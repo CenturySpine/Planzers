@@ -247,6 +247,15 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
       messenger.showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.activitiesDeleted)),
       );
+    } on RestaurantChosenForMealException {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.activitiesRestaurantChosenForMeal,
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

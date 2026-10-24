@@ -40,11 +40,13 @@ class TripActivityCreatePage extends StatelessWidget {
         initialLocation: initialLocation,
         initialAddress: initialAddress,
         initialPlannedDay: initialPlannedDay,
-        onCreated: (_) {
+        // The new activity id is handed back to whoever opened the page
+        // (e.g. a meal choosing the restaurant it creates).
+        onCreated: (activityId) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.activitiesAdded)),
           );
-          context.pop();
+          context.pop(activityId);
         },
       ),
     );

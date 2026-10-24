@@ -6,6 +6,7 @@ import 'package:planerz/features/activities/data/activity_text_ai_repository.dar
 import 'package:planerz/features/activities/data/activity_trip_driving_route.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/core/firebase/firebase_functions_region.dart';
+import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 
@@ -22,6 +23,11 @@ final tripActivitiesStreamProvider =
         (ref, tripId) {
   return ref.watch(activitiesRepositoryProvider).watchTripActivities(tripId);
 });
+
+/// Thrown when deleting a restaurant that a meal is set to go to.
+class RestaurantChosenForMealException implements Exception {
+  const RestaurantChosenForMealException();
+}
 
 class ActivitiesRepository {
   ActivitiesRepository({
@@ -558,18 +564,18 @@ class ActivitiesRepository {
       throw StateError('Droits insuffisants pour supprimer une activite');
     }
 
-    final mealsUsingActivity =
-        await firestore
-            .collection('trips')
-            .doc(cleanTripId)
-            .collection('meals')
-            .where('restaurantActivityId', isEqualTo: cleanActivityId)
-            .limit(1)
-            .get();
-    if (mealsUsingActivity.docs.isNotEmpty) {
-      throw StateError(
-        'Ce restaurant est associé à un repas et ne peut pas être supprimé.',
-      );
+    // A meal keeps its restaurant when switched to another mode, so only
+    // meals still going to the restaurant hold it back.
+    final mealsLinkedToActivity = await firestore
+        .collection('trips')
+        .doc(cleanTripId)
+        .collection('meals')
+        .where('restaurantActivityId', isEqualTo: cleanActivityId)
+        .get();
+    if (mealsLinkedToActivity.docs.any(
+      (doc) => TripMeal.fromDoc(doc).mealMode == MealMode.restaurant,
+    )) {
+      throw const RestaurantChosenForMealException();
     }
 
     await docRef.delete();

@@ -398,7 +398,7 @@ enum TripMealsPermissionAction {
   editMeal,
   addContribution,
   manageRecipe,
-  suggestRestaurant,
+  chooseRestaurant,
 }
 
 /// Permissions for trip meals.
@@ -411,7 +411,7 @@ class TripMealsPermissions {
     required this.editMealMinRole,
     required this.addContributionMinRole,
     required this.manageRecipeMinRole,
-    required this.suggestRestaurantMinRole,
+    required this.chooseRestaurantMinRole,
   });
 
   final TripPermissionRole createMealMinRole;
@@ -419,7 +419,10 @@ class TripMealsPermissions {
   final TripPermissionRole editMealMinRole;
   final TripPermissionRole addContributionMinRole;
   final TripPermissionRole manageRecipeMinRole;
-  final TripPermissionRole suggestRestaurantMinRole;
+
+  /// Choosing (or changing) the restaurant a meal goes to. Stored under
+  /// `suggestRestaurant`, its original name.
+  final TripPermissionRole chooseRestaurantMinRole;
 
   static const defaults = TripMealsPermissions(
     createMealMinRole: TripPermissionRole.admin,
@@ -427,7 +430,7 @@ class TripMealsPermissions {
     editMealMinRole: TripPermissionRole.admin,
     addContributionMinRole: TripPermissionRole.participant,
     manageRecipeMinRole: TripPermissionRole.chef,
-    suggestRestaurantMinRole: TripPermissionRole.admin,
+    chooseRestaurantMinRole: TripPermissionRole.admin,
   );
 
   factory TripMealsPermissions.fromFirestore(dynamic raw) {
@@ -450,8 +453,8 @@ class TripMealsPermissions {
       manageRecipeMinRole: raw['manageRecipe'] == null
           ? defaults.manageRecipeMinRole
           : TripPermissionRole.fromFirestore(raw['manageRecipe']),
-      suggestRestaurantMinRole: raw['suggestRestaurant'] == null
-          ? defaults.suggestRestaurantMinRole
+      chooseRestaurantMinRole: raw['suggestRestaurant'] == null
+          ? defaults.chooseRestaurantMinRole
           : TripPermissionRole.fromFirestore(raw['suggestRestaurant']),
     );
   }
@@ -463,7 +466,7 @@ class TripMealsPermissions {
       'editMeal': editMealMinRole.toFirestore(),
       'addContribution': addContributionMinRole.toFirestore(),
       'manageRecipe': manageRecipeMinRole.toFirestore(),
-      'suggestRestaurant': suggestRestaurantMinRole.toFirestore(),
+      'suggestRestaurant': chooseRestaurantMinRole.toFirestore(),
     };
   }
 }

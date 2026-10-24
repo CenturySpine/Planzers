@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
+import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_ui.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
@@ -32,7 +33,12 @@ class TripMealCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final dayPartLabel = _dayPartLabel(context, meal.mealDayPart);
-    final mealPreviewLabel = _mealPreviewLabel(context, meal);
+    final mealPreviewLabel = switch (meal.mealMode) {
+      MealMode.cooked => _cookedMealPreviewLabel(meal, l10n),
+      MealMode.potluck => l10n.mealModePotluckLabel,
+      MealMode.restaurant =>
+        _restaurantName(ref) ?? l10n.mealRestaurantToChoose,
+    };
     final chefId = meal.chefParticipantId?.trim();
     final hasChef =
         meal.mealMode == MealMode.cooked && chefId != null && chefId.isNotEmpty;
@@ -137,6 +143,22 @@ class TripMealCard extends ConsumerWidget {
       ),
     );
   }
+
+  /// Current name of the chosen restaurant, or null when none is chosen (or
+  /// it was deleted). The name saved with the meal covers the loading time.
+  String? _restaurantName(WidgetRef ref) {
+    final activityId = meal.restaurantActivityId.trim();
+    if (activityId.isEmpty) return null;
+    final activities =
+        ref.watch(tripActivitiesStreamProvider(tripId)).asData?.value;
+    if (activities == null) {
+      final savedName = meal.restaurantName.trim();
+      return savedName.isEmpty ? null : savedName;
+    }
+    final restaurant = activities.where((a) => a.id == activityId).firstOrNull;
+    if (restaurant == null) return null;
+    return restaurant.label.trim();
+  }
 }
 
 IconData _mealModeIcon(MealMode mealMode) => switch (mealMode) {
@@ -144,15 +166,6 @@ IconData _mealModeIcon(MealMode mealMode) => switch (mealMode) {
       MealMode.restaurant => PhosphorIconsRegular.storefront,
       MealMode.potluck => PhosphorIconsRegular.bowlFood,
     };
-
-String _mealPreviewLabel(BuildContext context, TripMeal meal) {
-  final l10n = AppLocalizations.of(context)!;
-  return switch (meal.mealMode) {
-    MealMode.cooked => _cookedMealPreviewLabel(meal, l10n),
-    MealMode.potluck => l10n.mealModePotluckLabel,
-    MealMode.restaurant => _restaurantMealPreviewLabel(meal, l10n),
-  };
-}
 
 String _cookedMealPreviewLabel(TripMeal meal, AppLocalizations l10n) {
   final componentTitles = meal.components
@@ -163,12 +176,6 @@ String _cookedMealPreviewLabel(TripMeal meal, AppLocalizations l10n) {
     return l10n.mealModeCookedLabel;
   }
   return componentTitles.join(' • ');
-}
-
-String _restaurantMealPreviewLabel(TripMeal meal, AppLocalizations l10n) {
-  final name = meal.restaurantName.trim();
-  if (name.isNotEmpty) return name;
-  return l10n.mealModeRestaurantLabel;
 }
 
 String _dayPartLabel(BuildContext context, TripDayPart dayPart) {

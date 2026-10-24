@@ -930,7 +930,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripPermissionsMealsDescription =>
-      'Minimum roles to create, delete, and edit meals, add a contribution, and manage a recipe.';
+      'Minimum roles to create, delete, and edit meals, choose their restaurant, add a contribution, and manage a recipe.';
 
   @override
   String get tripPermissionMealsCreate => 'Create a meal';
@@ -941,6 +941,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tripPermissionMealsEdit =>
       'Edit a meal (date, type, participants, chef, category)';
+
+  @override
+  String get tripPermissionMealsChooseRestaurant =>
+      'Choose a meal\'s restaurant';
 
   @override
   String get tripPermissionMealsAddContribution =>
@@ -1843,9 +1847,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activitiesNoPlanned => 'No planned activities.';
 
   @override
-  String get activitiesSuggestAction => 'Suggest';
-
-  @override
   String get activitiesPreviousWeek => 'Previous week';
 
   @override
@@ -2233,6 +2234,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activitiesDeleted => 'Activity deleted';
 
   @override
+  String get activitiesRestaurantChosenForMeal =>
+      'This restaurant is chosen for a meal and can\'t be deleted.';
+
+  @override
   String get activitiesNotFound => 'Activity not found.';
 
   @override
@@ -2472,11 +2477,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealModePotluckLabel => 'Everyone brings something!';
 
   @override
-  String get mealRestaurantLinkLabel => 'Restaurant link';
+  String get mealRestaurantChoose => 'Choose a restaurant';
 
   @override
-  String get mealRestaurantLinkHint =>
-      'Add a link to show the restaurant preview.';
+  String get mealRestaurantNew => 'New restaurant';
+
+  @override
+  String get mealRestaurantChange => 'Change';
+
+  @override
+  String get mealRestaurantRemove => 'Remove';
+
+  @override
+  String get mealRestaurantToChoose => 'Restaurant to be chosen';
+
+  @override
+  String get mealRestaurantPickerEmpty => 'No restaurant suggested yet.';
 
   @override
   String get mealPotluckTitle => 'Shared contributions';
@@ -3583,10 +3599,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tripOverviewNoAccommodationSuggestions =>
       'No accommodation suggestions yet. Add an \"Accommodation\" activity here or from Planning to make it appear.';
-
-  @override
-  String get tripOverviewNoRestaurantSuggestions =>
-      'No restaurant suggestions yet. Add a \"Restaurant\" activity here or from Planning to make it appear.';
 
   @override
   String get cupidonPopupTitle => 'You have a match';
@@ -5116,7 +5128,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPermissionsMealsDescription =>
-      'Minimum roles to create, delete, and edit meals, add a contribution, and manage a recipe.';
+      'Minimum roles to create, delete, and edit meals, choose their restaurant, add a contribution, and manage a recipe.';
 
   @override
   String get tripPermissionMealsCreate => 'Create a meal';
@@ -5127,6 +5139,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get tripPermissionMealsEdit =>
       'Edit a meal (date, type, participants, chef, category)';
+
+  @override
+  String get tripPermissionMealsChooseRestaurant =>
+      'Choose a meal\'s restaurant';
 
   @override
   String get tripPermissionMealsAddContribution =>
@@ -5958,9 +5974,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get activitiesNoPlanned => 'No planned activities.';
 
   @override
-  String get activitiesSuggestAction => 'Suggest';
-
-  @override
   String get activitiesPreviousWeek => 'Previous week';
 
   @override
@@ -6348,6 +6361,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get activitiesDeleted => 'Activity deleted';
 
   @override
+  String get activitiesRestaurantChosenForMeal =>
+      'This restaurant is chosen for a meal and can\'t be deleted.';
+
+  @override
   String get activitiesNotFound => 'Activity not found.';
 
   @override
@@ -6587,11 +6604,22 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get mealModePotluckLabel => 'Everyone brings something!';
 
   @override
-  String get mealRestaurantLinkLabel => 'Restaurant link';
+  String get mealRestaurantChoose => 'Choose a restaurant';
 
   @override
-  String get mealRestaurantLinkHint =>
-      'Add a link to show the restaurant preview.';
+  String get mealRestaurantNew => 'New restaurant';
+
+  @override
+  String get mealRestaurantChange => 'Change';
+
+  @override
+  String get mealRestaurantRemove => 'Remove';
+
+  @override
+  String get mealRestaurantToChoose => 'Restaurant to be chosen';
+
+  @override
+  String get mealRestaurantPickerEmpty => 'No restaurant suggested yet.';
 
   @override
   String get mealPotluckTitle => 'Shared contributions';
@@ -7698,10 +7726,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get tripOverviewNoAccommodationSuggestions =>
       'No accommodation suggestions yet. Add an \"Accommodation\" activity here or from Planning to make it appear.';
-
-  @override
-  String get tripOverviewNoRestaurantSuggestions =>
-      'No restaurant suggestions yet. Add a \"Restaurant\" activity here or from Planning to make it appear.';
 
   @override
   String get cupidonPopupTitle => 'You have a match';
