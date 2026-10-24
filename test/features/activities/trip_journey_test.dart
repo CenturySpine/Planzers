@@ -227,7 +227,7 @@ void main() {
     );
   });
 
-  test('a restaurant shows the name found from its link', () {
+  test('restaurants show their place name, the trip map their label', () {
     TripActivity restaurant(Map<String, dynamic> preview) => TripActivity(
           id: 'r',
           label: "dej' spaghetti & co",
@@ -243,6 +243,20 @@ void main() {
 
     expect(restaurant({'title': ' Spaghetti & Co. '}).displayLabel,
         'Spaghetti & Co.');
+    final placed = TripActivity(
+      id: 'r',
+      label: "dej' spaghetti & co",
+      category: TripActivityCategory.restaurant,
+      linkUrl: '',
+      address: '',
+      freeComments: '',
+      createdBy: 'u1',
+      createdAt: DateTime(2026, 1, 1),
+      linkPreview: const {'title': 'Lien', 'imageUrl': 'link.jpg'},
+      placePreview: const {'title': 'Spaghetti & Co', 'imageUrl': 'place.jpg'},
+    );
+    expect(placed.displayLabel, 'Spaghetti & Co');
+    expect(placed.photoPreview['imageUrl'], 'place.jpg');
     expect(restaurant(const {}).displayLabel, "dej' spaghetti & co");
     expect(
       tripJourneyMealStops(
@@ -254,7 +268,7 @@ void main() {
           restaurant({'title': 'Spaghetti & Co.'})
         ],
       ).single.activity.label,
-      'Spaghetti & Co.',
+      "dej' spaghetti & co",
     );
     expect(_activity('cave').displayLabel, 'cave');
   });

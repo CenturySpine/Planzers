@@ -120,7 +120,10 @@ bool tripActivityMatchesQuery(
 }) {
   final query = rawQuery.trim().toLowerCase();
   if (query.isEmpty) return true;
-  final previewValues = activity.linkPreview.values
+  final previewValues = [
+    ...activity.linkPreview.values,
+    ...activity.placePreview.values,
+  ]
       .whereType<String>()
       .map((value) => value.trim())
       .where((value) => value.isNotEmpty);

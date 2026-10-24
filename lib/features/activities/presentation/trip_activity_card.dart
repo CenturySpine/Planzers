@@ -181,7 +181,7 @@ class TripActivityCard extends StatelessWidget {
     final filterGroup = activity.category.filterGroup;
     final categoryColor = filterGroup.filterColor;
     final categoryLightBg = filterGroup.filterLightBgColor;
-    final preview = activity.linkPreview;
+    final preview = activity.photoPreview;
     final imageUrl = ((preview['imageUrl'] as String?) ?? '').trim();
     final hasImage = imageUrl.isNotEmpty;
     final hasLink = activity.linkUrl.trim().isNotEmpty;
