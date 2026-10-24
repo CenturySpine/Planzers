@@ -30,7 +30,8 @@ final activityPhotosRepositoryProvider =
   );
 });
 
-/// The current traveler's photos for a trip, all activities together.
+/// The current traveler's photos for a trip, all activities and meals
+/// together.
 final myActivityPhotosStreamProvider = StreamProvider.autoDispose
     .family<List<ActivityPhoto>, String>((ref, tripId) {
   return ref.watch(activityPhotosRepositoryProvider).watchMyPhotos(tripId);
@@ -45,7 +46,7 @@ final sharedActivityPhotosOfMemberStreamProvider = StreamProvider.autoDispose
       .watchSharedPhotos(args.tripId, args.memberId);
 });
 
-/// The current traveler's favorite photo choices, by activity id.
+/// The current traveler's favorite photo choices, by activity or meal id.
 final myActivityFavoritesStreamProvider = StreamProvider.autoDispose
     .family<Map<String, ActivityFavoriteRef>, String>((ref, tripId) {
   return ref.watch(activityPhotosRepositoryProvider).watchMyFavorites(tripId);
@@ -102,7 +103,8 @@ final visibleActivityPhotosProvider =
   return [...mine, ...others];
 });
 
-/// The current traveler's favorite photo of each activity, by activity id.
+/// The current traveler's favorite photo of each activity or meal, by its
+/// id.
 final activityFavoritePhotosProvider = Provider.autoDispose
     .family<Map<String, ActivityPhoto>, String>((ref, tripId) {
   return resolveActivityFavorites(
@@ -245,14 +247,14 @@ class ActivityPhotosRepository {
   /// Storage. The daily limit is checked by the caller.
   Future<void> addPhoto({
     required String tripId,
-    required String activityId,
+    required PhotoSubject subject,
     required Uint8List bytes,
   }) async {
     final uid = _requireUid();
     final cleanTripId = tripId.trim();
-    final cleanActivityId = activityId.trim();
+    final cleanSubjectId = subject.id.trim();
     if (!_safeSegment.hasMatch(cleanTripId) ||
-        !_safeSegment.hasMatch(cleanActivityId) ||
+        !_safeSegment.hasMatch(cleanSubjectId) ||
         !_safeSegment.hasMatch(uid)) {
       throw StateError('Paramètres invalides');
     }
@@ -267,13 +269,16 @@ class ActivityPhotosRepository {
     final metadata = SettableMetadata(
       contentType: 'image/jpeg',
       cacheControl: 'private, max-age=31536000, immutable',
-      customMetadata: {'tripId': cleanTripId, 'activityId': cleanActivityId},
+      customMetadata: {
+        'tripId': cleanTripId,
+        subject.firestoreField: cleanSubjectId,
+      },
     );
     try {
       await photoRef.putData(prepared.photo, metadata);
       await thumbRef.putData(prepared.thumbnail, metadata);
       await docRef.set({
-        'activityId': cleanActivityId,
+        subject.firestoreField: cleanSubjectId,
         'url': await photoRef.getDownloadURL(),
         'thumbUrl': await thumbRef.getDownloadURL(),
         'shared': true,
@@ -316,11 +321,11 @@ class ActivityPhotosRepository {
   }
 
   /// Makes [photo] (the traveler's or another member's) their favorite of
-  /// [activityId], or clears it when [photo] is null. Also drops the former
-  /// favorite mark from their own photos of the activity.
-  Future<void> setActivityFavorite({
+  /// the activity or meal [subjectId], or clears it when [photo] is null.
+  /// Also drops the former favorite mark from their own photos of it.
+  Future<void> setFavorite({
     required String tripId,
-    required String activityId,
+    required String subjectId,
     required ActivityPhoto? photo,
     required Iterable<ActivityPhoto> myPhotos,
   }) async {
@@ -329,7 +334,7 @@ class ActivityPhotosRepository {
     final batch = firestore.batch();
     final favoriteRef = _moduleRef(cleanTripId, uid)
         .collection('activityFavorites')
-        .doc(activityId);
+        .doc(subjectId);
     if (photo == null) {
       batch.delete(favoriteRef);
     } else {
@@ -340,7 +345,7 @@ class ActivityPhotosRepository {
       });
     }
     for (final mine in myPhotos) {
-      if (mine.activityId == activityId && mine.favorite) {
+      if (mine.subjectId == subjectId && mine.favorite) {
         batch.update(
           _photosRef(cleanTripId, uid).doc(mine.id),
           {'favorite': FieldValue.delete()},

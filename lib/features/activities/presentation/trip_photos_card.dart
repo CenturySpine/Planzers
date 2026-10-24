@@ -10,46 +10,66 @@ import 'package:planerz/features/activities/data/activity_photo.dart';
 import 'package:planerz/features/activities/data/activity_photos_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
+import 'package:planerz/features/administration/data/maintenance_repository.dart';
+import 'package:planerz/features/meals/data/meals_repository.dart';
+import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// How many of [photos] belong to activities planned on the same (local) day
-/// as [day]. Each activity's current date is used, so the photos of a moved
-/// activity count on its new day.
-int activityPhotosCountOnDay({
+/// The day photos can be attached on, by activity or meal id: planned
+/// activities on their date, meals on theirs.
+Map<String, DateTime> photoSubjectDays({
+  required Iterable<TripActivity> activities,
+  required Iterable<TripMeal> meals,
+}) {
+  return {
+    for (final activity in activities)
+      if (activity.plannedAt != null)
+        activity.id: tripActivityDateOnly(activity.plannedAt!),
+    for (final meal in meals) meal.id: meal.mealDateAsDateTime,
+  };
+}
+
+/// How many of [photos] belong to activities or meals on the same (local)
+/// day as [day]. [subjectDays] gives each one's current day, so the photos
+/// of a moved activity or meal count on its new day.
+int photosCountOnDay({
   required Iterable<ActivityPhoto> photos,
-  required Map<String, TripActivity> activitiesById,
+  required Map<String, DateTime> subjectDays,
   required DateTime day,
 }) {
   final target = tripActivityDateOnly(day);
   return photos.where((photo) {
-    final plannedAt = activitiesById[photo.activityId]?.plannedAt;
-    return plannedAt != null &&
-        tripActivitiesSameDay(tripActivityDateOnly(plannedAt), target);
+    final subjectDay = subjectDays[photo.subjectId];
+    return subjectDay != null && tripActivitiesSameDay(subjectDay, target);
   }).length;
 }
 
-/// The photos of an activity: the current traveler's own, then those the
-/// other members shared (outlined). Adding is for planned activities only,
-/// within the daily limit. Hidden for an unplanned activity without photos.
-class TripActivityPhotosCard extends ConsumerStatefulWidget {
-  const TripActivityPhotosCard({
+/// The photos of an activity or a meal: the current traveler's own, then
+/// those the other members shared (outlined). Adding needs a [day], within
+/// the daily limit of the activities and meals of that day. Hidden when it
+/// has neither a day nor photos.
+class TripPhotosCard extends ConsumerStatefulWidget {
+  const TripPhotosCard({
     super.key,
     required this.tripId,
-    required this.activity,
+    required this.subject,
+    required this.day,
   });
 
   final String tripId;
-  final TripActivity activity;
+  final PhotoSubject subject;
+
+  /// The activity's planned date or the meal's date; null for an unplanned
+  /// activity.
+  final DateTime? day;
 
   @override
-  ConsumerState<TripActivityPhotosCard> createState() =>
-      _TripActivityPhotosCardState();
+  ConsumerState<TripPhotosCard> createState() => _TripPhotosCardState();
 }
 
-class _TripActivityPhotosCardState
-    extends ConsumerState<TripActivityPhotosCard> {
+class _TripPhotosCardState extends ConsumerState<TripPhotosCard> {
   static const double _thumbExtent = 72;
 
   final _crossCache = CrossCache();
@@ -78,7 +98,7 @@ class _TripActivityPhotosCardState
     return [if (file != null) file];
   }
 
-  Future<void> _addPhotos(int remaining) async {
+  Future<void> _addPhotos(int remaining, int maxPerDay) async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     final List<XFile> picked;
@@ -95,7 +115,7 @@ class _TripActivityPhotosCardState
     if (picked.length > remaining) {
       messenger.showSnackBar(
         SnackBar(
-          content: Text(l10n.activityPhotosDayLimit(activityPhotosMaxPerDay)),
+          content: Text(l10n.activityPhotosDayLimit(maxPerDay)),
         ),
       );
     }
@@ -107,7 +127,7 @@ class _TripActivityPhotosCardState
       try {
         await repository.addPhoto(
           tripId: widget.tripId,
-          activityId: widget.activity.id,
+          subject: widget.subject,
           bytes: await file.readAsBytes(),
         );
       } catch (error) {
@@ -131,7 +151,7 @@ class _TripActivityPhotosCardState
         fullscreenDialog: true,
         builder: (_) => _ActivityPhotoViewerPage(
           tripId: widget.tripId,
-          activityId: widget.activity.id,
+          subjectId: widget.subject.id,
           initialPhotos: photos,
           initialIndex: index,
           crossCache: _crossCache,
@@ -152,31 +172,37 @@ class _TripActivityPhotosCardState
         const <ActivityPhoto>[];
     final photos = ref
         .watch(visibleActivityPhotosProvider(widget.tripId))
-        .where((photo) => photo.activityId == widget.activity.id)
+        .where((photo) => photo.subjectId == widget.subject.id)
         .toList(growable: false);
     final favoriteKey = ref
-        .watch(
-            activityFavoritePhotosProvider(widget.tripId))[widget.activity.id]
+        .watch(activityFavoritePhotosProvider(widget.tripId))[widget.subject.id]
         ?.key;
-    final plannedAt = widget.activity.plannedAt;
-    if (plannedAt == null && photos.isEmpty) return const SizedBox.shrink();
+    final day = widget.day;
+    if (day == null && photos.isEmpty) return const SizedBox.shrink();
 
     final activities =
         ref.watch(tripActivitiesStreamProvider(widget.tripId)).asData?.value ??
             const <TripActivity>[];
-    final activitiesById = {
-      for (final activity in activities) activity.id: activity,
-      widget.activity.id: widget.activity,
+    final meals =
+        ref.watch(tripMealsStreamProvider(widget.tripId)).asData?.value ??
+            const <TripMeal>[];
+    final subjectDays = {
+      ...photoSubjectDays(activities: activities, meals: meals),
+      if (day != null) widget.subject.id: tripActivityDateOnly(day),
     };
     // Only the traveler's own photos count, private ones included.
-    final dayCount = plannedAt == null
+    final dayCount = day == null
         ? 0
-        : activityPhotosCountOnDay(
+        : photosCountOnDay(
             photos: myPhotos,
-            activitiesById: activitiesById,
-            day: plannedAt,
+            subjectDays: subjectDays,
+            day: day,
           );
-    final remaining = activityPhotosMaxPerDay - dayCount;
+    final maxPerDay = activityPhotosMaxPerDayFor(
+      isApplicationOwner:
+          ref.watch(isApplicationOwnerProvider).asData?.value ?? false,
+    );
+    final remaining = maxPerDay - dayCount;
     final pendingUploads = _pendingUploads;
 
     return Padding(
@@ -197,27 +223,22 @@ class _TripActivityPhotosCardState
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
-                    if (plannedAt != null)
+                    if (day != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         child: Text(
-                          l10n.activityPhotosDayCount(
-                            dayCount,
-                            activityPhotosMaxPerDay,
-                          ),
+                          l10n.activityPhotosDayCount(dayCount, maxPerDay),
                           style: Theme.of(context)
                               .textTheme
                               .bodySmall
                               ?.copyWith(color: cs.onSurfaceVariant),
                         ),
                       ),
-                    if (plannedAt != null &&
-                        remaining > 0 &&
-                        pendingUploads == null)
+                    if (day != null && remaining > 0 && pendingUploads == null)
                       IconButton(
                         tooltip: l10n.activityPhotosAdd,
                         icon: const Icon(PhosphorIconsRegular.plus),
-                        onPressed: () => _addPhotos(remaining),
+                        onPressed: () => _addPhotos(remaining, maxPerDay),
                       )
                     else
                       // Keeps the header height when the button is hidden.
@@ -400,22 +421,24 @@ Future<bool> confirmActivityPhotoDeletion(BuildContext context) async {
   return confirmed == true;
 }
 
-/// Full-screen view of an activity's photos: swipe between them, pinch to
-/// zoom (swiping pauses while zoomed in). On the traveler's own photo:
-/// favorite, sharing, caption and deletion; on another member's: its author
-/// and caption, favorite and report, plus deletion for trip admins. Reports
-/// are handled by the application owner only.
+/// Full-screen view of an activity's or a meal's photos: swipe between them,
+/// pinch to zoom (swiping pauses while zoomed in). On the traveler's own
+/// photo: favorite, sharing, caption and deletion; on another member's: its
+/// author and caption, favorite and report, plus deletion for trip admins.
+/// Reports are handled by the application owner only.
 class _ActivityPhotoViewerPage extends ConsumerStatefulWidget {
   const _ActivityPhotoViewerPage({
     required this.tripId,
-    required this.activityId,
+    required this.subjectId,
     required this.initialPhotos,
     required this.initialIndex,
     required this.crossCache,
   });
 
   final String tripId;
-  final String activityId;
+
+  /// Id of the activity or meal.
+  final String subjectId;
 
   /// Shown until the live list is available.
   final List<ActivityPhoto> initialPhotos;
@@ -570,9 +593,9 @@ class _ActivityPhotoViewerPageState
   Future<void> _toggleFavorite(ActivityPhoto photo, bool isFavorite) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await _repository.setActivityFavorite(
+      await _repository.setFavorite(
         tripId: widget.tripId,
-        activityId: widget.activityId,
+        subjectId: widget.subjectId,
         photo: isFavorite ? null : photo,
         myPhotos: ref
                 .read(myActivityPhotosStreamProvider(widget.tripId))
@@ -625,11 +648,11 @@ class _ActivityPhotoViewerPageState
     final photos = loaded
         ? ref
             .watch(visibleActivityPhotosProvider(widget.tripId))
-            .where((photo) => photo.activityId == widget.activityId)
+            .where((photo) => photo.subjectId == widget.subjectId)
             .toList(growable: false)
         : widget.initialPhotos;
     final favoriteKey = ref
-        .watch(activityFavoritePhotosProvider(widget.tripId))[widget.activityId]
+        .watch(activityFavoritePhotosProvider(widget.tripId))[widget.subjectId]
         ?.key;
     final isAdmin = ref
             .watch(tripStreamProvider(widget.tripId))

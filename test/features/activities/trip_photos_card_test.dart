@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planerz/features/activities/data/activity_photo.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
-import 'package:planerz/features/activities/presentation/trip_activity_photos_card.dart';
+import 'package:planerz/features/activities/presentation/trip_photos_card.dart';
+import 'package:planerz/features/meals/data/trip_meal.dart';
+import 'package:planerz/features/trips/data/trip_day_part.dart';
 
 TripActivity _activity(String id, {DateTime? plannedAt}) {
   return TripActivity(
@@ -17,16 +19,29 @@ TripActivity _activity(String id, {DateTime? plannedAt}) {
   );
 }
 
+TripMeal _meal(String id, String dateKey) {
+  return TripMeal(
+    id: id,
+    mealDateKey: dateKey,
+    mealDayPart: TripDayPart.midday,
+    mealTimeHHMM: '12:30',
+    participantIds: const [],
+    createdBy: 'u1',
+    createdAt: DateTime(2025, 1, 1),
+  );
+}
+
 ActivityPhoto _photo(String id, String activityId) {
   return ActivityPhoto(id: id, activityId: activityId, url: 'u', thumbUrl: 't');
 }
 
 void main() {
-  group('activityPhotosCountOnDay', () {
+  group('photosCountOnDay', () {
     final morning = _activity('morning', plannedAt: DateTime(2025, 6, 10, 9));
     final evening = _activity('evening', plannedAt: DateTime(2025, 6, 10, 21));
     final nextDay = _activity('nextDay', plannedAt: DateTime(2025, 6, 11, 10));
     final unplanned = _activity('unplanned');
+    final lunch = _meal('lunch', '2025-06-10');
     final photos = [
       _photo('p1', 'morning'),
       _photo('p2', 'morning'),
@@ -34,41 +49,49 @@ void main() {
       _photo('p4', 'nextDay'),
       _photo('p5', 'unplanned'),
       _photo('p6', 'deleted'),
+      const ActivityPhoto(id: 'p7', mealId: 'lunch', url: 'u', thumbUrl: 't'),
     ];
 
-    test('counts the photos of every activity of the same day', () {
-      final count = activityPhotosCountOnDay(
+    test('counts the photos of every activity and meal of the same day', () {
+      final count = photosCountOnDay(
         photos: photos,
-        activitiesById: {
-          for (final a in [morning, evening, nextDay, unplanned]) a.id: a,
-        },
+        subjectDays: photoSubjectDays(
+          activities: [morning, evening, nextDay, unplanned],
+          meals: [lunch],
+        ),
         day: DateTime(2025, 6, 10, 15),
       );
-      expect(count, 3);
+      expect(count, 4);
     });
 
-    test('follows an activity moved to another day', () {
+    test('follows an activity or a meal moved to another day', () {
       final moved = _activity('evening', plannedAt: DateTime(2025, 6, 11, 21));
-      final activitiesById = {
-        for (final a in [morning, moved, nextDay, unplanned]) a.id: a,
-      };
+      final subjectDays = photoSubjectDays(
+        activities: [morning, moved, nextDay, unplanned],
+        meals: [_meal('lunch', '2025-06-11')],
+      );
       expect(
-        activityPhotosCountOnDay(
+        photosCountOnDay(
           photos: photos,
-          activitiesById: activitiesById,
+          subjectDays: subjectDays,
           day: DateTime(2025, 6, 10),
         ),
         2,
       );
       expect(
-        activityPhotosCountOnDay(
+        photosCountOnDay(
           photos: photos,
-          activitiesById: activitiesById,
+          subjectDays: subjectDays,
           day: DateTime(2025, 6, 11),
         ),
-        2,
+        3,
       );
     });
+  });
+
+  test('the application owner gets a larger daily limit', () {
+    expect(activityPhotosMaxPerDayFor(isApplicationOwner: false), 10);
+    expect(activityPhotosMaxPerDayFor(isApplicationOwner: true), 15);
   });
 
   group('activityFavoritePhotos', () {
@@ -115,9 +138,8 @@ void main() {
           thumbUrl: 't',
           favorite: favorite,
         );
-    ActivityFavoriteRef ref(String activityId, String owner, String id) =>
-        ActivityFavoriteRef(
-            activityId: activityId, ownerId: owner, photoId: id);
+    ActivityFavoriteRef ref(String subjectId, String owner, String id) =>
+        ActivityFavoriteRef(subjectId: subjectId, ownerId: owner, photoId: id);
 
     final mine = [
       photo('me', 'm1', 'a1', favorite: true),
@@ -133,6 +155,22 @@ void main() {
         myPhotos: mine,
       );
       expect(favorites['a1']!.key, 'bob/b1');
+    });
+
+    test('a meal has its favorite photo too', () {
+      const mealPhoto = ActivityPhoto(
+        id: 'b9',
+        ownerId: 'bob',
+        mealId: 'lunch',
+        url: 'u',
+        thumbUrl: 't',
+      );
+      final favorites = resolveActivityFavorites(
+        favorites: {'lunch': ref('lunch', 'bob', 'b9')},
+        visiblePhotos: [...mine, ...others, mealPhoto],
+        myPhotos: mine,
+      );
+      expect(favorites['lunch']!.key, 'bob/b9');
     });
 
     test('activities never chosen again keep the former mark', () {

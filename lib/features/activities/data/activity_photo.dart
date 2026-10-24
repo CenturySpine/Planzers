@@ -1,7 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Most photos a traveler can attach to the activities of one day.
+/// Most photos a traveler can attach to the activities and meals of one
+/// day; the application owner gets more.
 const int activityPhotosMaxPerDay = 10;
+const int activityPhotosMaxPerDayForApplicationOwner = 15;
+
+int activityPhotosMaxPerDayFor({required bool isApplicationOwner}) =>
+    isApplicationOwner
+        ? activityPhotosMaxPerDayForApplicationOwner
+        : activityPhotosMaxPerDay;
 
 /// Longest side of the stored photo and of its thumbnail, in pixels.
 const int activityPhotoMaxSide = 2048;
@@ -25,7 +32,20 @@ String activityPhotoThumbStoragePath(
 ) =>
     'users/$uid/activityPhotos/$tripId/${photoId}_thumb.jpg';
 
-/// A traveler's photo attached to a planned activity
+/// What photos are attached to: a planned activity or a meal. Their ids
+/// never collide, so either one identifies the subject alone.
+class PhotoSubject {
+  const PhotoSubject.activity(this.id) : isMeal = false;
+  const PhotoSubject.meal(this.id) : isMeal = true;
+
+  final String id;
+  final bool isMeal;
+
+  /// Field of the photo record holding [id].
+  String get firestoreField => isMeal ? 'mealId' : 'activityId';
+}
+
+/// A traveler's photo attached to a planned activity or a meal
 /// (`trips/{tripId}/travelerModules/{ownerId}/activityPhotos/{id}`).
 /// Shared photos are seen by every trip member, private ones by their author
 /// only. Its files are removed server-side whenever the record is deleted
@@ -34,7 +54,8 @@ class ActivityPhoto {
   const ActivityPhoto({
     required this.id,
     this.ownerId = '',
-    required this.activityId,
+    this.activityId = '',
+    this.mealId = '',
     required this.url,
     required this.thumbUrl,
     this.caption = '',
@@ -47,7 +68,12 @@ class ActivityPhoto {
 
   /// The traveler who added it.
   final String ownerId;
+
+  /// Empty for a meal's photo.
   final String activityId;
+
+  /// Empty for an activity's photo.
+  final String mealId;
   final String url;
   final String thumbUrl;
 
@@ -72,6 +98,7 @@ class ActivityPhoto {
       id: doc.id,
       ownerId: doc.reference.parent.parent?.id ?? '',
       activityId: (data['activityId'] as String?) ?? '',
+      mealId: (data['mealId'] as String?) ?? '',
       url: (data['url'] as String?) ?? '',
       thumbUrl: (data['thumbUrl'] as String?) ?? '',
       caption: (data['caption'] as String?) ?? '',
@@ -83,6 +110,9 @@ class ActivityPhoto {
 
   /// Identifies the photo across travelers.
   String get key => '$ownerId/$id';
+
+  /// Id of the activity or meal it belongs to.
+  String get subjectId => mealId.isNotEmpty ? mealId : activityId;
 }
 
 /// Oldest first; photos still being recorded go last.
@@ -95,7 +125,7 @@ int compareActivityPhotos(ActivityPhoto a, ActivityPhoto b) {
   return aAt.compareTo(bAt);
 }
 
-/// The photos marked with the former favorite field, by activity id. Should
+/// The photos marked with the former favorite field, by subject id. Should
 /// two be marked (e.g. set from two devices at once), the first in display
 /// order wins.
 Map<String, ActivityPhoto> activityFavoritePhotos(
@@ -105,21 +135,23 @@ Map<String, ActivityPhoto> activityFavoritePhotos(
     ..sort(compareActivityPhotos);
   final favorites = <String, ActivityPhoto>{};
   for (final photo in sorted) {
-    favorites.putIfAbsent(photo.activityId, () => photo);
+    favorites.putIfAbsent(photo.subjectId, () => photo);
   }
   return favorites;
 }
 
-/// A traveler's favorite photo of an activity, possibly another member's
-/// (`trips/{tripId}/travelerModules/{uid}/activityFavorites/{activityId}`).
+/// A traveler's favorite photo of an activity or a meal, possibly another
+/// member's
+/// (`trips/{tripId}/travelerModules/{uid}/activityFavorites/{subjectId}`).
 class ActivityFavoriteRef {
   const ActivityFavoriteRef({
-    required this.activityId,
+    required this.subjectId,
     required this.ownerId,
     required this.photoId,
   });
 
-  final String activityId;
+  /// Id of the activity or meal.
+  final String subjectId;
   final String ownerId;
   final String photoId;
 
@@ -130,17 +162,17 @@ class ActivityFavoriteRef {
   ) {
     final data = doc.data() ?? const <String, dynamic>{};
     return ActivityFavoriteRef(
-      activityId: doc.id,
+      subjectId: doc.id,
       ownerId: (data['ownerId'] as String?) ?? '',
       photoId: (data['photoId'] as String?) ?? '',
     );
   }
 }
 
-/// The favorite photo of each activity, by activity id, among the photos the
-/// traveler can see. A chosen favorite whose photo was deleted or made
-/// private shows none; activities never chosen since favorites moved fall
-/// back to the former mark on the traveler's own photos.
+/// The favorite photo of each activity or meal, by subject id, among the
+/// photos the traveler can see. A chosen favorite whose photo was deleted or
+/// made private shows none; activities never chosen since favorites moved
+/// fall back to the former mark on the traveler's own photos.
 Map<String, ActivityPhoto> resolveActivityFavorites({
   required Map<String, ActivityFavoriteRef> favorites,
   required Iterable<ActivityPhoto> visiblePhotos,
@@ -153,8 +185,8 @@ Map<String, ActivityPhoto> resolveActivityFavorites({
   };
   for (final favorite in favorites.values) {
     final photo = byKey[favorite.photoKey];
-    if (photo != null && photo.activityId == favorite.activityId) {
-      result[favorite.activityId] = photo;
+    if (photo != null && photo.subjectId == favorite.subjectId) {
+      result[favorite.subjectId] = photo;
     }
   }
   return result;
@@ -213,6 +245,8 @@ class PhotoReport {
   final String tripId;
   final String photoOwnerId;
   final String photoId;
+
+  /// Empty for a meal's photo.
   final String activityId;
   final String reporterId;
   final PhotoReportReason reason;
