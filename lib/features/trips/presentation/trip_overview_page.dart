@@ -39,6 +39,7 @@ import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/features/trips/presentation/trip_transfer_actions.dart';
 import 'package:planerz/features/wallet/data/wallet_repository.dart';
 import 'package:planerz/features/trips/data/trip_lifecycle.dart';
 import 'package:planerz/core/presentation/pz_components.dart';
@@ -557,6 +558,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     required bool canEditGeneralInfo,
     required bool canManageTripSettings,
     required bool canDeleteTrip,
+    required bool canExportTrip,
     required bool isArchivedForMe,
   }) {
     final rows = <TripOverviewSettingsRowData>[];
@@ -593,6 +595,15 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
           icon: PhosphorIconsRegular.copy,
           label: l10n.tripOverviewCopyTripId,
           onTap: _copyTripId,
+        ),
+      );
+    }
+    if (canExportTrip) {
+      rows.add(
+        TripOverviewSettingsRowData(
+          icon: PhosphorIconsRegular.export,
+          label: l10n.tripOverviewExportTrip,
+          onTap: () => exportTripToFile(context, ref, _trip),
         ),
       );
     }
@@ -761,6 +772,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             canEditGeneralInfo: canEditGeneralInfo,
             canManageTripSettings: canManageTripSettings,
             canDeleteTrip: canDeleteTrip,
+            canExportTrip: canEdit,
             isArchivedForMe: ref.watch(isTripArchivedForMeProvider(_trip.id)),
           );
           // Past trips not archived yet (by this member): tell when the

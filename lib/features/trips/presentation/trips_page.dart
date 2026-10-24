@@ -19,6 +19,7 @@ import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/presentation/join_trip_by_code_dialog.dart';
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
+import 'package:planerz/features/trips/presentation/trip_transfer_actions.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/trips/presentation/offline_personal_data_prefetcher.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -292,6 +293,18 @@ class _TripsPageState extends ConsumerState<TripsPage>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
+                    FloatingActionButton.small(
+                      heroTag: 'trips_import_fab',
+                      tooltip: l10n.tripsImportTripTooltip,
+                      backgroundColor: AppTokens.surface,
+                      foregroundColor: AppTokens.primaryDark,
+                      onPressed: () => importTripFromFile(context, ref),
+                      child: const Icon(
+                        PhosphorIconsRegular.downloadSimple,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     FloatingActionButton.small(
                       heroTag: 'trips_join_fab',
                       tooltip: l10n.tripsJoinWithInviteTooltip,
