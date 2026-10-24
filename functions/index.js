@@ -5234,6 +5234,12 @@ const {
 exports.adminListTripActivityCounts = adminListTripActivityCounts;
 exports.adminDeleteTripActivities = adminDeleteTripActivities;
 
+// --- Trip export / import between environments (preview → prod) ---
+const { exportTrip, importTrip } = require('./trip_transfer');
+
+exports.exportTrip = exportTrip;
+exports.importTrip = importTrip;
+
 // --- Public API / OAuth (Ridgegear and future third-party clients) ---
 const {
   getOAuthClientPublicInfo,

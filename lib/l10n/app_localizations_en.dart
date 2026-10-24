@@ -577,6 +577,33 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get tripsExported => 'Trip exported';
+
+  @override
+  String tripsExportError(Object error) {
+    return 'Export error: $error';
+  }
+
+  @override
+  String get tripsImportTripTooltip => 'Import a trip';
+
+  @override
+  String get tripsImported => 'Trip imported';
+
+  @override
+  String tripsImportError(Object error) {
+    return 'Import error: $error';
+  }
+
+  @override
+  String tripsImportVersionMismatch(Object fileVersion, Object appVersion) {
+    return 'File exported from version $fileVersion, which differs from this app\'s version ($appVersion).';
+  }
+
+  @override
+  String get tripsImportInvalidFile => 'This file is not a trip export.';
+
+  @override
   String get tripsArchiveDialogTitle => 'Archive this trip?';
 
   @override
@@ -1504,6 +1531,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripOverviewCopyTripId => 'Copy trip ID';
+
+  @override
+  String get tripOverviewExportTrip => 'Export trip';
 
   @override
   String get tripOverviewArchiveTrip => 'Archive';
@@ -4733,6 +4763,33 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   }
 
   @override
+  String get tripsExported => 'Trip exported';
+
+  @override
+  String tripsExportError(Object error) {
+    return 'Export error: $error';
+  }
+
+  @override
+  String get tripsImportTripTooltip => 'Import a trip';
+
+  @override
+  String get tripsImported => 'Trip imported';
+
+  @override
+  String tripsImportError(Object error) {
+    return 'Import error: $error';
+  }
+
+  @override
+  String tripsImportVersionMismatch(Object fileVersion, Object appVersion) {
+    return 'File exported from version $fileVersion, which differs from this app\'s version ($appVersion).';
+  }
+
+  @override
+  String get tripsImportInvalidFile => 'This file is not a trip export.';
+
+  @override
   String get tripsArchiveDialogTitle => 'Archive this trip?';
 
   @override
@@ -5589,6 +5646,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewCopyTripId => 'Copy trip ID';
+
+  @override
+  String get tripOverviewExportTrip => 'Export trip';
 
   @override
   String get tripOverviewArchiveTrip => 'Archive';

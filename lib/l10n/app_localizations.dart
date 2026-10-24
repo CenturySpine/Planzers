@@ -1132,6 +1132,48 @@ abstract class AppLocalizations {
   /// **'Erreur suppression : {error}'**
   String tripsDeleteError(Object error);
 
+  /// No description provided for @tripsExported.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voyage exporté'**
+  String get tripsExported;
+
+  /// No description provided for @tripsExportError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Erreur export : {error}'**
+  String tripsExportError(Object error);
+
+  /// No description provided for @tripsImportTripTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Importer un voyage'**
+  String get tripsImportTripTooltip;
+
+  /// No description provided for @tripsImported.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voyage importé'**
+  String get tripsImported;
+
+  /// No description provided for @tripsImportError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Erreur import : {error}'**
+  String tripsImportError(Object error);
+
+  /// No description provided for @tripsImportVersionMismatch.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fichier exporté depuis la version {fileVersion}, différente de celle de l\'application ({appVersion}).'**
+  String tripsImportVersionMismatch(Object fileVersion, Object appVersion);
+
+  /// No description provided for @tripsImportInvalidFile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce fichier n\'est pas un export de voyage.'**
+  String get tripsImportInvalidFile;
+
   /// No description provided for @tripsArchiveDialogTitle.
   ///
   /// In fr, this message translates to:
@@ -2753,6 +2795,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Copier l\'identifiant du voyage'**
   String get tripOverviewCopyTripId;
+
+  /// No description provided for @tripOverviewExportTrip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Exporter le voyage'**
+  String get tripOverviewExportTrip;
 
   /// No description provided for @tripOverviewArchiveTrip.
   ///
