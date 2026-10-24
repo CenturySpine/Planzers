@@ -727,6 +727,8 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
     final isTransport =
         widget.activity.category == TripActivityCategory.transport;
     final mapPoints = tripActivityMapPoints(widget.activity);
+    final placeImageUrl =
+        ((widget.activity.placePreview['imageUrl'] as String?) ?? '').trim();
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -786,6 +788,12 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      if (placeImageUrl.isNotEmpty) ...[
+                        LinkPreviewThumbnail(
+                          preview: widget.activity.placePreview,
+                        ),
+                        const SizedBox(width: 12),
+                      ],
                       Expanded(
                         child: Text(
                           widget.activity.address.trim(),

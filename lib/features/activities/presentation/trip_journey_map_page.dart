@@ -673,9 +673,9 @@ class _SelectedActivitiesCard extends StatelessWidget {
                   [
                     if (numbers[activity.id] != null)
                       '${numbers[activity.id]}.',
-                    activity.displayLabel.isEmpty
+                    activity.label.trim().isEmpty
                         ? l10n.activitiesUntitled
-                        : activity.displayLabel,
+                        : activity.label.trim(),
                   ].join(' '),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,

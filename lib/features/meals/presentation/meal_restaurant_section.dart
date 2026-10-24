@@ -227,7 +227,7 @@ class _RestaurantPickerTile extends StatelessWidget {
     final label = restaurant.displayLabel;
     final address = restaurant.address.trim();
     final imageUrl =
-        ((restaurant.linkPreview['imageUrl'] as String?) ?? '').trim();
+        ((restaurant.photoPreview['imageUrl'] as String?) ?? '').trim();
     final votes = restaurant.votes.length;
     return ListTile(
       selected: chosen,
@@ -235,7 +235,7 @@ class _RestaurantPickerTile extends StatelessWidget {
           ? ClipRRect(
               borderRadius: BorderRadius.circular(AppTokens.radiusMd),
               child: LinkPreviewThumbnail(
-                preview: restaurant.linkPreview,
+                preview: restaurant.photoPreview,
                 size: 36,
               ),
             )

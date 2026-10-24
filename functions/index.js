@@ -20,6 +20,10 @@ const {
   deleteActivityPhotoRecords,
   deleteMealPhotoRecords,
 } = require('./wallet_cleanup');
+const {
+  activityPlaceQuery,
+  activityPlaceQueryKey,
+} = require('./activity_place_preview');
 const { runTripLifecycle } = require('./trip_lifecycle');
 const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate');
 const {
@@ -2355,6 +2359,54 @@ exports.generateActivityLinkPreviewOnCreate = onDocumentCreated(
   async (event) => {
     const data = event.data.data() || {};
     await generateLinkPreview(event.data.ref, undefined, data.linkUrl, 'linkPreview');
+  }
+);
+
+// The photo and name of an activity's place, looked up on Google Places from
+// the place picked on OpenStreetMap. Shown on the activity (cards, its page),
+// never on the trip map, which only shows the travelers' own photos.
+exports.refreshActivityPlacePreview = onDocumentWritten(
+  {
+    document: 'trips/{tripId}/activities/{activityId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    if (!event.data.after.exists) return;
+    const before = event.data.before.exists ? event.data.before.data() || {} : {};
+    const after = event.data.after.data() || {};
+    const placeKey = activityPlaceQueryKey(after);
+    if (event.data.before.exists && activityPlaceQueryKey(before) === placeKey) {
+      return;
+    }
+
+    const docRef = event.data.after.ref;
+    const place = activityPlaceQuery(after);
+    if (!place) {
+      if (after.placePreview) {
+        await docRef.set({ placePreview: FieldValue.delete() }, { merge: true });
+      }
+      return;
+    }
+
+    const found = await enrichWithGooglePlaces(place.query, place.lat, place.lng);
+    // The activity may have been deleted or moved meanwhile.
+    const current = await docRef.get();
+    if (!current.exists || activityPlaceQueryKey(current.data()) !== placeKey) return;
+    await docRef.set(
+      {
+        placePreview: found
+          ? {
+              status: 'ok',
+              title: found.title,
+              imageUrl: found.imageUrl,
+              fetchedAt: FieldValue.serverTimestamp(),
+            }
+          : { status: 'empty', fetchedAt: FieldValue.serverTimestamp() },
+      },
+      { merge: true }
+    );
   }
 );
 

@@ -116,7 +116,9 @@ List<TripJourneyMealStop> tripJourneyMealStops(
             meal: meal,
             activity: TripActivity(
               id: tripJourneyMealStopId(meal.id),
-              label: restaurant.displayLabel,
+              // The trip map shows the group's label, never content found
+              // on Google.
+              label: restaurant.label.trim(),
               category: TripActivityCategory.restaurant,
               linkUrl: restaurant.linkUrl,
               address: restaurant.address,
@@ -131,7 +133,6 @@ List<TripJourneyMealStop> tripJourneyMealStops(
                 tripMealPlannedMinutesSinceMidnight(meal),
               ),
               durationMinutes: restaurant.durationMinutes,
-              linkPreview: restaurant.linkPreview,
               location: restaurant.location,
             ),
           ),
