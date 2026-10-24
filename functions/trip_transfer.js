@@ -44,6 +44,9 @@ const TRANSFER_LOGS_COLLECTION = 'tripTransferLogs';
 /** Stands for the exporter in the file, and becomes the importer. */
 const EXPORTER_PLACEHOLDER = '$exporter';
 
+/** Appended to the title of an imported trip, to tell it from the original. */
+const IMPORTED_TITLE_SUFFIX = '(export)';
+
 /** Transfer files left behind (download or import interrupted). */
 const STALE_TRANSFER_FILE_AGE_MS = 24 * 60 * 60 * 1000;
 
@@ -408,6 +411,23 @@ function generateInviteToken() {
   const segment = () =>
     Array.from({ length: 3 }, () => chars[crypto.randomInt(chars.length)]).join('');
   return `${segment()}-${segment()}`;
+}
+
+/** An invite code no other trip uses (a shared code makes joining fail). */
+async function generateUniqueInviteToken(db) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const token = generateInviteToken();
+    const taken = await db.collection('trips').where('inviteToken', '==', token).limit(1).get();
+    if (taken.empty) return token;
+  }
+  throw new Error('No free invite code found');
+}
+
+/** Marks the imported trip as a copy, once (re-importing keeps one mark). */
+function importedTripTitle(title) {
+  const clean = normalizeString(title);
+  if (clean.endsWith(IMPORTED_TITLE_SUFFIX)) return clean;
+  return clean ? `${clean} ${IMPORTED_TITLE_SUFFIX}` : IMPORTED_TITLE_SUFFIX;
 }
 
 // ---------------------------------------------------------------------------
@@ -996,6 +1016,7 @@ async function importTripPayload({ db, bucket, payload, importerUid, importerEma
 
   try {
     const tripData = tripDataForTransfer(importedData(payload.trip.data, accounts));
+    tripData.title = importedTripTitle(tripData.title);
     if (payload.banner) {
       const { contentType, bytes } = decodeTransferFile(
         payload.banner,
@@ -1010,14 +1031,15 @@ async function importTripPayload({ db, bucket, payload, importerUid, importerEma
     }
 
     // The trip first: participant triggers update it (participant count).
+    const inviteToken = await generateUniqueInviteToken(db);
     await tripRef.set({
       ...tripData,
       ownerId: importerUid,
       memberUserIds: [importerUid],
-      inviteToken: generateInviteToken(),
+      inviteToken,
       createdAt: FieldValue.serverTimestamp(),
     });
-    log.info('Voyage créé', { tripId: tripRef.id, title: normalizeString(tripData.title) });
+    log.info('Voyage créé', { tripId: tripRef.id, title: tripData.title, inviteToken });
 
     if (!slotId) {
       // The exporter had no participant slot: the importer gets a new one.
@@ -1190,6 +1212,7 @@ module.exports = {
   isValidDocId,
   isOwnTransferPath,
   generateInviteToken,
+  importedTripTitle,
   parseTransferFile,
   collectionWrites,
   buildTripTransferPayload,

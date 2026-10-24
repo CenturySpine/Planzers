@@ -82,13 +82,40 @@ class TripShellPage extends ConsumerStatefulWidget {
 
 class _TripShellPageState extends ConsumerState<TripShellPage> {
   String? _lastPrecachingBannerUrl;
+
+  /// Trip each tab was last shown for. A tab keeps its last location, which
+  /// belongs to the trip shown before when going straight from one trip to
+  /// another (notification, link).
+  final Map<int, String> _branchTripIds = <int, String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _rememberShownBranch();
+  }
+
+  void _rememberShownBranch() {
+    _branchTripIds[widget.navigationShell.currentIndex] = widget.tripId;
+  }
+
+  /// Opens a tab; one last used in another trip reopens at its root for this
+  /// trip instead of going back to that other trip.
+  void _goToBranch(int branchIndex) {
+    final shownFor = _branchTripIds[branchIndex];
+    widget.navigationShell.goBranch(
+      branchIndex,
+      initialLocation: shownFor != null && shownFor != widget.tripId,
+    );
+  }
+
   void _goToOverview() {
-    widget.navigationShell.goBranch(0);
+    _goToBranch(0);
   }
 
   @override
   void didUpdateWidget(covariant TripShellPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _rememberShownBranch();
     // Branch pages stay mounted (StatefulShellRoute.indexedStack) — switching
     // back to Aperçu never triggers a fresh build, so the Ridgegear weight
     // provider would keep serving its cached value forever. The provider
@@ -310,7 +337,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                       NavigationRail(
                         selectedIndex: displayedSelectedIndex,
                         onDestinationSelected: (index) {
-                          navigationShell.goBranch(
+                          _goToBranch(
                             TripShellPage._destinations[index].branchIndex,
                           );
                         },
@@ -349,7 +376,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                     : _TripMobileScrollableNavBar(
                         selectedIndex: displayedSelectedIndex,
                         onDestinationSelected: (index) {
-                          navigationShell.goBranch(
+                          _goToBranch(
                             TripShellPage._destinations[index].branchIndex,
                           );
                         },
