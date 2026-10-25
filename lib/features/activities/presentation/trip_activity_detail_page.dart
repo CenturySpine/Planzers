@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cross_cache/cross_cache.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
@@ -20,6 +21,7 @@ import 'package:planerz/features/activities/presentation/trip_place_picker_page.
 import 'package:planerz/features/activities/presentation/trip_transport_mode_presentation.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
+import 'package:planerz/features/messaging/presentation/chat_image_viewer.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
@@ -489,6 +491,16 @@ class _ReadBody extends ConsumerStatefulWidget {
 
 class _ReadBodyState extends ConsumerState<_ReadBody> {
   bool _locating = false;
+  final _crossCache = CrossCache();
+
+  /// Shows a photo of the place (or of its link) full screen.
+  void _showPhoto(String imageUrl) {
+    showChatImageViewer(
+      context: context,
+      crossCache: _crossCache,
+      imageUrl: imageUrl,
+    );
+  }
 
   /// Places the activity on the map; its address is filled only when it had
   /// none.
@@ -737,6 +749,9 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
           LinkPreviewCompact(
             url: widget.activity.linkUrl.trim(),
             preview: widget.activity.linkPreview,
+            onImageTap: () => _showPhoto(
+              (widget.activity.linkPreview['imageUrl'] as String?) ?? '',
+            ),
           ),
           const SizedBox(height: 16),
         ],
@@ -789,8 +804,11 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       if (placeImageUrl.isNotEmpty) ...[
-                        LinkPreviewThumbnail(
-                          preview: widget.activity.placePreview,
+                        GestureDetector(
+                          onTap: () => _showPhoto(placeImageUrl),
+                          child: LinkPreviewThumbnail(
+                            preview: widget.activity.placePreview,
+                          ),
                         ),
                         const SizedBox(width: 12),
                       ],
