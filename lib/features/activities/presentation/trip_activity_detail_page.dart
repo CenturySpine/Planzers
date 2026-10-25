@@ -18,6 +18,8 @@ import 'package:planerz/features/activities/presentation/trip_activity_duration.
 import 'package:planerz/features/activities/presentation/trip_photos_card.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_place_field.dart';
 import 'package:planerz/features/activities/presentation/trip_place_picker_page.dart';
+import 'package:planerz/features/activities/presentation/trip_transport_connection.dart';
+import 'package:planerz/features/activities/presentation/trip_transport_connection_sheet.dart';
 import 'package:planerz/features/activities/presentation/trip_transport_mode_presentation.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
@@ -734,6 +736,17 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
           : false,
       orElse: () => false,
     );
+    // Like a transport to fill in, the second part is added already
+    // planned; the first part is edited.
+    final canAddConnection = widget.canEditActivity &&
+        canPlanActivity &&
+        canAddTripTransportConnection(widget.activity) &&
+        tripAsync.maybeWhen(
+          data: (trip) =>
+              trip != null &&
+              canSuggestActivityForTrip(trip: trip, userId: myUid),
+          orElse: () => false,
+        );
     final tripMemberPublicLabels =
         ref.watch(tripMemberResolvedLabelsProvider(widget.tripId));
     final isTransport =
@@ -759,6 +772,23 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
             (widget.activity.transportMode != null ||
                 widget.activity.departureAddress.trim().isNotEmpty)) ...[
           _TransportCard(activity: widget.activity),
+          const SizedBox(height: 12),
+        ],
+        if (canAddConnection) ...[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: () => showTripTransportConnectionSheet(
+                context,
+                tripId: widget.tripId,
+                transport: widget.activity,
+              ),
+              icon: const Icon(PhosphorIconsRegular.path),
+              label: Text(
+                AppLocalizations.of(context)!.activitiesTransportConnectionAdd,
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
         ],
         if (mapPoints.isNotEmpty) ...[

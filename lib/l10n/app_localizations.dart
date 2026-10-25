@@ -3613,6 +3613,30 @@ abstract class AppLocalizations {
   /// **'{from} → {to}'**
   String activitiesMissingTransportLabel(Object from, Object to);
 
+  /// No description provided for @activitiesTransportConnectionAdd.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter une correspondance'**
+  String get activitiesTransportConnectionAdd;
+
+  /// No description provided for @activitiesTransportConnectionStop.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lieu de correspondance'**
+  String get activitiesTransportConnectionStop;
+
+  /// No description provided for @activitiesTransportConnectionMode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mode de transport après la correspondance'**
+  String get activitiesTransportConnectionMode;
+
+  /// No description provided for @activitiesTransportConnectionAdded.
+  ///
+  /// In fr, this message translates to:
+  /// **'Correspondance ajoutée'**
+  String get activitiesTransportConnectionAdded;
+
   /// No description provided for @activitiesJourneyMapTitle.
   ///
   /// In fr, this message translates to:
