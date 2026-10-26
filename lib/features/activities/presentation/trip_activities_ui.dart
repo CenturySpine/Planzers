@@ -21,6 +21,8 @@ class TripActivitiesFilterChips extends StatelessWidget {
   });
 
   final Set<ActivityFilterGroup> activeFilters;
+
+  /// The groups offered, with their labels.
   final Map<ActivityFilterGroup, String> filterLabels;
   final ValueChanged<ActivityFilterGroup> onToggle;
 
@@ -35,18 +37,19 @@ class TripActivitiesFilterChips extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
         children: [
-          for (final group in _chipGroups) ...[
-            TripCategoryFilterChip(
-              label: filterLabels[group]!,
-              icon: group.filterIcon,
-              color: group.filterColor,
-              lightBg: group.filterLightBgColor,
-              ink: group.filterInkColor,
-              selected: activeFilters.contains(group),
-              onToggle: () => onToggle(group),
-            ),
-            const SizedBox(width: 6),
-          ],
+          for (final group in _chipGroups)
+            if (filterLabels[group] case final label?) ...[
+              TripCategoryFilterChip(
+                label: label,
+                icon: group.filterIcon,
+                color: group.filterColor,
+                lightBg: group.filterLightBgColor,
+                ink: group.filterInkColor,
+                selected: activeFilters.contains(group),
+                onToggle: () => onToggle(group),
+              ),
+              const SizedBox(width: 6),
+            ],
           TripCategoryFilterChip(
             label: l10n.activitiesFilterPresences,
             icon: PresenceCategoryColors.icon,

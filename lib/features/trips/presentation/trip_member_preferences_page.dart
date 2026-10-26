@@ -10,6 +10,7 @@ import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/invite_join_widgets.dart';
 import 'package:planerz/features/trips/presentation/trip_create_creator_name_dialog.dart';
@@ -429,7 +430,13 @@ class _TripMemberPreferencesPageState
                       tripStartDate: trip.startDate,
                       tripEndDate: trip.endDate,
                       trip: trip,
-                      showStayDates: !trip.isDayTrip,
+                      // The organizer may set every traveler's dates.
+                      showStayDates: !trip.isDayTrip &&
+                          canEditOwnStayForTrip(
+                            trip: trip,
+                            userId: FirebaseAuth.instance.currentUser?.uid,
+                          ),
+                      showDayParts: trip.homeMealsModuleEnabled,
                       isCupidonModeEnabled: trip.cupidonModeEnabled,
                       initialStay: stayDraft,
                       initialCupidonEnabled: _cupidonDraft,

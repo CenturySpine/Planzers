@@ -74,6 +74,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   bool _carpoolModuleEnabled = false;
   bool _roomsModuleEnabled = false;
   bool _gamesModuleEnabled = false;
+  bool _journeyModuleEnabled = true;
+  bool _homeMealsModuleEnabled = true;
+  bool _shoppingModuleEnabled = true;
   String? _profileName;
   String _customName = '';
   bool _useProfileName = false;
@@ -279,6 +282,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     _roomsModuleEnabled =
         trip.isDayTrip ? false : trip.roomsModuleEnabled;
     _gamesModuleEnabled = trip.gamesModuleEnabled;
+    _journeyModuleEnabled = trip.journeyModuleEnabled;
+    _homeMealsModuleEnabled = trip.homeMealsModuleEnabled;
+    _shoppingModuleEnabled = trip.shoppingModuleEnabled;
     _isDayTrip = trip.isDayTrip;
     if (trip.isDayTrip) {
       _singleDayDate = trip.startDate != null
@@ -641,6 +647,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             carpoolModuleEnabled: _carpoolModuleEnabled,
             roomsModuleEnabled: _isDayTrip ? false : _roomsModuleEnabled,
             gamesModuleEnabled: _gamesModuleEnabled,
+            journeyModuleEnabled: _journeyModuleEnabled,
+            homeMealsModuleEnabled: _homeMealsModuleEnabled,
+            shoppingModuleEnabled: _shoppingModuleEnabled,
             startDate: startDate,
             endDate: endDate,
             tripStartDayPart: tripStartDayPart,
@@ -724,10 +733,23 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             carpoolModuleEnabled: _carpoolModuleEnabled,
             roomsModuleEnabled: _isDayTrip ? false : _roomsModuleEnabled,
             gamesModuleEnabled: _gamesModuleEnabled,
+            journeyModuleEnabled: _journeyModuleEnabled,
+            homeMealsModuleEnabled: _homeMealsModuleEnabled,
+            shoppingModuleEnabled: _shoppingModuleEnabled,
             startDate: startDate,
             endDate: endDate,
-            tripStartDayPart: _isDayTrip ? null : _stay.startDayPart,
-            tripEndDayPart: _isDayTrip ? null : _stay.endDayPart,
+            // Without home meals, nobody is asked for the first and last
+            // meals: the trip runs over whole days.
+            tripStartDayPart: _isDayTrip
+                ? null
+                : _homeMealsModuleEnabled
+                    ? _stay.startDayPart
+                    : TripDayPart.morning,
+            tripEndDayPart: _isDayTrip
+                ? null
+                : _homeMealsModuleEnabled
+                    ? _stay.endDayPart
+                    : TripDayPart.evening,
             isDayTrip: _isDayTrip,
           );
       // The trip exists from now on: a failure here must not lead to
@@ -1004,67 +1026,69 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                       ),
                     ),
                   if (!_isDayTrip) ...[
-                    _FormSection(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            l10n.tripCreateMealsSectionLabel,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppTokens.text700,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            l10n.tripCreateMealsHint,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              height: 1.45,
-                              color: AppTokens.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          _MealBoundCard(
-                            dayLabel: l10n.tripCreateArrivalMealDay(
-                              _shortDateLabel(
-                                TripMemberStay.parseDateKey(
-                                      _stay.startDateKey,
-                                    ) ??
-                                    DateTime.now(),
+                    // An existing trip keeps its meal bounds while hidden.
+                    if (_homeMealsModuleEnabled)
+                      _FormSection(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              l10n.tripCreateMealsSectionLabel,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppTokens.text700,
+                                letterSpacing: 0.2,
                               ),
                             ),
-                            dayIcon: PhosphorIconsRegular.airplaneTakeoff,
-                            question: l10n.tripCreateFirstMealQuestion,
-                            selected: _stay.startDayPart,
-                            onSelected: (part) {
-                              setState(() {
-                                _stay = _stay.copyWith(startDayPart: part);
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 10),
-                          _MealBoundCard(
-                            dayLabel: l10n.tripCreateDepartureMealDay(
-                              _shortDateLabel(
-                                TripMemberStay.parseDateKey(_stay.endDateKey) ??
-                                    DateTime.now(),
+                            const SizedBox(height: 6),
+                            Text(
+                              l10n.tripCreateMealsHint,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                height: 1.45,
+                                color: AppTokens.onSurfaceVariant,
                               ),
                             ),
-                            dayIcon: PhosphorIconsRegular.airplaneLanding,
-                            question: l10n.tripCreateLastMealQuestion,
-                            selected: _stay.endDayPart,
-                            onSelected: (part) {
-                              setState(() {
-                                _stay = _stay.copyWith(endDayPart: part);
-                              });
-                            },
-                          ),
-                        ],
+                            const SizedBox(height: 10),
+                            _MealBoundCard(
+                              dayLabel: l10n.tripCreateArrivalMealDay(
+                                _shortDateLabel(
+                                  TripMemberStay.parseDateKey(
+                                        _stay.startDateKey,
+                                      ) ??
+                                      DateTime.now(),
+                                ),
+                              ),
+                              dayIcon: PhosphorIconsRegular.airplaneTakeoff,
+                              question: l10n.tripCreateFirstMealQuestion,
+                              selected: _stay.startDayPart,
+                              onSelected: (part) {
+                                setState(() {
+                                  _stay = _stay.copyWith(startDayPart: part);
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 10),
+                            _MealBoundCard(
+                              dayLabel: l10n.tripCreateDepartureMealDay(
+                                _shortDateLabel(
+                                  TripMemberStay.parseDateKey(_stay.endDateKey) ??
+                                      DateTime.now(),
+                                ),
+                              ),
+                              dayIcon: PhosphorIconsRegular.airplaneLanding,
+                              question: l10n.tripCreateLastMealQuestion,
+                              selected: _stay.endDayPart,
+                              onSelected: (part) {
+                                setState(() {
+                                  _stay = _stay.copyWith(endDayPart: part);
+                                });
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                     if (_lodgingsLoaded)
                       _FormSection(
                         child: _TripCreateLabel(
@@ -1124,6 +1148,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                       carpoolEnabled: _carpoolModuleEnabled,
                       roomsEnabled: _roomsModuleEnabled,
                       gamesEnabled: _gamesModuleEnabled,
+                      journeyEnabled: _journeyModuleEnabled,
+                      homeMealsEnabled: _homeMealsModuleEnabled,
+                      shoppingEnabled: _shoppingModuleEnabled,
                       cupidonEnabled: _cupidonModeEnabled,
                       photosController: _photosStorageController,
                       onCarpoolChanged: (enabled) {
@@ -1134,6 +1161,15 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                       },
                       onGamesChanged: (enabled) {
                         setState(() => _gamesModuleEnabled = enabled);
+                      },
+                      onJourneyChanged: (enabled) {
+                        setState(() => _journeyModuleEnabled = enabled);
+                      },
+                      onHomeMealsChanged: (enabled) {
+                        setState(() => _homeMealsModuleEnabled = enabled);
+                      },
+                      onShoppingChanged: (enabled) {
+                        setState(() => _shoppingModuleEnabled = enabled);
                       },
                       onCupidonChanged: (enabled) {
                         setState(() => _cupidonModeEnabled = enabled);
@@ -1724,11 +1760,17 @@ class _TripCreateModulesSection extends StatelessWidget {
     required this.carpoolEnabled,
     required this.roomsEnabled,
     required this.gamesEnabled,
+    required this.journeyEnabled,
+    required this.homeMealsEnabled,
+    required this.shoppingEnabled,
     required this.cupidonEnabled,
     required this.photosController,
     required this.onCarpoolChanged,
     required this.onRoomsChanged,
     required this.onGamesChanged,
+    required this.onJourneyChanged,
+    required this.onHomeMealsChanged,
+    required this.onShoppingChanged,
     required this.onCupidonChanged,
   });
 
@@ -1737,11 +1779,17 @@ class _TripCreateModulesSection extends StatelessWidget {
   final bool carpoolEnabled;
   final bool roomsEnabled;
   final bool gamesEnabled;
+  final bool journeyEnabled;
+  final bool homeMealsEnabled;
+  final bool shoppingEnabled;
   final bool cupidonEnabled;
   final TextEditingController photosController;
   final ValueChanged<bool> onCarpoolChanged;
   final ValueChanged<bool> onRoomsChanged;
   final ValueChanged<bool> onGamesChanged;
+  final ValueChanged<bool> onJourneyChanged;
+  final ValueChanged<bool> onHomeMealsChanged;
+  final ValueChanged<bool> onShoppingChanged;
   final ValueChanged<bool> onCupidonChanged;
 
   @override
@@ -1781,6 +1829,33 @@ class _TripCreateModulesSection extends StatelessWidget {
           title: l10n.tripCreateModulePlanningTitle,
           subtitle: l10n.tripCreateModulePlanningSubtitle,
           includedLabel: l10n.tripCreateModuleIncluded,
+        ),
+        const SizedBox(height: 8),
+        _TripCreateModuleToggleRow(
+          value: journeyEnabled,
+          enabled: !saving,
+          icon: PhosphorIconsRegular.mapTrifold,
+          title: l10n.tripModuleJourneyLabel,
+          subtitle: l10n.tripModuleJourneySubtitle,
+          onChanged: onJourneyChanged,
+        ),
+        const SizedBox(height: 8),
+        _TripCreateModuleToggleRow(
+          value: homeMealsEnabled,
+          enabled: !saving,
+          icon: PhosphorIconsRegular.cookingPot,
+          title: l10n.tripModuleHomeMealsLabel,
+          subtitle: l10n.tripModuleHomeMealsSubtitle,
+          onChanged: onHomeMealsChanged,
+        ),
+        const SizedBox(height: 8),
+        _TripCreateModuleToggleRow(
+          value: shoppingEnabled,
+          enabled: !saving,
+          icon: PhosphorIconsRegular.shoppingCartSimple,
+          title: l10n.tripTabShopping,
+          subtitle: l10n.tripModuleShoppingSubtitle,
+          onChanged: onShoppingChanged,
         ),
         const SizedBox(height: 8),
         _TripCreateModuleToggleRow(

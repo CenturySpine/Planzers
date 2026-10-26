@@ -27,3 +27,11 @@ test('participant add and remove callables use manageParticipants permission', (
   assert.equal(participantPermissionKey('removeTripParticipant'), 'manageParticipants');
   assert.equal(participantPermissionKey('removeTripRegisteredMember'), 'manageParticipants');
 });
+
+test('updating one\'s own stay uses editOwnStay permission', () => {
+  const block = callableBlock('updateParticipantProfile');
+  assert.match(
+    block,
+    /if \(hasStay && isOwnProfile\) \{\s*await assertTripParticipantPermission\(\{[\s\S]*?permissionKey:\s*'editOwnStay'/
+  );
+});

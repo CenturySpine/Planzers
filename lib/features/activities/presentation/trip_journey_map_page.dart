@@ -31,9 +31,16 @@ import 'package:planerz/l10n/app_localizations.dart';
 
 /// The trip drawn on a map, for the whole trip or one day.
 class TripJourneyMapPage extends ConsumerWidget {
-  const TripJourneyMapPage({super.key, required this.tripId});
+  const TripJourneyMapPage({
+    super.key,
+    required this.tripId,
+    this.showAppBar = true,
+  });
 
   final String tripId;
+
+  /// False as a tab of the trip, under the trip's own app bar.
+  final bool showAppBar;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -65,8 +72,18 @@ class TripJourneyMapPage extends ConsumerWidget {
               if (!night.isMissing) night.stop,
           ];
 
+    // The map belongs to the itinerary module: an old link to it, once the
+    // module is off, leads back to the planning.
+    if (trip != null && !trip.journeyModuleEnabled && showAppBar) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) context.go('/trips/$tripId/activities');
+      });
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.activitiesJourneyMapTitle)),
+      appBar: showAppBar
+          ? AppBar(title: Text(l10n.activitiesJourneyMapTitle))
+          : null,
       body: error != null
           ? Center(
               child: Padding(

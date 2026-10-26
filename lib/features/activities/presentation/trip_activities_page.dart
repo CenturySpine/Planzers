@@ -33,6 +33,7 @@ import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_lodging_editor_sheet.dart';
 import 'package:planerz/features/trips/presentation/trip_lodging_ui.dart';
+import 'package:planerz/features/trips/presentation/trip_module_tab.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -249,8 +250,17 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       body = Builder(builder: (context) {
           final items = activities;
           _markActivitiesAsReadIfNeeded(tripId: trip.id, items: items);
+          final journeyEnabled = trip.journeyModuleEnabled;
+          if (!journeyEnabled) {
+            // Nights and transports belong to the itinerary: their filters
+            // are not offered without it.
+            _activeFilters.removeAll(const [
+              ActivityFilterGroup.nuits,
+              ActivityFilterGroup.trajets,
+            ]);
+          }
           // Worked out from the trip's lodgings, once they are loaded.
-          final lodgingNights = storedLodgings == null
+          final lodgingNights = storedLodgings == null || !journeyEnabled
               ? const <TripLodgingNight>[]
               : tripLodgingNightsForPlanning(
                   nights: tripNights(trip),
@@ -263,6 +273,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
           ];
           // Shown with the transports, before the activity they lead to.
           final showMissingTransports = canAddMissingTransport &&
+              journeyEnabled &&
               (_activeFilters.isEmpty ||
                   _activeFilters.contains(ActivityFilterGroup.trajets));
           final missingTransportsByArrival = showMissingTransports
@@ -388,10 +399,15 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
 
           final filterLabels = {
             ActivityFilterGroup.repas: l10n.activitiesFilterRepas,
-            ActivityFilterGroup.nuits: l10n.activitiesFilterNuits,
+            if (journeyEnabled)
+              ActivityFilterGroup.nuits: l10n.activitiesFilterNuits,
             ActivityFilterGroup.loisirs: l10n.activitiesFilterLoisirs,
-            ActivityFilterGroup.trajets: l10n.activitiesFilterTrajets,
+            if (journeyEnabled)
+              ActivityFilterGroup.trajets: l10n.activitiesFilterTrajets,
           };
+          // The map is reached from here unless it has its own tab.
+          final showMapButton = journeyEnabled &&
+              tripModuleTabFor(trip) != TripModuleTab.map;
 
           return DefaultTabController(
             length: 3,
@@ -420,13 +436,15 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         }),
                       ),
                     ),
-                    IconButton(
-                      tooltip: l10n.activitiesJourneyMapTitle,
-                      onPressed: () =>
-                          context.push('/trips/${trip.id}/activities/map'),
-                      icon: const Icon(PhosphorIconsRegular.mapTrifold),
-                    ),
-                    const SizedBox(width: 4),
+                    if (showMapButton) ...[
+                      IconButton(
+                        tooltip: l10n.activitiesJourneyMapTitle,
+                        onPressed: () =>
+                            context.push('/trips/${trip.id}/activities/map'),
+                        icon: const Icon(PhosphorIconsRegular.mapTrifold),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
                   ],
                 ),
                 Expanded(

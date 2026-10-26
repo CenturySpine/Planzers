@@ -45,6 +45,14 @@ class TripMemberStay {
     };
   }
 
+  /// Present from the first morning to the last evening: stays are set this
+  /// way when nobody is asked for the morning / midday / evening (trips
+  /// without home meals).
+  TripMemberStay asWholeDays() => copyWith(
+        startDayPart: TripDayPart.morning,
+        endDayPart: TripDayPart.evening,
+      );
+
   TripMemberStay copyWith({
     String? startDateKey,
     TripDayPart? startDayPart,

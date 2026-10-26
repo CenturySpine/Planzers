@@ -451,7 +451,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       return;
     }
 
-    if (!ctx.isDayTrip) {
+    // Locked dates are the organizer's: the newcomer keeps them.
+    final savesStay = !ctx.isDayTrip && !ctx.stayDatesLocked;
+    if (savesStay) {
       if (!TripMemberStay.isChronological(stay)) {
         setState(() {
           _error = AppLocalizations.of(context)!.tripStayInvalidRange;
@@ -484,12 +486,12 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
           .read(tripMembersRepositoryProvider)
           .watchMyParticipant(widget.tripId)
           .first;
-      if (myParticipant != null) {
-        final myPhoneNumber = ref.read(myPhoneNumberProvider).asData?.value;
+      final myPhoneNumber = ref.read(myPhoneNumberProvider).asData?.value;
+      if (myParticipant != null && (savesStay || myPhoneNumber != null)) {
         await ref.read(tripMembersRepositoryProvider).updateParticipantProfile(
               tripId: widget.tripId,
               participantId: myParticipant.id,
-              stay: ctx.isDayTrip ? null : stay,
+              stay: savesStay ? stay : null,
               phoneVisibility: myPhoneNumber != null ? _phoneVisibilityDraft : null,
             );
       }
@@ -722,7 +724,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   mode: TripMemberStayOptionsEditorMode.draft,
                   tripStartDate: ctx.tripStartDate,
                   tripEndDate: ctx.tripEndDate,
-                  showStayDates: !ctx.isDayTrip,
+                  showStayDates: !ctx.isDayTrip && !ctx.stayDatesLocked,
+                  showDayParts: ctx.homeMealsModuleEnabled,
                   isCupidonModeEnabled: tripCupidonModeEnabled,
                   initialStay: _stayDraft!,
                   initialCupidonEnabled: _inviteCupidonEnabled,

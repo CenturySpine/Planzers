@@ -16,6 +16,9 @@ class Trip {
     this.carpoolModuleEnabled = true,
     this.roomsModuleEnabled = true,
     this.gamesModuleEnabled = true,
+    this.journeyModuleEnabled = true,
+    this.homeMealsModuleEnabled = true,
+    this.shoppingModuleEnabled = true,
     required this.ownerId,
     required this.memberUserIds,
     required this.createdAt,
@@ -37,6 +40,7 @@ class Trip {
     this.mealsPermissions = TripMealsPermissions.defaults,
     this.shoppingPermissions = TripShoppingPermissions.defaults,
     this.carpoolPermissions = TripCarpoolPermissions.defaults,
+    this.roomsPermissions = TripRoomsPermissions.defaults,
     this.participantCount,
   });
 
@@ -52,6 +56,17 @@ class Trip {
   final bool carpoolModuleEnabled;
   final bool roomsModuleEnabled;
   final bool gamesModuleEnabled;
+
+  /// Itinerary module: the trip map, nights and transports in the planning.
+  final bool journeyModuleEnabled;
+
+  /// Home meals module: cooked and potluck meals, recipes, contributions and
+  /// the morning / midday / evening of stays. Meals at the restaurant stay
+  /// available without it.
+  final bool homeMealsModuleEnabled;
+
+  /// Shopping module: the shared shopping list tab.
+  final bool shoppingModuleEnabled;
   final String ownerId;
 
   /// Firebase UIDs of all members. Managed server-side for Firestore rules.
@@ -70,6 +85,7 @@ class Trip {
   final TripMealsPermissions mealsPermissions;
   final TripShoppingPermissions shoppingPermissions;
   final TripCarpoolPermissions carpoolPermissions;
+  final TripRoomsPermissions roomsPermissions;
   final DateTime createdAt;
   final DateTime? startDate;
   final DateTime? endDate;
@@ -148,6 +164,9 @@ class Trip {
       carpoolModuleEnabled: data['carpoolModuleEnabled'] ?? true,
       roomsModuleEnabled: data['roomsModuleEnabled'] ?? true,
       gamesModuleEnabled: data['gamesModuleEnabled'] ?? true,
+      journeyModuleEnabled: data['journeyModuleEnabled'] ?? true,
+      homeMealsModuleEnabled: data['homeMealsModuleEnabled'] ?? true,
+      shoppingModuleEnabled: data['shoppingModuleEnabled'] ?? true,
       ownerId: (data['ownerId'] as String?) ?? '',
       memberUserIds: ((data['memberUserIds'] as List<dynamic>?) ?? const [])
           .map((e) => e.toString())
@@ -191,6 +210,9 @@ class Trip {
       carpoolPermissions: TripCarpoolPermissions.fromFirestore(
         (data['permissions'] as Map<String, dynamic>?)?['carpool'],
       ),
+      roomsPermissions: TripRoomsPermissions.fromFirestore(
+        (data['permissions'] as Map<String, dynamic>?)?['rooms'],
+      ),
     );
   }
 
@@ -210,6 +232,9 @@ class Trip {
       'carpoolModuleEnabled': carpoolModuleEnabled,
       'roomsModuleEnabled': roomsModuleEnabled,
       'gamesModuleEnabled': gamesModuleEnabled,
+      'journeyModuleEnabled': journeyModuleEnabled,
+      'homeMealsModuleEnabled': homeMealsModuleEnabled,
+      'shoppingModuleEnabled': shoppingModuleEnabled,
       'ownerId': ownerId,
       'memberUserIds': memberUserIds,
       'createdAt': createdAt.toIso8601String(),
@@ -234,6 +259,7 @@ class Trip {
         'meals': mealsPermissions.toFirestore(),
         'shopping': shoppingPermissions.toFirestore(),
         'carpool': carpoolPermissions.toFirestore(),
+        'rooms': roomsPermissions.toFirestore(),
       },
     };
   }

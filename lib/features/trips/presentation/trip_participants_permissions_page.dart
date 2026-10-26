@@ -185,6 +185,19 @@ class _TripParticipantsPermissionsPageState
                           minRole: role,
                         ),
                       ),
+                      TripPermissionItemRow(
+                        title: l10n.tripPermissionParticipantsEditOwnStay,
+                        minRole: trip.participantsPermissions.editOwnStayMinRole,
+                        icon: PhosphorIconsRegular.calendarDots,
+                        busy: _savingActions.contains(
+                          TripParticipantsPermissionAction.editOwnStay,
+                        ),
+                        enabled: !_isResettingDefaults,
+                        onChanged: (role) => _updatePermission(
+                          action: TripParticipantsPermissionAction.editOwnStay,
+                          minRole: role,
+                        ),
+                      ),
                     ],
                   ),
                 ),

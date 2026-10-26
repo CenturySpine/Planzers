@@ -514,6 +514,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Suggest games and challenges for the group.';
 
   @override
+  String get tripModuleJourneyLabel => 'Itinerary';
+
+  @override
+  String get tripModuleJourneySubtitle =>
+      'Follow your stages on the map, with nights and transports in the planning.';
+
+  @override
+  String get tripModuleHomeMealsLabel => 'Home meals';
+
+  @override
+  String get tripModuleHomeMealsSubtitle =>
+      'Organize cooked meals and potlucks.';
+
+  @override
+  String get tripModuleShoppingSubtitle => 'Keep a shared shopping list.';
+
+  @override
   String get tripCreateModulePhotosSubtitle =>
       'Add a storage link to enable the card.';
 
@@ -876,6 +893,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Toggle user role between admin and participant';
 
   @override
+  String get tripPermissionParticipantsEditOwnStay =>
+      'Change one\'s own stay dates';
+
+  @override
   String get tripPermissionsColumnAction => 'Action';
 
   @override
@@ -990,6 +1011,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Manage permissions on shopping lists.';
 
   @override
+  String get tripSectionRoomsDescription =>
+      'Manage permissions on rooms and beds.';
+
+  @override
+  String get tripPermissionRoomsManage => 'Manage rooms';
+
+  @override
   String get tripSectionParticipants => 'Participants';
 
   @override
@@ -1019,6 +1047,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripTabShopping => 'Shopping';
+
+  @override
+  String get tripTabMap => 'Map';
 
   @override
   String get tripCarsTitle => 'Carpool';
@@ -4697,6 +4728,23 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Suggest games and challenges for the group.';
 
   @override
+  String get tripModuleJourneyLabel => 'Itinerary';
+
+  @override
+  String get tripModuleJourneySubtitle =>
+      'Follow your stages on the map, with nights and transports in the planning.';
+
+  @override
+  String get tripModuleHomeMealsLabel => 'Home meals';
+
+  @override
+  String get tripModuleHomeMealsSubtitle =>
+      'Organize cooked meals and potlucks.';
+
+  @override
+  String get tripModuleShoppingSubtitle => 'Keep a shared shopping list.';
+
+  @override
   String get tripCreateModulePhotosSubtitle =>
       'Add a storage link to enable the card.';
 
@@ -5059,6 +5107,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Toggle user role between admin and participant';
 
   @override
+  String get tripPermissionParticipantsEditOwnStay =>
+      'Change one\'s own stay dates';
+
+  @override
   String get tripPermissionsColumnAction => 'Action';
 
   @override
@@ -5173,6 +5225,13 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Manage permissions on shopping lists.';
 
   @override
+  String get tripSectionRoomsDescription =>
+      'Manage permissions on rooms and beds.';
+
+  @override
+  String get tripPermissionRoomsManage => 'Manage rooms';
+
+  @override
   String get tripSectionParticipants => 'Participants';
 
   @override
@@ -5202,6 +5261,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripTabShopping => 'Shopping';
+
+  @override
+  String get tripTabMap => 'Map';
 
   @override
   String get tripCarsTitle => 'Carpool';

@@ -12,6 +12,7 @@ class TripCalendarStayBoundsField extends StatelessWidget {
     required this.tripEndDate,
     required this.value,
     required this.onChanged,
+    this.showDayParts = true,
   });
 
   /// When both set, constrains the date pickers to this trip calendar span.
@@ -19,6 +20,9 @@ class TripCalendarStayBoundsField extends StatelessWidget {
   final DateTime? tripEndDate;
   final TripMemberStay value;
   final ValueChanged<TripMemberStay> onChanged;
+
+  /// False without home meals: dates only, kept as whole days.
+  final bool showDayParts;
 
   static DateTimeRange _pickerBounds(DateTime? tripStart, DateTime? tripEnd) {
     final now = DateTime.now();
@@ -52,11 +56,10 @@ class TripCalendarStayBoundsField extends StatelessWidget {
     );
     if (picked == null) return;
     final key = TripMemberStay.dateKeyFromDateTime(picked);
-    if (isStart) {
-      onChanged(value.copyWith(startDateKey: key));
-    } else {
-      onChanged(value.copyWith(endDateKey: key));
-    }
+    final next = isStart
+        ? value.copyWith(startDateKey: key)
+        : value.copyWith(endDateKey: key);
+    onChanged(showDayParts ? next : next.asWholeDays());
   }
 
   DateTime _clampDate(DateTime d, DateTimeRange bounds) {
@@ -90,7 +93,7 @@ class TripCalendarStayBoundsField extends StatelessWidget {
         _TripCalendarBoundRow(
           label: l10n.tripStayFromLabel,
           dateLabel: _dateLabel(context, value.startDateKey),
-          part: value.startDayPart,
+          part: showDayParts ? value.startDayPart : null,
           partLabelFor: (part) => _dayPartLabel(l10n, part),
           onPickDate: () => _pickDate(context, isStart: true),
           onPartChanged: (p) => onChanged(value.copyWith(startDayPart: p)),
@@ -99,7 +102,7 @@ class TripCalendarStayBoundsField extends StatelessWidget {
         _TripCalendarBoundRow(
           label: l10n.tripStayToLabel,
           dateLabel: _dateLabel(context, value.endDateKey),
-          part: value.endDayPart,
+          part: showDayParts ? value.endDayPart : null,
           partLabelFor: (part) => _dayPartLabel(l10n, part),
           onPickDate: () => _pickDate(context, isStart: false),
           onPartChanged: (p) => onChanged(value.copyWith(endDayPart: p)),
@@ -121,7 +124,9 @@ class _TripCalendarBoundRow extends StatelessWidget {
 
   final String label;
   final String dateLabel;
-  final TripDayPart part;
+
+  /// Null when the morning / midday / evening is not asked.
+  final TripDayPart? part;
   final String Function(TripDayPart part) partLabelFor;
   final VoidCallback onPickDate;
   final ValueChanged<TripDayPart> onPartChanged;
@@ -144,23 +149,25 @@ class _TripCalendarBoundRow extends StatelessWidget {
             child: Text(dateLabel),
           ),
         ),
-        const SizedBox(width: 8),
-        DropdownButtonHideUnderline(
-          child: DropdownButton<TripDayPart>(
-            value: part,
-            onChanged: (v) {
-              if (v != null) onPartChanged(v);
-            },
-            items: TripDayPart.values
-                .map(
-                  (p) => DropdownMenuItem(
-                    value: p,
-                    child: Text(partLabelFor(p)),
-                  ),
-                )
-                .toList(),
+        if (part != null) ...[
+          const SizedBox(width: 8),
+          DropdownButtonHideUnderline(
+            child: DropdownButton<TripDayPart>(
+              value: part,
+              onChanged: (v) {
+                if (v != null) onPartChanged(v);
+              },
+              items: TripDayPart.values
+                  .map(
+                    (p) => DropdownMenuItem(
+                      value: p,
+                      child: Text(partLabelFor(p)),
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

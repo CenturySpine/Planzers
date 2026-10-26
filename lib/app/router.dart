@@ -43,6 +43,7 @@ import 'package:planerz/features/trips/presentation/trip_expenses_permissions_pa
 import 'package:planerz/features/trips/presentation/trip_activities_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_general_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_meals_permissions_page.dart';
+import 'package:planerz/features/trips/presentation/trip_rooms_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_shopping_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_carpool_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_page.dart';
@@ -300,6 +301,12 @@ final GoRouter appRouter = GoRouter(
                     tripId: state.pathParameters['tripId']!,
                   ),
                 ),
+                GoRoute(
+                  path: 'rooms',
+                  builder: (context, state) => TripRoomsPermissionsPage(
+                    tripId: state.pathParameters['tripId']!,
+                  ),
+                ),
               ],
             ),
             GoRoute(
@@ -534,6 +541,20 @@ final GoRouter appRouter = GoRouter(
                 GoRoute(
                   path: 'announcements',
                   builder: (context, state) => const TripAnnouncementsPage(),
+                ),
+              ],
+            ),
+            // The trip map as a tab (branch 9 of the trip shell), when the
+            // trip has the itinerary but no shopping list.
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: 'map',
+                  builder: (context, state) => TripJourneyMapPage(
+                    key: _tripPageKey(state),
+                    tripId: state.pathParameters['tripId']!,
+                    showAppBar: false,
+                  ),
                 ),
               ],
             ),

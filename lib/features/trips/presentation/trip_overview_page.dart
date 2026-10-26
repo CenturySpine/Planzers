@@ -883,7 +883,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   departureTime,
                                   meetingPointLabel,
                                 ),
-                      if (myCarpool.goesShopping)
+                      if (myCarpool.goesShopping &&
+                          _trip.shoppingModuleEnabled)
                         l10n.tripOverviewCarpoolShoppingTeamLine,
                     ];
                   }(),

@@ -128,6 +128,7 @@ class _TripStayFormDialogState extends ConsumerState<_TripStayFormDialog> {
             tripEndDate: widget.trip.endDate,
             value: _value,
             onChanged: (v) => setState(() => _value = v),
+            showDayParts: widget.trip.homeMealsModuleEnabled,
           ),
         ),
       ),

@@ -8,6 +8,7 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/account/presentation/account_app_bar_actions.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
+import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_announcements_repository.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
@@ -15,11 +16,18 @@ import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/presentation/ridgegear_module_card.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
+import 'package:planerz/features/trips/presentation/trip_module_tab.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 /// Width at which we show a [NavigationRail] instead of a bottom nav bar.
 const double _kTripShellWideBreakpoint = 720;
+
+/// Shell branch showing the trip map as a tab (see the router).
+const int _kTripMapBranchIndex = 9;
+
+/// Shell branch of the shopping list (see the router).
+const int _kTripShoppingBranchIndex = 7;
 
 Widget _buildNavIcon({
   required IconData icon,
@@ -43,7 +51,7 @@ class TripShellPage extends ConsumerStatefulWidget {
   final String tripId;
   final StatefulNavigationShell navigationShell;
 
-  static const List<_TripNavDestination> _destinations = [
+  static const List<_TripNavDestination> _baseDestinations = [
     _TripNavDestination(
       branchIndex: 0,
       label: 'Aperçu',
@@ -68,13 +76,30 @@ class TripShellPage extends ConsumerStatefulWidget {
       icon: PhosphorIconsRegular.wallet,
       selectedIcon: PhosphorIconsFill.wallet,
     ),
-    _TripNavDestination(
-      branchIndex: 7,
-      label: 'Courses',
-      icon: PhosphorIconsRegular.shoppingCartSimple,
-      selectedIcon: PhosphorIconsFill.shoppingCartSimple,
-    ),
   ];
+
+  static const _shoppingDestination = _TripNavDestination(
+    branchIndex: _kTripShoppingBranchIndex,
+    label: 'Courses',
+    icon: PhosphorIconsRegular.shoppingCartSimple,
+    selectedIcon: PhosphorIconsFill.shoppingCartSimple,
+  );
+
+  static const _mapDestination = _TripNavDestination(
+    branchIndex: _kTripMapBranchIndex,
+    label: 'Carte',
+    icon: PhosphorIconsRegular.mapTrifold,
+    selectedIcon: PhosphorIconsFill.mapTrifold,
+  );
+
+  static List<_TripNavDestination> _destinationsFor(Trip trip) => [
+        ..._baseDestinations,
+        ...switch (tripModuleTabFor(trip)) {
+          TripModuleTab.shopping => [_shoppingDestination],
+          TripModuleTab.map => [_mapDestination],
+          null => const <_TripNavDestination>[],
+        },
+      ];
 
   @override
   ConsumerState<TripShellPage> createState() => _TripShellPageState();
@@ -110,6 +135,27 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
 
   void _goToOverview() {
     _goToBranch(0);
+  }
+
+  /// A tab of a module switched off (an old link, or the module turned off
+  /// meanwhile) gives way to the overview, or to the planning for the map.
+  void _leaveDisabledModuleBranch(Trip trip) {
+    final branch = widget.navigationShell.currentIndex;
+    final int? fallbackBranch;
+    if (branch == _kTripShoppingBranchIndex && !trip.shoppingModuleEnabled) {
+      fallbackBranch = 0;
+    } else if (branch == _kTripMapBranchIndex &&
+        tripModuleTabFor(trip) != TripModuleTab.map) {
+      fallbackBranch = 6;
+    } else {
+      fallbackBranch = null;
+    }
+    if (fallbackBranch == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.navigationShell.currentIndex != branch) return;
+      _goToBranch(fallbackBranch!);
+    });
   }
 
   @override
@@ -239,6 +285,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
           'Dépenses' => l10n.tripTabExpenses,
           'Repas' => l10n.tripTabMeals,
           'Courses' => l10n.tripTabShopping,
+          'Carte' => l10n.tripTabMap,
           _ => label,
         };
 
@@ -251,6 +298,8 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
+        _leaveDisabledModuleBranch(trip);
+        final destinations = TripShellPage._destinationsFor(trip);
         final titleForAppBar =
             trip.title.isEmpty ? l10n.tripLabelGeneric : trip.title;
         _precacheTripBannerIfNeeded(trip.bannerImageUrl);
@@ -261,7 +310,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
             builder: (context, constraints) {
               final useRail = constraints.maxWidth >= _kTripShellWideBreakpoint;
               final railExtended = constraints.maxWidth >= 900;
-              final selectedDestinationIndex = TripShellPage._destinations.indexWhere(
+              final selectedDestinationIndex = destinations.indexWhere(
                 (destination) =>
                     destination.branchIndex == navigationShell.currentIndex,
               );
@@ -337,9 +386,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                       NavigationRail(
                         selectedIndex: displayedSelectedIndex,
                         onDestinationSelected: (index) {
-                          _goToBranch(
-                            TripShellPage._destinations[index].branchIndex,
-                          );
+                          _goToBranch(destinations[index].branchIndex);
                         },
                         extended: railExtended,
                         // With extended: true, Flutter only allows none/null here;
@@ -348,7 +395,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                             ? NavigationRailLabelType.none
                             : NavigationRailLabelType.selected,
                         destinations: [
-                          for (final d in TripShellPage._destinations)
+                          for (final d in destinations)
                             NavigationRailDestination(
                               icon: _buildNavIcon(
                                 icon: d.icon,
@@ -376,11 +423,9 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                     : _TripMobileScrollableNavBar(
                         selectedIndex: displayedSelectedIndex,
                         onDestinationSelected: (index) {
-                          _goToBranch(
-                            TripShellPage._destinations[index].branchIndex,
-                          );
+                          _goToBranch(destinations[index].branchIndex);
                         },
-                        destinations: TripShellPage._destinations,
+                        destinations: destinations,
                         unreadByTabLabel: {
                           'Messagerie': unreadMessages,
                           'Planning': unreadActivities,

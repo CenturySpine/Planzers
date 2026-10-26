@@ -17,7 +17,8 @@ import 'package:planerz/l10n/app_localizations.dart';
 /// any participant for themselves, independent of the trip-wide module
 /// configuration. When [showGenericModules] and [canManageGenericModules]
 /// are both true, the list also exposes the trip-wide "generic" modules
-/// (carpool, rooms, games) so an organiser can switch them on/off inline.
+/// (itinerary, home meals, shopping, carpool, rooms, games) so an organiser
+/// can switch them on/off inline.
 class TravelerModulesToggleList extends ConsumerWidget {
   const TravelerModulesToggleList({
     super.key,
@@ -130,6 +131,48 @@ class TravelerModulesToggleList extends ConsumerWidget {
           const SizedBox(height: 18),
           _ModuleGroupHeader(
             label: l10n.tripTravelerModulesGenericGroupLabel,
+          ),
+          const SizedBox(height: 10),
+          _TravelerModuleToggleRow(
+            icon: PhosphorIconsRegular.mapTrifold,
+            iconColor: ActivityFilterGroup.trajets.filterInkColor,
+            iconBackground: ActivityFilterGroup.trajets.filterLightBgColor,
+            label: l10n.tripModuleJourneyLabel,
+            description: l10n.tripModuleJourneySubtitle,
+            value: trip.journeyModuleEnabled,
+            onChanged: (value) => tripsRepository.setTripModuleEnabled(
+              tripId: tripId,
+              module: TripGenericModule.journey,
+              enabled: value,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _TravelerModuleToggleRow(
+            icon: PhosphorIconsRegular.cookingPot,
+            iconColor: ActivityFilterGroup.repas.filterInkColor,
+            iconBackground: ActivityFilterGroup.repas.filterLightBgColor,
+            label: l10n.tripModuleHomeMealsLabel,
+            description: l10n.tripModuleHomeMealsSubtitle,
+            value: trip.homeMealsModuleEnabled,
+            onChanged: (value) => tripsRepository.setTripModuleEnabled(
+              tripId: tripId,
+              module: TripGenericModule.homeMeals,
+              enabled: value,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _TravelerModuleToggleRow(
+            icon: PhosphorIconsRegular.shoppingCartSimple,
+            iconColor: ActivityFilterGroup.repas.filterInkColor,
+            iconBackground: ActivityFilterGroup.repas.filterLightBgColor,
+            label: l10n.tripTabShopping,
+            description: l10n.tripModuleShoppingSubtitle,
+            value: trip.shoppingModuleEnabled,
+            onChanged: (value) => tripsRepository.setTripModuleEnabled(
+              tripId: tripId,
+              module: TripGenericModule.shopping,
+              enabled: value,
+            ),
           ),
           const SizedBox(height: 10),
           _TravelerModuleToggleRow(

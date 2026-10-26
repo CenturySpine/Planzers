@@ -517,6 +517,23 @@ class AppLocalizationsFr extends AppLocalizations {
       'Propose des jeux et défis pour le groupe.';
 
   @override
+  String get tripModuleJourneyLabel => 'Itinéraire';
+
+  @override
+  String get tripModuleJourneySubtitle =>
+      'Suis tes étapes sur la carte, avec les nuits et les trajets dans le planning.';
+
+  @override
+  String get tripModuleHomeMealsLabel => 'Repas maison';
+
+  @override
+  String get tripModuleHomeMealsSubtitle =>
+      'Organise les repas cuisinés et les auberges espagnoles.';
+
+  @override
+  String get tripModuleShoppingSubtitle => 'Fais une liste de courses commune.';
+
+  @override
   String get tripCreateModulePhotosSubtitle =>
       'Ajoute un lien de stockage pour activer la carte.';
 
@@ -886,6 +903,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Passer un utilisateur en admin / participant';
 
   @override
+  String get tripPermissionParticipantsEditOwnStay =>
+      'Modifier ses dates de présence';
+
+  @override
   String get tripPermissionsColumnAction => 'Action';
 
   @override
@@ -1002,6 +1023,13 @@ class AppLocalizationsFr extends AppLocalizations {
       'Gestion des droits sur les listes de courses.';
 
   @override
+  String get tripSectionRoomsDescription =>
+      'Gestion des droits sur les chambres et les lits.';
+
+  @override
+  String get tripPermissionRoomsManage => 'Gérer les chambres';
+
+  @override
   String get tripSectionParticipants => 'Participants';
 
   @override
@@ -1031,6 +1059,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripTabShopping => 'Courses';
+
+  @override
+  String get tripTabMap => 'Carte';
 
   @override
   String get tripCarsTitle => 'Covoiturage';
@@ -4738,6 +4769,23 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Propose des jeux et défis pour le groupe.';
 
   @override
+  String get tripModuleJourneyLabel => 'Itinéraire';
+
+  @override
+  String get tripModuleJourneySubtitle =>
+      'Suis tes étapes sur la carte, avec les nuits et les trajets dans le planning.';
+
+  @override
+  String get tripModuleHomeMealsLabel => 'Repas maison';
+
+  @override
+  String get tripModuleHomeMealsSubtitle =>
+      'Organise les repas cuisinés et les auberges espagnoles.';
+
+  @override
+  String get tripModuleShoppingSubtitle => 'Fais une liste de courses commune.';
+
+  @override
   String get tripCreateModulePhotosSubtitle =>
       'Ajoute un lien de stockage pour activer la carte.';
 
@@ -5107,6 +5155,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Passer un utilisateur en admin / participant';
 
   @override
+  String get tripPermissionParticipantsEditOwnStay =>
+      'Modifier ses dates de présence';
+
+  @override
   String get tripPermissionsColumnAction => 'Action';
 
   @override
@@ -5223,6 +5275,13 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Gestion des droits sur les listes de courses.';
 
   @override
+  String get tripSectionRoomsDescription =>
+      'Gestion des droits sur les chambres et les lits.';
+
+  @override
+  String get tripPermissionRoomsManage => 'Gérer les chambres';
+
+  @override
   String get tripSectionParticipants => 'Participants';
 
   @override
@@ -5252,6 +5311,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripTabShopping => 'Courses';
+
+  @override
+  String get tripTabMap => 'Carte';
 
   @override
   String get tripCarsTitle => 'Covoiturage';

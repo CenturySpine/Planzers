@@ -1024,6 +1024,36 @@ abstract class AppLocalizations {
   /// **'Propose des jeux et défis pour le groupe.'**
   String get tripCreateModuleGamesSubtitle;
 
+  /// No description provided for @tripModuleJourneyLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Itinéraire'**
+  String get tripModuleJourneyLabel;
+
+  /// No description provided for @tripModuleJourneySubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Suis tes étapes sur la carte, avec les nuits et les trajets dans le planning.'**
+  String get tripModuleJourneySubtitle;
+
+  /// No description provided for @tripModuleHomeMealsLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Repas maison'**
+  String get tripModuleHomeMealsLabel;
+
+  /// No description provided for @tripModuleHomeMealsSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Organise les repas cuisinés et les auberges espagnoles.'**
+  String get tripModuleHomeMealsSubtitle;
+
+  /// No description provided for @tripModuleShoppingSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fais une liste de courses commune.'**
+  String get tripModuleShoppingSubtitle;
+
   /// No description provided for @tripCreateModulePhotosSubtitle.
   ///
   /// In fr, this message translates to:
@@ -1660,6 +1690,12 @@ abstract class AppLocalizations {
   /// **'Passer un utilisateur en admin / participant'**
   String get tripPermissionParticipantsToggleAdmin;
 
+  /// No description provided for @tripPermissionParticipantsEditOwnStay.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier ses dates de présence'**
+  String get tripPermissionParticipantsEditOwnStay;
+
   /// No description provided for @tripPermissionsColumnAction.
   ///
   /// In fr, this message translates to:
@@ -1864,6 +1900,18 @@ abstract class AppLocalizations {
   /// **'Gestion des droits sur les listes de courses.'**
   String get tripSectionShoppingDescription;
 
+  /// No description provided for @tripSectionRoomsDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Gestion des droits sur les chambres et les lits.'**
+  String get tripSectionRoomsDescription;
+
+  /// No description provided for @tripPermissionRoomsManage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Gérer les chambres'**
+  String get tripPermissionRoomsManage;
+
   /// No description provided for @tripSectionParticipants.
   ///
   /// In fr, this message translates to:
@@ -1923,6 +1971,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Courses'**
   String get tripTabShopping;
+
+  /// No description provided for @tripTabMap.
+  ///
+  /// In fr, this message translates to:
+  /// **'Carte'**
+  String get tripTabMap;
 
   /// No description provided for @tripCarsTitle.
   ///

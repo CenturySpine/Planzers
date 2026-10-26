@@ -340,6 +340,19 @@ service cloud.firestore {
         && tripCallerRoleRank(tripId) >= roleRank(tripMealManageRecipeMinRole(tripId));
     }
 
+    /// Trips created before this permission have no `rooms` section: rooms
+    /// stay open to every participant there.
+    function tripManageRoomsMinRole(tripId) {
+      let configured = tripDoc(tripId).data.get('permissions', {})
+        .get('rooms', {}).get('manageRooms', 'participant');
+      return configured is string ? configured : 'participant';
+    }
+
+    function canManageRooms(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripManageRoomsMinRole(tripId));
+    }
+
     function tripParticipantDoc(tripId, participantId) {
       return get(
         /databases/$(database)/documents/trips/$(tripId)/participants/$(participantId)
@@ -676,6 +689,9 @@ service cloud.firestore {
             'carpoolModuleEnabled',
             'roomsModuleEnabled',
             'gamesModuleEnabled',
+            'journeyModuleEnabled',
+            'homeMealsModuleEnabled',
+            'shoppingModuleEnabled',
           ])
         ) ||
         (
@@ -795,7 +811,8 @@ service cloud.firestore {
       }
 
       match /rooms/{roomId} {
-        allow read, write: if isTripMember(tripId);
+        allow read: if isTripMember(tripId);
+        allow write: if canManageRooms(tripId);
       }
 
       /// Where the group sleeps: a place for some nights of the trip

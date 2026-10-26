@@ -120,20 +120,31 @@ class TripSettingsPermissionsPage extends ConsumerWidget {
                 onTap: () =>
                     context.push('/trips/$tripId/settings/permissions/meals'),
               ),
-              _SettingsSectionCard(
-                title: l10n.tripOverviewTileCarpool,
-                icon: PhosphorIconsRegular.car,
-                description: l10n.tripCarpoolCreateAction,
-                onTap: () => context
-                    .push('/trips/$tripId/settings/permissions/carpool'),
-              ),
-              _SettingsSectionCard(
-                title: l10n.tripSectionShopping,
-                icon: PhosphorIconsRegular.shoppingCartSimple,
-                description: l10n.tripSectionShoppingDescription,
-                onTap: () => context
-                    .push('/trips/$tripId/settings/permissions/shopping'),
-              ),
+              // A module switched off has no permissions to set.
+              if (trip.carpoolModuleEnabled)
+                _SettingsSectionCard(
+                  title: l10n.tripOverviewTileCarpool,
+                  icon: PhosphorIconsRegular.car,
+                  description: l10n.tripCarpoolCreateAction,
+                  onTap: () => context
+                      .push('/trips/$tripId/settings/permissions/carpool'),
+                ),
+              if (trip.shoppingModuleEnabled)
+                _SettingsSectionCard(
+                  title: l10n.tripSectionShopping,
+                  icon: PhosphorIconsRegular.shoppingCartSimple,
+                  description: l10n.tripSectionShoppingDescription,
+                  onTap: () => context
+                      .push('/trips/$tripId/settings/permissions/shopping'),
+                ),
+              if (trip.roomsModuleEnabled && !trip.isDayTrip)
+                _SettingsSectionCard(
+                  title: l10n.tripOverviewTileRooms,
+                  icon: PhosphorIconsRegular.bed,
+                  description: l10n.tripSectionRoomsDescription,
+                  onTap: () =>
+                      context.push('/trips/$tripId/settings/permissions/rooms'),
+                ),
             ],
           ),
         );

@@ -1453,6 +1453,12 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           );
         }
         final memberIds = participants.map((m) => m.id).toList();
+        // Without home meals, a new meal is one at the restaurant.
+        if (widget.isCreate &&
+            !trip.homeMealsModuleEnabled &&
+            _activeMealView != _MealDetailsView.restaurant) {
+          _activeMealView = _MealDetailsView.restaurant;
+        }
         return mealAsync.when(
           loading: () =>
               const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -2138,13 +2144,17 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              _buildMealModeSelector(
-                                l10n: l10n,
-                                textTheme: textTheme,
-                                colorScheme: colorScheme,
-                                canEditMealMode: canEditMealCore,
-                              ),
-                              const SizedBox(height: 12),
+                              // Without home meals, meals are only at the
+                              // restaurant: there is no other kind to pick.
+                              if (trip.homeMealsModuleEnabled) ...[
+                                _buildMealModeSelector(
+                                  l10n: l10n,
+                                  textTheme: textTheme,
+                                  colorScheme: colorScheme,
+                                  canEditMealMode: canEditMealCore,
+                                ),
+                                const SizedBox(height: 12),
+                              ],
                               MealRestaurantSection(
                                 tripId: widget.tripId,
                                 restaurantActivityId: _restaurantActivityId,

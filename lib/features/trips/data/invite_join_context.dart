@@ -29,6 +29,8 @@ class InviteJoinContext {
     this.tripStartDayPart,
     this.tripEndDayPart,
     this.isDayTrip = false,
+    this.stayDatesLocked = false,
+    this.homeMealsModuleEnabled = true,
   });
 
   final String tripId;
@@ -47,6 +49,13 @@ class InviteJoinContext {
 
   /// When true, stay-date UI is hidden on the invite join flow.
   final bool isDayTrip;
+
+  /// The organizer sets every traveler's dates: the newcomer keeps the trip's.
+  final bool stayDatesLocked;
+
+  /// Without home meals, stays are set in whole days (no morning / midday /
+  /// evening).
+  final bool homeMealsModuleEnabled;
 
   /// Stay draft for the join flow: participant slot when set, else trip calendar.
   TripMemberStay stayDraftForJoin({String? selectedParticipantId}) {

@@ -737,13 +737,15 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
       orElse: () => false,
     );
     // Like a transport to fill in, the second part is added already
-    // planned; the first part is edited.
+    // planned; the first part is edited. Connections belong to the
+    // itinerary.
     final canAddConnection = widget.canEditActivity &&
         canPlanActivity &&
         canAddTripTransportConnection(widget.activity) &&
         tripAsync.maybeWhen(
           data: (trip) =>
               trip != null &&
+              trip.journeyModuleEnabled &&
               canSuggestActivityForTrip(trip: trip, userId: myUid),
           orElse: () => false,
         );

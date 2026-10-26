@@ -16,6 +16,7 @@ class TripParticipantStayDatesEditor extends StatefulWidget {
     this.onDraftChanged,
     this.onLiveChanged,
     this.showTitle = true,
+    this.showDayParts = true,
   }) : assert(
           mode == TripMemberStayOptionsEditorMode.draft
               ? onDraftChanged != null
@@ -30,6 +31,9 @@ class TripParticipantStayDatesEditor extends StatefulWidget {
   final ValueChanged<TripMemberStay>? onDraftChanged;
   final Future<void> Function(TripMemberStay stay)? onLiveChanged;
   final bool showTitle;
+
+  /// False without home meals: dates only, kept as whole days.
+  final bool showDayParts;
 
   @override
   State<TripParticipantStayDatesEditor> createState() =>
@@ -130,6 +134,7 @@ class _TripParticipantStayDatesEditorState
               tripEndDate: widget.tripEndDate,
               value: _stay,
               onChanged: _handleStayChanged,
+              showDayParts: widget.showDayParts,
             ),
           ],
         ),

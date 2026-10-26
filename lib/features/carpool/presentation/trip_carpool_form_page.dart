@@ -404,24 +404,26 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                       l10n.tripCarpoolAvailableSeatsLabel,
                       _seatsController.text.trim(),
                     ),
-                    const Divider(height: 32),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(l10n.tripCarpoolGoesShoppingLabel, style: labelStyle),
-                        const SizedBox(height: 4),
-                        Icon(
-                          _goesShopping
-                              ? PhosphorIconsRegular.shoppingCartSimple
-                              : PhosphorIconsRegular.minus,
-                          size: 20,
-                          color: _goesShopping
-                              ? colorScheme.primary
-                              : colorScheme.onSurfaceVariant,
-                        ),
-                      ],
-                    ),
+                    if (trip.shoppingModuleEnabled) ...[
+                      const Divider(height: 32),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(l10n.tripCarpoolGoesShoppingLabel, style: labelStyle),
+                          const SizedBox(height: 4),
+                          Icon(
+                            _goesShopping
+                                ? PhosphorIconsRegular.shoppingCartSimple
+                                : PhosphorIconsRegular.minus,
+                            size: 20,
+                            color: _goesShopping
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
+                    ],
                     const Divider(height: 32),
                     Text(
                       l10n.tripCarpoolPassengersTitle,
@@ -541,15 +543,17 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 12),
-                    SwitchListTile(
-                      value: _goesShopping,
-                      onChanged: canToggleShopping && canUseEditControls
-                          ? (value) => setState(() => _goesShopping = value)
-                          : null,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.tripCarpoolGoesShoppingLabel),
-                    ),
+                    if (trip.shoppingModuleEnabled) ...[
+                      const SizedBox(height: 12),
+                      SwitchListTile(
+                        value: _goesShopping,
+                        onChanged: canToggleShopping && canUseEditControls
+                            ? (value) => setState(() => _goesShopping = value)
+                            : null,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(l10n.tripCarpoolGoesShoppingLabel),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     Text(
                       l10n.tripCarpoolPassengersTitle,
