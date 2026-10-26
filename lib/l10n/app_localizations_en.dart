@@ -2263,6 +2263,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activitiesFromLodgingByCar => 'From lodging (car)';
 
   @override
+  String activitiesFromNamedLodgingByCar(String lodging) {
+    return 'From $lodging (car)';
+  }
+
+  @override
   String get activitiesFromCurrentLocationByCar =>
       'From current location (car)';
 
@@ -2288,8 +2293,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Link preview will be updated after saving.';
 
   @override
-  String get activitiesRouteCalculating =>
-      'Calculating route from trip address.';
+  String get activitiesRouteCalculating => 'Calculating route.';
 
   @override
   String get activitiesRouteNotCalculatedYet => 'Not calculated yet.';
@@ -2308,8 +2312,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activitiesRouteCalculated => 'Route calculated.';
 
   @override
-  String get activitiesRouteMissingTripAddress =>
-      'Trip address missing: fill it in trip overview.';
+  String get activitiesRouteMissingLodging =>
+      'No lodging address for this night.';
+
+  @override
+  String get activitiesRouteMissingActivityDate =>
+      'Activity without date: starting lodging unknown.';
 
   @override
   String get activitiesRouteNoResult => 'No route found.';
@@ -6451,6 +6459,11 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get activitiesFromLodgingByCar => 'From lodging (car)';
 
   @override
+  String activitiesFromNamedLodgingByCar(String lodging) {
+    return 'From $lodging (car)';
+  }
+
+  @override
   String get activitiesFromCurrentLocationByCar =>
       'From current location (car)';
 
@@ -6476,8 +6489,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Link preview will be updated after saving.';
 
   @override
-  String get activitiesRouteCalculating =>
-      'Calculating route from trip address.';
+  String get activitiesRouteCalculating => 'Calculating route.';
 
   @override
   String get activitiesRouteNotCalculatedYet => 'Not calculated yet.';
@@ -6496,8 +6508,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get activitiesRouteCalculated => 'Route calculated.';
 
   @override
-  String get activitiesRouteMissingTripAddress =>
-      'Trip address missing: fill it in trip overview.';
+  String get activitiesRouteMissingLodging =>
+      'No lodging address for this night.';
+
+  @override
+  String get activitiesRouteMissingActivityDate =>
+      'Activity without date: starting lodging unknown.';
 
   @override
   String get activitiesRouteNoResult => 'No route found.';

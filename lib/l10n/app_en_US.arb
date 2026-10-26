@@ -885,6 +885,12 @@
   "activitiesPlannedDateHelp": "Planned date",
   "activitiesAddressCardTitle": "Location address",
   "activitiesFromLodgingByCar": "From lodging (car)",
+  "activitiesFromNamedLodgingByCar": "From {lodging} (car)",
+  "@activitiesFromNamedLodgingByCar": {
+    "placeholders": {
+      "lodging": {"type": "String"}
+    }
+  },
   "activitiesFromCurrentLocationByCar": "From current location (car)",
   "commonDash": "—",
   "activitiesDone": "Activity done",
@@ -893,14 +899,15 @@
   "@activitiesPlannedOn": {"placeholders": {"date": {}}},
   "activitiesRemovePlannedDate": "Remove planned date",
   "activitiesLinkPreviewAfterSave": "Link preview will be updated after saving.",
-  "activitiesRouteCalculating": "Calculating route from trip address.",
+  "activitiesRouteCalculating": "Calculating route.",
   "activitiesRouteNotCalculatedYet": "Not calculated yet.",
   "activitiesRouteDistance": "Distance: {distance}",
   "@activitiesRouteDistance": {"placeholders": {"distance": {}}},
   "activitiesRouteDuration": "Duration: {duration}",
   "@activitiesRouteDuration": {"placeholders": {"duration": {}}},
   "activitiesRouteCalculated": "Route calculated.",
-  "activitiesRouteMissingTripAddress": "Trip address missing: fill it in trip overview.",
+  "activitiesRouteMissingLodging": "No lodging address for this night.",
+  "activitiesRouteMissingActivityDate": "Activity without date: starting lodging unknown.",
   "activitiesRouteNoResult": "No route found.",
   "activitiesRouteNoResultWithDetail": "No route found ({detail}).",
   "@activitiesRouteNoResultWithDetail": {"placeholders": {"detail": {}}},

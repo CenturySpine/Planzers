@@ -2287,6 +2287,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get activitiesFromLodgingByCar => 'Depuis le logement (voiture)';
 
   @override
+  String activitiesFromNamedLodgingByCar(String lodging) {
+    return 'Depuis $lodging (voiture)';
+  }
+
+  @override
   String get activitiesFromCurrentLocationByCar =>
       'Depuis l\'emplacement actuel (voiture)';
 
@@ -2312,8 +2317,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'L\'aperçu du lien sera mis à jour après enregistrement.';
 
   @override
-  String get activitiesRouteCalculating =>
-      'Calcul en cours depuis l\'adresse du voyage.';
+  String get activitiesRouteCalculating => 'Calcul en cours.';
 
   @override
   String get activitiesRouteNotCalculatedYet => 'Pas encore calculé.';
@@ -2332,8 +2336,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get activitiesRouteCalculated => 'Trajet calculé.';
 
   @override
-  String get activitiesRouteMissingTripAddress =>
-      'Adresse du voyage manquante : renseignez-la dans l\'aperçu du voyage.';
+  String get activitiesRouteMissingLodging =>
+      'Aucune adresse d\'hébergement pour cette nuit.';
+
+  @override
+  String get activitiesRouteMissingActivityDate =>
+      'Activité sans date : hébergement de départ inconnu.';
 
   @override
   String get activitiesRouteNoResult => 'Aucun trajet trouvé.';
@@ -6513,6 +6521,11 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get activitiesFromLodgingByCar => 'Depuis le logement (voiture)';
 
   @override
+  String activitiesFromNamedLodgingByCar(String lodging) {
+    return 'Depuis $lodging (voiture)';
+  }
+
+  @override
   String get activitiesFromCurrentLocationByCar =>
       'Depuis l\'emplacement actuel (voiture)';
 
@@ -6538,8 +6551,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'L\'aperçu du lien sera mis à jour après enregistrement.';
 
   @override
-  String get activitiesRouteCalculating =>
-      'Calcul en cours depuis l\'adresse du voyage.';
+  String get activitiesRouteCalculating => 'Calcul en cours.';
 
   @override
   String get activitiesRouteNotCalculatedYet => 'Pas encore calculé.';
@@ -6558,8 +6570,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get activitiesRouteCalculated => 'Trajet calculé.';
 
   @override
-  String get activitiesRouteMissingTripAddress =>
-      'Adresse du voyage manquante : renseignez-la dans l\'aperçu du voyage.';
+  String get activitiesRouteMissingLodging =>
+      'Aucune adresse d\'hébergement pour cette nuit.';
+
+  @override
+  String get activitiesRouteMissingActivityDate =>
+      'Activité sans date : hébergement de départ inconnu.';
 
   @override
   String get activitiesRouteNoResult => 'Aucun trajet trouvé.';

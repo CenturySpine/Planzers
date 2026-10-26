@@ -5300,12 +5300,15 @@ exports.refreshExpenseGroupSettlement = refreshExpenseGroupSettlement;
 const {
   computeActivityDrivingRouteFromTrip,
   recomputeActivityDrivingRoutesOnTripAddressChange,
+  recomputeActivityDrivingRoutesOnLodgingChange,
   refreshActivityDrivingRoute,
 } = require('./activity_driving_route');
 
 exports.computeActivityDrivingRouteFromTrip = computeActivityDrivingRouteFromTrip;
 exports.recomputeActivityDrivingRoutesOnTripAddressChange =
   recomputeActivityDrivingRoutesOnTripAddressChange;
+exports.recomputeActivityDrivingRoutesOnLodgingChange =
+  recomputeActivityDrivingRoutesOnLodgingChange;
 exports.refreshActivityDrivingRoute = refreshActivityDrivingRoute;
 
 // --- AI import of planning activities from travel documents ---

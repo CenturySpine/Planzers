@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Driving route from the trip vacation address to the activity address,
-/// filled by Cloud Function (`tripDrivingRoute` on the activity document).
+/// Driving route from the lodging where the activity's day starts to the
+/// activity, filled by Cloud Function (`tripDrivingRoute` on the activity
+/// document).
 class ActivityTripDrivingRoute {
   const ActivityTripDrivingRoute({
     required this.status,
@@ -11,6 +12,7 @@ class ActivityTripDrivingRoute {
     this.durationText,
     this.detail,
     this.errorMessage,
+    this.originLabel,
     this.calculatedAt,
   });
 
@@ -21,6 +23,9 @@ class ActivityTripDrivingRoute {
   final String? durationText;
   final String? detail;
   final String? errorMessage;
+
+  /// Name (else address) of the lodging the route starts from.
+  final String? originLabel;
   final DateTime? calculatedAt;
 
   static ActivityTripDrivingRoute? fromFirestore(dynamic raw) {
@@ -41,6 +46,7 @@ class ActivityTripDrivingRoute {
       durationText: (m['durationText'] as String?)?.trim(),
       detail: (m['detail'] as String?)?.trim(),
       errorMessage: (m['errorMessage'] as String?)?.trim(),
+      originLabel: (m['originLabel'] as String?)?.trim(),
       calculatedAt: switch (calculatedRaw) {
         Timestamp ts => ts.toDate(),
         _ => null,
