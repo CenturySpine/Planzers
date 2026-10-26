@@ -3145,6 +3145,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripOverviewSectionAccommodation => 'Destination';
 
   @override
+  String get tripOverviewSectionLodgings => 'Lodging';
+
+  @override
+  String get tripLodgingTitle => 'Lodging';
+
+  @override
+  String get tripLodgingEveryNight => 'Every night';
+
+  @override
+  String tripLodgingNightsRange(String start, String end, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nights',
+      one: '1 night',
+    );
+    return '$start to $end · $_temp0';
+  }
+
+  @override
+  String get tripLodgingMissing => 'Lodging not filled in';
+
+  @override
+  String get tripLodgingPrevious => 'Previous stage';
+
+  @override
+  String get tripLodgingNext => 'Next stage';
+
+  @override
+  String get tripLodgingReuseLabel => 'Already in this trip';
+
+  @override
+  String get tripLodgingAddressLabel => 'Address';
+
+  @override
+  String get tripLodgingPlaceRequired =>
+      'Fill in at least a name, an address or a link.';
+
+  @override
+  String get tripLodgingRemove => 'Remove';
+
+  @override
+  String get tripCreateLodgingAllNights => 'Same lodging for every night';
+
+  @override
+  String get activitiesMissingLodging => 'Lodging to fill in';
+
+  @override
   String get tripOverviewSectionGroup => 'The group';
 
   @override
@@ -7283,6 +7331,54 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewSectionAccommodation => 'Destination';
+
+  @override
+  String get tripOverviewSectionLodgings => 'Lodging';
+
+  @override
+  String get tripLodgingTitle => 'Lodging';
+
+  @override
+  String get tripLodgingEveryNight => 'Every night';
+
+  @override
+  String tripLodgingNightsRange(String start, String end, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nights',
+      one: '1 night',
+    );
+    return '$start to $end · $_temp0';
+  }
+
+  @override
+  String get tripLodgingMissing => 'Lodging not filled in';
+
+  @override
+  String get tripLodgingPrevious => 'Previous stage';
+
+  @override
+  String get tripLodgingNext => 'Next stage';
+
+  @override
+  String get tripLodgingReuseLabel => 'Already in this trip';
+
+  @override
+  String get tripLodgingAddressLabel => 'Address';
+
+  @override
+  String get tripLodgingPlaceRequired =>
+      'Fill in at least a name, an address or a link.';
+
+  @override
+  String get tripLodgingRemove => 'Remove';
+
+  @override
+  String get tripCreateLodgingAllNights => 'Same lodging for every night';
+
+  @override
+  String get activitiesMissingLodging => 'Lodging to fill in';
 
   @override
   String get tripOverviewSectionGroup => 'The group';

@@ -1197,6 +1197,26 @@
   "tripGamesDeleted": "Jeu supprimé",
   "tripOverviewTopTabAnnouncements": "Annonces",
   "tripOverviewSectionAccommodation": "Destination",
+  "tripOverviewSectionLodgings": "Hébergements",
+  "tripLodgingTitle": "Hébergement",
+  "tripLodgingEveryNight": "Toutes les nuits",
+  "tripLodgingNightsRange": "Du {start} au {end} · {count, plural, =1{1 nuit} other{{count} nuits}}",
+  "@tripLodgingNightsRange": {
+    "placeholders": {
+      "start": {"type": "String"},
+      "end": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+  "tripLodgingMissing": "Hébergement non renseigné",
+  "tripLodgingPrevious": "Étape précédente",
+  "tripLodgingNext": "Étape suivante",
+  "tripLodgingReuseLabel": "Déjà dans le voyage",
+  "tripLodgingAddressLabel": "Adresse",
+  "tripLodgingPlaceRequired": "Renseigne au moins un nom, une adresse ou un lien.",
+  "tripLodgingRemove": "Retirer",
+  "tripCreateLodgingAllNights": "Même hébergement pour toutes les nuits",
+  "activitiesMissingLodging": "Hébergement à renseigner",
   "tripOverviewSectionGroup": "Le groupe",
   "tripOverviewSectionModules": "Modules du voyage",
   "tripOverviewSectionSettings": "Réglages du voyage",

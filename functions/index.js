@@ -2304,6 +2304,25 @@ exports.generateActivityLinkPreview = onDocumentUpdated(
   }
 );
 
+exports.generateLodgingLinkPreview = onDocumentUpdated(
+  {
+    document: 'trips/{tripId}/lodgings/{lodgingId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const before = event.data.before.data() || {};
+    const after = event.data.after.data() || {};
+    await generateLinkPreview(
+      event.data.after.ref,
+      before.linkUrl,
+      after.linkUrl,
+      'linkPreview'
+    );
+  }
+);
+
 exports.generateMealLinkPreview = onDocumentUpdated(
   {
     document: 'trips/{tripId}/meals/{mealId}',
@@ -2407,6 +2426,19 @@ exports.refreshActivityPlacePreview = onDocumentWritten(
       },
       { merge: true }
     );
+  }
+);
+
+exports.generateLodgingLinkPreviewOnCreate = onDocumentCreated(
+  {
+    document: 'trips/{tripId}/lodgings/{lodgingId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const data = event.data.data() || {};
+    await generateLinkPreview(event.data.ref, undefined, data.linkUrl, 'linkPreview');
   }
 );
 

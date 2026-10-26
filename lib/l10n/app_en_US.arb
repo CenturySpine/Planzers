@@ -1197,6 +1197,26 @@
   "tripGamesDeleted": "Game deleted",
   "tripOverviewTopTabAnnouncements": "Announcements",
   "tripOverviewSectionAccommodation": "Destination",
+  "tripOverviewSectionLodgings": "Lodging",
+  "tripLodgingTitle": "Lodging",
+  "tripLodgingEveryNight": "Every night",
+  "tripLodgingNightsRange": "{start} to {end} · {count, plural, =1{1 night} other{{count} nights}}",
+  "@tripLodgingNightsRange": {
+    "placeholders": {
+      "start": {"type": "String"},
+      "end": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+  "tripLodgingMissing": "Lodging not filled in",
+  "tripLodgingPrevious": "Previous stage",
+  "tripLodgingNext": "Next stage",
+  "tripLodgingReuseLabel": "Already in this trip",
+  "tripLodgingAddressLabel": "Address",
+  "tripLodgingPlaceRequired": "Fill in at least a name, an address or a link.",
+  "tripLodgingRemove": "Remove",
+  "tripCreateLodgingAllNights": "Same lodging for every night",
+  "activitiesMissingLodging": "Lodging to fill in",
   "tripOverviewSectionGroup": "The group",
   "tripOverviewSectionModules": "Trip modules",
   "tripOverviewSectionSettings": "Trip settings",

@@ -3172,6 +3172,55 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewSectionAccommodation => 'Destination';
 
   @override
+  String get tripOverviewSectionLodgings => 'Hébergements';
+
+  @override
+  String get tripLodgingTitle => 'Hébergement';
+
+  @override
+  String get tripLodgingEveryNight => 'Toutes les nuits';
+
+  @override
+  String tripLodgingNightsRange(String start, String end, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nuits',
+      one: '1 nuit',
+    );
+    return 'Du $start au $end · $_temp0';
+  }
+
+  @override
+  String get tripLodgingMissing => 'Hébergement non renseigné';
+
+  @override
+  String get tripLodgingPrevious => 'Étape précédente';
+
+  @override
+  String get tripLodgingNext => 'Étape suivante';
+
+  @override
+  String get tripLodgingReuseLabel => 'Déjà dans le voyage';
+
+  @override
+  String get tripLodgingAddressLabel => 'Adresse';
+
+  @override
+  String get tripLodgingPlaceRequired =>
+      'Renseigne au moins un nom, une adresse ou un lien.';
+
+  @override
+  String get tripLodgingRemove => 'Retirer';
+
+  @override
+  String get tripCreateLodgingAllNights =>
+      'Même hébergement pour toutes les nuits';
+
+  @override
+  String get activitiesMissingLodging => 'Hébergement à renseigner';
+
+  @override
   String get tripOverviewSectionGroup => 'Le groupe';
 
   @override
@@ -7347,6 +7396,55 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewSectionAccommodation => 'Destination';
+
+  @override
+  String get tripOverviewSectionLodgings => 'Hébergements';
+
+  @override
+  String get tripLodgingTitle => 'Hébergement';
+
+  @override
+  String get tripLodgingEveryNight => 'Toutes les nuits';
+
+  @override
+  String tripLodgingNightsRange(String start, String end, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nuits',
+      one: '1 nuit',
+    );
+    return 'Du $start au $end · $_temp0';
+  }
+
+  @override
+  String get tripLodgingMissing => 'Hébergement non renseigné';
+
+  @override
+  String get tripLodgingPrevious => 'Étape précédente';
+
+  @override
+  String get tripLodgingNext => 'Étape suivante';
+
+  @override
+  String get tripLodgingReuseLabel => 'Déjà dans le voyage';
+
+  @override
+  String get tripLodgingAddressLabel => 'Adresse';
+
+  @override
+  String get tripLodgingPlaceRequired =>
+      'Renseigne au moins un nom, une adresse ou un lien.';
+
+  @override
+  String get tripLodgingRemove => 'Retirer';
+
+  @override
+  String get tripCreateLodgingAllNights =>
+      'Même hébergement pour toutes les nuits';
+
+  @override
+  String get activitiesMissingLodging => 'Hébergement à renseigner';
 
   @override
   String get tripOverviewSectionGroup => 'Le groupe';

@@ -5689,6 +5689,84 @@ abstract class AppLocalizations {
   /// **'Destination'**
   String get tripOverviewSectionAccommodation;
 
+  /// No description provided for @tripOverviewSectionLodgings.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergements'**
+  String get tripOverviewSectionLodgings;
+
+  /// No description provided for @tripLodgingTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergement'**
+  String get tripLodgingTitle;
+
+  /// No description provided for @tripLodgingEveryNight.
+  ///
+  /// In fr, this message translates to:
+  /// **'Toutes les nuits'**
+  String get tripLodgingEveryNight;
+
+  /// No description provided for @tripLodgingNightsRange.
+  ///
+  /// In fr, this message translates to:
+  /// **'Du {start} au {end} · {count, plural, =1{1 nuit} other{{count} nuits}}'**
+  String tripLodgingNightsRange(String start, String end, int count);
+
+  /// No description provided for @tripLodgingMissing.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergement non renseigné'**
+  String get tripLodgingMissing;
+
+  /// No description provided for @tripLodgingPrevious.
+  ///
+  /// In fr, this message translates to:
+  /// **'Étape précédente'**
+  String get tripLodgingPrevious;
+
+  /// No description provided for @tripLodgingNext.
+  ///
+  /// In fr, this message translates to:
+  /// **'Étape suivante'**
+  String get tripLodgingNext;
+
+  /// No description provided for @tripLodgingReuseLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déjà dans le voyage'**
+  String get tripLodgingReuseLabel;
+
+  /// No description provided for @tripLodgingAddressLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Adresse'**
+  String get tripLodgingAddressLabel;
+
+  /// No description provided for @tripLodgingPlaceRequired.
+  ///
+  /// In fr, this message translates to:
+  /// **'Renseigne au moins un nom, une adresse ou un lien.'**
+  String get tripLodgingPlaceRequired;
+
+  /// No description provided for @tripLodgingRemove.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer'**
+  String get tripLodgingRemove;
+
+  /// No description provided for @tripCreateLodgingAllNights.
+  ///
+  /// In fr, this message translates to:
+  /// **'Même hébergement pour toutes les nuits'**
+  String get tripCreateLodgingAllNights;
+
+  /// No description provided for @activitiesMissingLodging.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergement à renseigner'**
+  String get activitiesMissingLodging;
+
   /// No description provided for @tripOverviewSectionGroup.
   ///
   /// In fr, this message translates to:

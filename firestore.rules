@@ -672,6 +672,7 @@ service cloud.firestore {
             'tripStartDayPart',
             'tripEndDayPart',
             'isDayTrip',
+            'lodgingsByNight',
             'carpoolModuleEnabled',
             'roomsModuleEnabled',
             'gamesModuleEnabled',
@@ -795,6 +796,44 @@ service cloud.firestore {
 
       match /rooms/{roomId} {
         allow read, write: if isTripMember(tripId);
+      }
+
+      /// Where the group sleeps: a place for some nights of the trip
+      /// (`nights`: their evenings, `yyyy-MM-dd`) or for every night
+      /// (`allNights`). `linkPreview` is written by Cloud Functions only.
+      match /lodgings/{lodgingId} {
+        function isValidLodging(data) {
+          return data.keys().hasOnly([
+              'name',
+              'address',
+              'location',
+              'linkUrl',
+              'linkPreview',
+              'nights',
+              'allNights',
+              'createdAt',
+              'createdBy',
+              'updatedAt',
+              'updatedBy',
+            ])
+            && data.name is string
+            && data.address is string
+            && data.linkUrl is string
+            && (!data.keys().hasAny(['location']) || data.location is latlng)
+            && data.nights is list
+            && data.nights.size() <= 366
+            && data.allNights is bool;
+        }
+
+        allow read: if isTripMember(tripId);
+        allow create: if canEditTripGeneralInfo(tripId)
+          && isValidLodging(request.resource.data)
+          && !request.resource.data.keys().hasAny(['linkPreview']);
+        allow update: if canEditTripGeneralInfo(tripId)
+          && isValidLodging(request.resource.data)
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['linkPreview']);
+        allow delete: if canEditTripGeneralInfo(tripId);
       }
 
       match /activities/{activityId} {

@@ -16,13 +16,17 @@ import 'package:planerz/features/activities/data/activity_photo.dart';
 import 'package:planerz/features/activities/data/activity_photos_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_journey.dart';
+import 'package:planerz/features/activities/presentation/trip_lodging_nights.dart';
 import 'package:planerz/features/activities/presentation/trip_missing_transport.dart';
 import 'package:planerz/features/activities/presentation/trip_missing_transport_sheet.dart';
 import 'package:planerz/features/activities/presentation/trip_transport_mode_presentation.dart';
 import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
+import 'package:planerz/features/trips/data/trip_lodging_plan.dart';
+import 'package:planerz/features/trips/data/trip_lodgings_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/features/trips/presentation/trip_lodging_ui.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 /// The trip drawn on a map, for the whole trip or one day.
@@ -45,6 +49,21 @@ class TripJourneyMapPage extends ConsumerWidget {
     final activities = activitiesAsync.asData?.value;
     final meals = mealsAsync.asData?.value;
     final error = activitiesAsync.error ?? mealsAsync.error;
+    final storedLodgings =
+        ref.watch(tripLodgingsStreamProvider(tripId)).asData?.value;
+    // The nights at a lodging stand in the journey as stops.
+    final lodgingStops = trip == null ||
+            activities == null ||
+            storedLodgings == null
+        ? const <TripActivity>[]
+        : [
+            for (final night in tripLodgingNightsForPlanning(
+              nights: tripNights(trip),
+              lodgings: effectiveTripLodgings(trip, storedLodgings),
+              activities: activities,
+            ))
+              if (!night.isMissing) night.stop,
+          ];
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.activitiesJourneyMapTitle)),
@@ -63,6 +82,7 @@ class TripJourneyMapPage extends ConsumerWidget {
               : TripJourneyMapView(
                   tripId: tripId,
                   activities: activities,
+                  lodgingStops: lodgingStops,
                   meals: meals,
                   canSuggestActivity: canSuggest,
                   canPlanActivity: canPlan,
@@ -81,6 +101,7 @@ class TripJourneyMapView extends ConsumerStatefulWidget {
     super.key,
     required this.tripId,
     required this.activities,
+    this.lodgingStops = const [],
     required this.meals,
     required this.canSuggestActivity,
     required this.canPlanActivity,
@@ -88,6 +109,9 @@ class TripJourneyMapView extends ConsumerStatefulWidget {
 
   final String tripId;
   final List<TripActivity> activities;
+
+  /// The nights at a lodging, as accommodations planned there.
+  final List<TripActivity> lodgingStops;
   final List<TripMeal> meals;
   final bool canSuggestActivity;
   final bool canPlanActivity;
@@ -171,7 +195,7 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final activities = widget.activities;
+    final activities = [...widget.activities, ...widget.lodgingStops];
     final canSuggest = widget.canSuggestActivity;
     final mealStops = tripJourneyMealStops(widget.meals, activities);
     final mealIdsByStopId = {
@@ -376,14 +400,24 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
                       ? _SelectedActivitiesCard(
                           activities: selected,
                           numbers: numbers,
-                          onOpen: (activity) => context.push(
-                            switch (mealIdsByStopId[activity.id]) {
-                              final mealId? =>
-                                '/trips/${widget.tripId}/meals/$mealId',
-                              null =>
-                                '/trips/${widget.tripId}/activities/${activity.id}',
-                            },
-                          ),
+                          onOpen: (activity) {
+                            // A night has no page of its own: its link opens.
+                            if (isTripLodgingStopId(activity.id)) {
+                              final link = activity.linkUrl.trim();
+                              if (link.isNotEmpty) {
+                                openTripLodgingLink(context, link);
+                              }
+                              return;
+                            }
+                            context.push(
+                              switch (mealIdsByStopId[activity.id]) {
+                                final mealId? =>
+                                  '/trips/${widget.tripId}/meals/$mealId',
+                                null =>
+                                  '/trips/${widget.tripId}/activities/${activity.id}',
+                              },
+                            );
+                          },
                         )
                       : _PendingPlaceCard(
                           address: _pendingAddress.isNotEmpty
