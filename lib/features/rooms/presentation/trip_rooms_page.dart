@@ -1,34 +1,148 @@
 import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/features/rooms/data/trip_room.dart';
+import 'package:planerz/features/rooms/data/trip_room_lodgings.dart';
+import 'package:planerz/features/trips/data/trip_lodging_plan.dart';
+import 'package:planerz/features/trips/data/trip_lodgings_repository.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-class TripRoomsPage extends ConsumerWidget {
+/// The trip's rooms, lodging by lodging (one tab each when there are
+/// several). A lodging's rooms are shared by all its nights; a night can be
+/// set apart with rooms of its own.
+class TripRoomsPage extends ConsumerStatefulWidget {
   const TripRoomsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TripRoomsPage> createState() => _TripRoomsPageState();
+}
+
+/// What the page shows for the lodging and night chosen.
+enum _RoomsView {
+  /// The rooms shared by every night.
+  shared,
+
+  /// A night using the shared rooms, shown as they are.
+  nightUsingShared,
+
+  /// A night with rooms of its own.
+  nightApart,
+}
+
+class _TripRoomsPageState extends ConsumerState<TripRoomsPage>
+    with TickerProviderStateMixin {
+  TabController? _tabController;
+  int _lodgingIndex = 0;
+
+  /// The night chosen, by lodging (`''` for none); absent for every night.
+  final Map<String, String> _nightByLodging = {};
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
+  }
+
+  TabController _tabControllerFor(int length) {
+    final current = _tabController;
+    if (current != null && current.length == length) return current;
+    current?.dispose();
+    _lodgingIndex = _lodgingIndex.clamp(0, length - 1);
+    final controller = TabController(
+      length: length,
+      initialIndex: _lodgingIndex,
+      vsync: this,
+    );
+    _tabController = controller;
+    return controller;
+  }
+
+  Future<void> _setNightApart({
+    required String tripId,
+    required String? lodgingId,
+    required String nightKey,
+    required List<TripRoom> sharedRooms,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    try {
+      await ref.read(roomsRepositoryProvider).setNightApart(
+            tripId: tripId,
+            lodgingId: lodgingId,
+            nightKey: nightKey,
+            commonRooms: sharedRooms,
+          );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _useSharedRooms({
+    required String tripId,
+    required List<TripRoom> nightRooms,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.roomsUseSharedRooms),
+        content: Text(l10n.roomsUseSharedRoomsBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.commonConfirm),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(roomsRepositoryProvider).deleteNightRooms(
+            tripId: tripId,
+            nightRooms: nightRooms,
+          );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
     final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
     final roomsAsync = ref.watch(tripRoomsStreamProvider(trip.id));
+    final lodgingsAsync = ref.watch(tripLodgingsStreamProvider(trip.id));
+    final storedLodgings = lodgingsAsync.asData?.value;
+    final rooms = roomsAsync.asData?.value;
+    final error = roomsAsync.error ?? lodgingsAsync.error;
 
-    return Scaffold(
-      body: roomsAsync.when(
-        data: (rooms) => _TripRoomsBody(
-          tripId: trip.id,
-          memberLabels: memberLabels,
-          rooms: rooms,
-        ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
+    if (error != null) {
+      return Scaffold(
+        body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
@@ -37,12 +151,177 @@ class TripRoomsPage extends ConsumerWidget {
             ),
           ),
         ),
+      );
+    }
+    // Rooms wait for the lodgings, so that none shows under a wrong one.
+    if (rooms == null || storedLodgings == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final split = TripRoomLodgings.forTrip(
+      trip,
+      effectiveTripLodgings(trip, storedLodgings),
+    );
+    final lodgings = split.lodgings;
+    final tabController = _tabControllerFor(lodgings.length);
+    final lodging = lodgings[_lodgingIndex];
+    final lodgingKey = lodging.id ?? '';
+    final nightKeys = lodging.nightKeys;
+    final nightKey = nightKeys.contains(_nightByLodging[lodgingKey])
+        ? _nightByLodging[lodgingKey]
+        : null;
+    final sharedRooms = split.commonRooms(rooms, lodging.id);
+    final nightRooms = nightKey == null
+        ? const <TripRoom>[]
+        : split.nightRooms(rooms, lodging.id, nightKey);
+    final view = nightKey == null
+        ? _RoomsView.shared
+        : nightRooms.isNotEmpty || sharedRooms.isEmpty
+            ? _RoomsView.nightApart
+            : _RoomsView.nightUsingShared;
+    final shownRooms = switch (view) {
+      _RoomsView.shared || _RoomsView.nightUsingShared => sharedRooms,
+      _RoomsView.nightApart => nightRooms,
+    };
+    final nightsApart = {
+      for (final key in nightKeys)
+        if (split.nightRooms(rooms, lodging.id, key).isNotEmpty) key,
+    };
+
+    Widget? action;
+    if (view == _RoomsView.nightUsingShared) {
+      action = OutlinedButton.icon(
+        onPressed: _busy
+            ? null
+            : () => _setNightApart(
+                  tripId: trip.id,
+                  lodgingId: lodging.id,
+                  nightKey: nightKey!,
+                  sharedRooms: sharedRooms,
+                ),
+        icon: const Icon(PhosphorIconsRegular.copy),
+        label: Text(l10n.roomsSetNightApart),
+      );
+    } else if (view == _RoomsView.nightApart && nightRooms.isNotEmpty) {
+      action = OutlinedButton.icon(
+        onPressed: _busy
+            ? null
+            : () => _useSharedRooms(tripId: trip.id, nightRooms: nightRooms),
+        icon: const Icon(PhosphorIconsRegular.arrowBendUpLeft),
+        label: Text(l10n.roomsUseSharedRooms),
+      );
+    }
+
+    return Scaffold(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (lodgings.length > 1)
+            TabBar(
+              controller: tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              onTap: (index) => setState(() => _lodgingIndex = index),
+              tabs: [
+                for (final l in lodgings)
+                  Tab(text: l.lodging?.displayTitle ?? l10n.tripLodgingTitle),
+              ],
+            ),
+          if (nightKeys.length > 1)
+            _RoomNightChips(
+              nights: lodging.nights,
+              selectedKey: nightKey,
+              nightsApart: nightsApart,
+              onSelected: (key) => setState(() {
+                if (key == null) {
+                  _nightByLodging.remove(lodgingKey);
+                } else {
+                  _nightByLodging[lodgingKey] = key;
+                }
+              }),
+            ),
+          Expanded(
+            child: _TripRoomsBody(
+              // A fresh search for each set of rooms.
+              key: ValueKey('$lodgingKey|${nightKey ?? ''}'),
+              tripId: trip.id,
+              memberLabels: memberLabels,
+              rooms: shownRooms,
+              readOnly: view == _RoomsView.nightUsingShared,
+              action: action,
+              roomSetOf: (room) =>
+                  '${split.lodgingIdOf(room) ?? ''}|${room.nightKey ?? ''}',
+            ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'trip_rooms_add',
-        tooltip: l10n.roomsCreate,
-        onPressed: () => _openCreateRoomSheet(context, ref, tripId: trip.id),
-        child: const Icon(PhosphorIconsRegular.plus),
+      floatingActionButton: view == _RoomsView.nightUsingShared
+          ? null
+          : FloatingActionButton(
+              heroTag: 'trip_rooms_add',
+              tooltip: l10n.roomsCreate,
+              onPressed: () => _openCreateRoomSheet(
+                context,
+                tripId: trip.id,
+                roomsOfSet: shownRooms,
+                lodgingId: lodging.id,
+                nightKey: view == _RoomsView.nightApart ? nightKey : null,
+              ),
+              child: const Icon(PhosphorIconsRegular.plus),
+            ),
+    );
+  }
+}
+
+/// "Every night" then each night of the lodging; nights with rooms of
+/// their own are marked.
+class _RoomNightChips extends StatelessWidget {
+  const _RoomNightChips({
+    required this.nights,
+    required this.selectedKey,
+    required this.nightsApart,
+    required this.onSelected,
+  });
+
+  final List<DateTime> nights;
+  final String? selectedKey;
+  final Set<String> nightsApart;
+
+  /// Null for every night.
+  final ValueChanged<String?> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final format =
+        DateFormat('EEE d', Localizations.localeOf(context).toString());
+    final group = ActivityFilterGroup.nuits;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Row(
+        children: [
+          ChoiceChip(
+            label: Text(l10n.tripLodgingEveryNight),
+            selected: selectedKey == null,
+            onSelected: (_) => onSelected(null),
+          ),
+          for (final night in nights) ...[
+            const SizedBox(width: 8),
+            Builder(builder: (context) {
+              final key = tripNightKey(night);
+              return ChoiceChip(
+                avatar: nightsApart.contains(key)
+                    ? Icon(PhosphorIconsFill.circle,
+                        size: 8, color: group.filterColor)
+                    : null,
+                label: Text(format.format(night)),
+                selected: selectedKey == key,
+                onSelected: (_) => onSelected(key),
+              );
+            }),
+          ],
+        ],
       ),
     );
   }
@@ -50,14 +329,29 @@ class TripRoomsPage extends ConsumerWidget {
 
 class _TripRoomsBody extends StatefulWidget {
   const _TripRoomsBody({
+    super.key,
     required this.tripId,
     required this.memberLabels,
     required this.rooms,
+    required this.roomSetOf,
+    this.readOnly = false,
+    this.action,
   });
 
   final String tripId;
   final Map<String, String> memberLabels;
   final List<TripRoom> rooms;
+
+  /// Rooms of the same set (lodging and night) share their travelers: each
+  /// one sleeps in one bed of the set.
+  final String Function(TripRoom room) roomSetOf;
+
+  /// Rooms shown as they are, not opened.
+  final bool readOnly;
+
+  /// Shown above the rooms (setting a night apart, or back to the shared
+  /// rooms).
+  final Widget? action;
 
   @override
   State<_TripRoomsBody> createState() => _TripRoomsBodyState();
@@ -92,6 +386,7 @@ class _TripRoomsBodyState extends State<_TripRoomsBody> {
         title: l10n.roomsCreateTitle,
       );
     }
+    final action = widget.action;
     final capacity = rooms.fold<int>(0, (sum, r) => sum + r.capacity);
     final assigned =
         rooms.fold<int>(0, (sum, r) => sum + r.assignedMemberIds.length);
@@ -101,6 +396,11 @@ class _TripRoomsBodyState extends State<_TripRoomsBody> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
       children: [
+        if (action != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Align(alignment: Alignment.centerLeft, child: action),
+          ),
         PzSectionHeader(
           title: l10n.tripOverviewTileRooms,
           count: rooms.length,
@@ -128,16 +428,19 @@ class _TripRoomsBodyState extends State<_TripRoomsBody> {
             child: _RoomCard(
               room: room,
               memberLabels: widget.memberLabels,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => _TripRoomDetailPage(
-                      tripId: widget.tripId,
-                      roomId: room.id,
-                    ),
-                  ),
-                );
-              },
+              onTap: widget.readOnly
+                  ? null
+                  : () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => _TripRoomDetailPage(
+                            tripId: widget.tripId,
+                            roomId: room.id,
+                            roomSetOf: widget.roomSetOf,
+                          ),
+                        ),
+                      );
+                    },
             ),
           ),
       ],
@@ -213,7 +516,9 @@ class _RoomCard extends StatelessWidget {
 
   final TripRoom room;
   final Map<String, String> memberLabels;
-  final VoidCallback onTap;
+
+  /// Null leaves the card still.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -255,8 +560,9 @@ class _RoomCard extends StatelessWidget {
                     assigned: room.assignedMemberIds.length,
                     capacity: room.capacity,
                   ),
-                  const Icon(PhosphorIconsRegular.caretRight,
-                      color: Color(0xFF8891A1)),
+                  if (onTap != null)
+                    const Icon(PhosphorIconsRegular.caretRight,
+                        color: Color(0xFF8891A1)),
                 ],
               ),
               const SizedBox(height: 6),
@@ -323,10 +629,14 @@ class _TripRoomDetailPage extends ConsumerStatefulWidget {
   const _TripRoomDetailPage({
     required this.tripId,
     required this.roomId,
+    required this.roomSetOf,
   });
 
   final String tripId;
   final String roomId;
+
+  /// See [_TripRoomsBody.roomSetOf].
+  final String Function(TripRoom room) roomSetOf;
 
   @override
   ConsumerState<_TripRoomDetailPage> createState() => _TripRoomDetailPageState();
@@ -542,14 +852,20 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
     final roomsAsync = ref.watch(tripRoomsStreamProvider(widget.tripId));
 
     return roomsAsync.when(
-      data: (rooms) {
-        final room = rooms.where((r) => r.id == widget.roomId).firstOrNull;
+      data: (allRooms) {
+        final room = allRooms.where((r) => r.id == widget.roomId).firstOrNull;
         if (room == null) {
           return Scaffold(
             appBar: AppBar(),
             body: const SizedBox.shrink(),
           );
         }
+        // The other rooms of the same lodging and night.
+        final roomSet = widget.roomSetOf(room);
+        final rooms = [
+          for (final r in allRooms)
+            if (widget.roomSetOf(r) == roomSet) r,
+        ];
         if (!_initialized || !_editing) {
           _setupEditorState(room, rooms);
         }
@@ -822,13 +1138,15 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
   }
 }
 
+/// Adds a room to [lodgingId], shared by its nights, or for [nightKey] only;
+/// [roomsOfSet] are the rooms already there.
 Future<void> _openCreateRoomSheet(
-  BuildContext context,
-  WidgetRef ref, {
+  BuildContext context, {
   required String tripId,
+  required List<TripRoom> roomsOfSet,
+  required String? lodgingId,
+  required String? nightKey,
 }) async {
-  final rooms = await ref.read(tripRoomsStreamProvider(tripId).future);
-  if (!context.mounted) return;
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -837,7 +1155,9 @@ Future<void> _openCreateRoomSheet(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
       child: _CreateRoomSheet(
         tripId: tripId,
-        allRooms: rooms,
+        allRooms: roomsOfSet,
+        lodgingId: lodgingId,
+        nightKey: nightKey,
       ),
     ),
   );
@@ -847,10 +1167,14 @@ class _CreateRoomSheet extends ConsumerStatefulWidget {
   const _CreateRoomSheet({
     required this.tripId,
     required this.allRooms,
+    required this.lodgingId,
+    required this.nightKey,
   });
 
   final String tripId;
   final List<TripRoom> allRooms;
+  final String? lodgingId;
+  final String? nightKey;
 
   @override
   ConsumerState<_CreateRoomSheet> createState() => _CreateRoomSheetState();
@@ -904,6 +1228,8 @@ class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
                   ),
                 )
                 .toList(),
+            lodgingId: widget.lodgingId,
+            nightKey: widget.nightKey,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

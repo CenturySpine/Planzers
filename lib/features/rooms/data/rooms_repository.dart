@@ -40,10 +40,14 @@ class RoomsRepository {
         .map((snap) => snap.docs.map(TripRoom.fromDoc).toList());
   }
 
+  /// Adds a room to [lodgingId] (null: the trip's first lodging), shared by
+  /// all its nights, or for [nightKey] only.
   Future<void> addRoom({
     required String tripId,
     required String name,
     required List<TripRoomBed> beds,
+    String? lodgingId,
+    String? nightKey,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -67,9 +71,65 @@ class RoomsRepository {
       'name': cleanName,
       'beds': beds.map((b) => b.toMap()).toList(),
       'assignedMemberIds': _roomAssignedFromBeds(beds),
+      if (lodgingId != null) 'lodgingId': lodgingId,
+      if (nightKey != null) 'nightKey': nightKey,
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': user.uid,
     });
+  }
+
+  /// Sets [nightKey] apart at [lodgingId]: copies of the [commonRooms], with
+  /// their beds and travelers, then changed for that night only.
+  Future<void> setNightApart({
+    required String tripId,
+    required String? lodgingId,
+    required String nightKey,
+    required List<TripRoom> commonRooms,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty || nightKey.trim().isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+    final col = _roomsCol(cleanTripId);
+    final batch = firestore.batch();
+    for (final room in commonRooms) {
+      batch.set(col.doc(), {
+        'name': room.name,
+        'beds': room.beds.map((b) => b.toMap()).toList(),
+        'assignedMemberIds': _roomAssignedFromBeds(room.beds),
+        if (lodgingId != null) 'lodgingId': lodgingId,
+        'nightKey': nightKey.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'createdBy': user.uid,
+      });
+    }
+    await batch.commit();
+  }
+
+  /// Deletes the [nightRooms] set apart for a night, which then uses the
+  /// rooms shared by every night again.
+  Future<void> deleteNightRooms({
+    required String tripId,
+    required List<TripRoom> nightRooms,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+    final col = _roomsCol(cleanTripId);
+    final batch = firestore.batch();
+    for (final room in nightRooms) {
+      batch.delete(col.doc(room.id));
+    }
+    await batch.commit();
   }
 
   Future<void> updateRoom({

@@ -2639,6 +2639,24 @@ abstract class AppLocalizations {
   /// **'Créer'**
   String get roomsCreate;
 
+  /// No description provided for @roomsSetNightApart.
+  ///
+  /// In fr, this message translates to:
+  /// **'Personnaliser cette nuit'**
+  String get roomsSetNightApart;
+
+  /// No description provided for @roomsUseSharedRooms.
+  ///
+  /// In fr, this message translates to:
+  /// **'Revenir aux chambres communes'**
+  String get roomsUseSharedRooms;
+
+  /// No description provided for @roomsUseSharedRoomsBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les chambres propres à cette nuit seront supprimées.'**
+  String get roomsUseSharedRoomsBody;
+
   /// No description provided for @roomsCreateTitle.
   ///
   /// In fr, this message translates to:

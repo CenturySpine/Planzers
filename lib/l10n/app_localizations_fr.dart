@@ -1458,6 +1458,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get roomsCreate => 'Créer';
 
   @override
+  String get roomsSetNightApart => 'Personnaliser cette nuit';
+
+  @override
+  String get roomsUseSharedRooms => 'Revenir aux chambres communes';
+
+  @override
+  String get roomsUseSharedRoomsBody =>
+      'Les chambres propres à cette nuit seront supprimées.';
+
+  @override
   String get roomsCreateTitle => 'Créer une chambre';
 
   @override
@@ -5595,6 +5605,16 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get roomsCreate => 'Créer';
+
+  @override
+  String get roomsSetNightApart => 'Personnaliser cette nuit';
+
+  @override
+  String get roomsUseSharedRooms => 'Revenir aux chambres communes';
+
+  @override
+  String get roomsUseSharedRoomsBody =>
+      'Les chambres propres à cette nuit seront supprimées.';
 
   @override
   String get roomsCreateTitle => 'Créer une chambre';

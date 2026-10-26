@@ -609,6 +609,9 @@
     }
   },
   "roomsCreate": "Create",
+  "roomsSetNightApart": "Customize this night",
+  "roomsUseSharedRooms": "Back to shared rooms",
+  "roomsUseSharedRoomsBody": "This night's own rooms will be deleted.",
   "roomsCreateTitle": "Create a room",
   "roomsCreated": "Room created",
   "roomsUpdated": "Room updated",
