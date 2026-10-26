@@ -1978,6 +1978,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get activitiesTransportConnectionAdd => 'Add a connection';
+
+  @override
+  String get activitiesTransportConnectionStop => 'Connection point';
+
+  @override
+  String get activitiesTransportConnectionMode =>
+      'Mode of transport after the connection';
+
+  @override
+  String get activitiesTransportConnectionAdded => 'Connection added';
+
+  @override
   String get activitiesJourneyMapTitle => 'Trip map';
 
   @override
@@ -6151,6 +6164,19 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String activitiesMissingTransportLabel(Object from, Object to) {
     return '$from → $to';
   }
+
+  @override
+  String get activitiesTransportConnectionAdd => 'Add a connection';
+
+  @override
+  String get activitiesTransportConnectionStop => 'Connection point';
+
+  @override
+  String get activitiesTransportConnectionMode =>
+      'Mode of transport after the connection';
+
+  @override
+  String get activitiesTransportConnectionAdded => 'Connection added';
 
   @override
   String get activitiesJourneyMapTitle => 'Trip map';

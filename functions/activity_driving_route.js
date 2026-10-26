@@ -5,6 +5,14 @@ const { FieldValue } = require('firebase-admin/firestore');
 const { onDocumentWritten, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 
+// OpenStreetMap services, free and keyless: Photon (komoot) turns an address
+// into a point, and the FOSSGIS OSRM server (the one openstreetmap.org uses)
+// computes the car route. Both ask for a moderate use from an identified
+// client.
+const PHOTON_SEARCH_URL = 'https://photon.komoot.io/api/';
+const OSRM_CAR_ROUTE_URL = 'https://routing.openstreetmap.de/routed-car/route/v1/driving/';
+const USER_AGENT = 'Planerz (https://planerz.centuryspine.org)';
+
 function normalizeString(v) {
   return (typeof v === 'string' ? v : '').trim();
 }
@@ -15,20 +23,71 @@ function asFiniteNumber(value) {
 }
 
 /**
- * @param {unknown} data
- * @returns {Promise<{ distanceMeters: number, durationSeconds: number, distanceText: string, durationText: string } | { elementStatus: string }>}
+ * @param {unknown} value a Firestore GeoPoint
+ * @returns {{ latitude: number, longitude: number } | null}
  */
-function parseRoutesApiResponse(data) {
+function pointOf(value) {
+  const latitude = asFiniteNumber(value?.latitude);
+  const longitude = asFiniteNumber(value?.longitude);
+  return latitude == null || longitude == null ? null : { latitude, longitude };
+}
+
+/**
+ * The place of an activity, to compute its route again only when it moves.
+ * @param {FirebaseFirestore.DocumentData} data
+ */
+function activityPlaceKey(data) {
+  const point = pointOf(data?.location);
+  return `${normalizeString(data?.address)}|${point ? `${point.latitude},${point.longitude}` : ''}`;
+}
+
+/**
+ * The point of Photon's first result, or null.
+ * @param {unknown} data Photon GeoJSON response
+ */
+function parsePhotonPoint(data) {
+  const feature = Array.isArray(data?.features) ? data.features[0] : null;
+  const coordinates = feature?.geometry?.coordinates;
+  if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
+  return pointOf({ latitude: coordinates[1], longitude: coordinates[0] });
+}
+
+/**
+ * @param {string} address
+ * @returns {Promise<{ latitude: number, longitude: number } | null>}
+ */
+async function geocodeAddress(address) {
+  const query = normalizeString(address);
+  if (!query) return null;
+  const url = new URL(PHOTON_SEARCH_URL);
+  url.searchParams.set('q', query);
+  url.searchParams.set('limit', '1');
+  const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+  if (!res.ok) throw new Error(`Photon HTTP ${res.status}`);
+  return parsePhotonPoint(await res.json());
+}
+
+/**
+ * @param {unknown} data OSRM route response
+ * @returns {{ distanceMeters: number, durationSeconds: number, distanceText: string, durationText: string } | { elementStatus: string }}
+ */
+function parseOsrmResponse(data) {
+  const code = normalizeString(data?.code);
+  // No road reaches one of the points, or none links them.
+  if (code === 'NoRoute' || code === 'NoSegment') {
+    return { elementStatus: code };
+  }
+  if (code !== 'Ok') {
+    throw new Error(normalizeString(data?.message) || `OSRM ${code || 'error'}`);
+  }
   const route = Array.isArray(data.routes) ? data.routes[0] : null;
   if (!route) {
-    return { elementStatus: 'ZERO_RESULTS' };
+    return { elementStatus: 'NoRoute' };
   }
-  const distanceMeters = Number(route.distanceMeters);
-  const durationRaw = normalizeString(route.duration);
-  const durationMatch = durationRaw.match(/^(\d+(?:\.\d+)?)s$/);
-  const durationSeconds = durationMatch ? Math.round(Number(durationMatch[1])) : NaN;
+  const distanceMeters = Math.round(Number(route.distance));
+  const durationSeconds = Math.round(Number(route.duration));
   if (!Number.isFinite(distanceMeters) || !Number.isFinite(durationSeconds)) {
-    throw new Error('Routes API returned invalid distance/duration');
+    throw new Error('OSRM returned invalid distance/duration');
   }
   return {
     distanceMeters,
@@ -39,53 +98,23 @@ function parseRoutesApiResponse(data) {
 }
 
 /**
- * @param {{ address?: string, latitude?: number, longitude?: number }} origin
- * @param {string} destinationAddress
- * @param {string} apiKey
+ * @param {{ latitude: number, longitude: number }} origin
+ * @param {{ latitude: number, longitude: number }} destination
  */
-async function fetchDrivingMatrix(origin, destinationAddress, apiKey) {
-  const originAddress = normalizeString(origin?.address);
-  const originLatitude = asFiniteNumber(origin?.latitude);
-  const originLongitude = asFiniteNumber(origin?.longitude);
-  const hasOriginAddress = originAddress.length > 0;
-  const hasOriginLatLng = originLatitude != null && originLongitude != null;
-  if (!hasOriginAddress && !hasOriginLatLng) {
-    throw new Error('Origin is missing');
-  }
-
-  const originPayload = hasOriginAddress
-    ? { address: originAddress }
-    : {
-        location: {
-          latLng: {
-            latitude: originLatitude,
-            longitude: originLongitude,
-          },
-        },
-      };
-
-  const res = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': apiKey,
-      'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration',
-    },
-    body: JSON.stringify({
-      origin: originPayload,
-      destination: { address: destinationAddress },
-      travelMode: 'DRIVE',
-      routingPreference: 'TRAFFIC_UNAWARE',
-      units: 'METRIC',
-      languageCode: 'fr-FR',
-    }),
+async function fetchDrivingRoute(origin, destination) {
+  const coordinates = [origin, destination]
+    .map((point) => `${point.longitude},${point.latitude}`)
+    .join(';');
+  const res = await fetch(`${OSRM_CAR_ROUTE_URL}${coordinates}?overview=false`, {
+    headers: { 'User-Agent': USER_AGENT },
   });
-  const data = await res.json();
-  if (!res.ok) {
-    const message = normalizeString(data?.error?.message) || `HTTP ${res.status}`;
-    throw new Error(message);
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`OSRM HTTP ${res.status}`);
   }
-  return parseRoutesApiResponse(data);
+  return parseOsrmResponse(data);
 }
 
 function formatDistanceText(distanceMeters) {
@@ -105,79 +134,73 @@ function formatDurationText(durationSeconds) {
 }
 
 /**
+ * Where the route to an activity ends: its point, or else its address
+ * placed by Photon. Null when it has neither or the address is not found.
+ * @param {FirebaseFirestore.DocumentData} data
+ */
+async function activityDestination(data) {
+  return pointOf(data?.location) ?? geocodeAddress(data?.address);
+}
+
+/**
+ * The route from [origin] to the activity, as stored or returned.
+ * @param {{ latitude: number, longitude: number }} origin
+ * @param {FirebaseFirestore.DocumentData} activityData
+ */
+async function drivingRouteToActivity(origin, activityData) {
+  try {
+    const destination = await activityDestination(activityData);
+    if (!destination) {
+      return { status: 'no_result', detail: 'ACTIVITY_ADDRESS_NOT_FOUND' };
+    }
+    const result = await fetchDrivingRoute(origin, destination);
+    if (result.elementStatus) {
+      return { status: 'no_result', detail: result.elementStatus };
+    }
+    return { status: 'ok', ...result };
+  } catch (e) {
+    return { status: 'error', errorMessage: String(e) };
+  }
+}
+
+/**
+ * Stores the route from the trip address to the activity. [tripOrigin] is
+ * the trip address placed by Photon (null when not found).
  * @param {FirebaseFirestore.DocumentReference} docRef
  * @param {string} tripAddress
- * @param {string} activityAddress
- * @param {string} apiKey
+ * @param {{ latitude: number, longitude: number } | null} tripOrigin
+ * @param {FirebaseFirestore.DocumentData} activityData
  */
-async function writeTripDrivingRouteForActivity(
-  docRef,
-  tripAddress,
-  activityAddress,
-  apiKey
-) {
-  if (!activityAddress) {
+async function writeTripDrivingRouteForActivity(docRef, tripAddress, tripOrigin, activityData) {
+  if (!normalizeString(activityData?.address) && !pointOf(activityData?.location)) {
     await docRef.set({ tripDrivingRoute: FieldValue.delete() }, { merge: true });
     return;
   }
 
-  if (!tripAddress) {
-    await docRef.set(
-      {
-        tripDrivingRoute: {
-          status: 'missing_trip_address',
-          calculatedAt: FieldValue.serverTimestamp(),
-        },
-      },
-      { merge: true }
-    );
-    return;
-  }
+  const route = !tripAddress
+    ? { status: 'missing_trip_address' }
+    : !tripOrigin
+      ? { status: 'no_result', detail: 'TRIP_ADDRESS_NOT_FOUND' }
+      : await drivingRouteToActivity(tripOrigin, activityData);
 
+  await docRef.set(
+    { tripDrivingRoute: { ...route, calculatedAt: FieldValue.serverTimestamp() } },
+    { merge: true }
+  );
+}
+
+/**
+ * The trip address placed by Photon; null when empty, not found or Photon
+ * fails (the route then reads as not found).
+ * @param {string} tripAddress
+ */
+async function tripOriginOf(tripAddress) {
+  if (!tripAddress) return null;
   try {
-    const result = await fetchDrivingMatrix(
-      { address: tripAddress },
-      activityAddress,
-      apiKey
-    );
-    if (result.elementStatus) {
-      await docRef.set(
-        {
-          tripDrivingRoute: {
-            status: 'no_result',
-            detail: result.elementStatus,
-            calculatedAt: FieldValue.serverTimestamp(),
-          },
-        },
-        { merge: true }
-      );
-      return;
-    }
-
-    await docRef.set(
-      {
-        tripDrivingRoute: {
-          status: 'ok',
-          distanceMeters: result.distanceMeters,
-          durationSeconds: result.durationSeconds,
-          distanceText: result.distanceText,
-          durationText: result.durationText,
-          calculatedAt: FieldValue.serverTimestamp(),
-        },
-      },
-      { merge: true }
-    );
+    return await geocodeAddress(tripAddress);
   } catch (e) {
-    await docRef.set(
-      {
-        tripDrivingRoute: {
-          status: 'error',
-          errorMessage: String(e),
-          calculatedAt: FieldValue.serverTimestamp(),
-        },
-      },
-      { merge: true }
-    );
+    console.error('Trip address geocoding failed', String(e));
+    return null;
   }
 }
 
@@ -186,7 +209,6 @@ const computeActivityDrivingRouteFromTrip = onDocumentWritten(
     document: 'trips/{tripId}/activities/{activityId}',
     timeoutSeconds: 60,
     memory: '256MiB',
-    secrets: ['GOOGLE_PLACES_API_KEY'],
   },
   async (event) => {
     if (!event.data.after.exists) {
@@ -195,16 +217,7 @@ const computeActivityDrivingRouteFromTrip = onDocumentWritten(
 
     const before = event.data.before.exists ? event.data.before.data() || {} : {};
     const after = event.data.after.data() || {};
-    const beforeAddr = normalizeString(before.address);
-    const afterAddr = normalizeString(after.address);
-
-    if (event.data.before.exists && beforeAddr === afterAddr) {
-      return;
-    }
-
-    const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-    if (!apiKey) {
-      console.error('computeActivityDrivingRouteFromTrip: GOOGLE_PLACES_API_KEY missing');
+    if (event.data.before.exists && activityPlaceKey(before) === activityPlaceKey(after)) {
       return;
     }
 
@@ -215,8 +228,8 @@ const computeActivityDrivingRouteFromTrip = onDocumentWritten(
     await writeTripDrivingRouteForActivity(
       event.data.after.ref,
       tripAddress,
-      afterAddr,
-      apiKey
+      await tripOriginOf(tripAddress),
+      after
     );
   }
 );
@@ -226,7 +239,6 @@ const recomputeActivityDrivingRoutesOnTripAddressChange = onDocumentUpdated(
     document: 'trips/{tripId}',
     timeoutSeconds: 120,
     memory: '512MiB',
-    secrets: ['GOOGLE_PLACES_API_KEY'],
   },
   async (event) => {
     const before = event.data.before.data() || {};
@@ -234,14 +246,6 @@ const recomputeActivityDrivingRoutesOnTripAddressChange = onDocumentUpdated(
     const beforeAddr = normalizeString(before.address);
     const afterAddr = normalizeString(after.address);
     if (beforeAddr === afterAddr) {
-      return;
-    }
-
-    const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-    if (!apiKey) {
-      console.error(
-        'recomputeActivityDrivingRoutesOnTripAddressChange: GOOGLE_PLACES_API_KEY missing'
-      );
       return;
     }
 
@@ -253,16 +257,17 @@ const recomputeActivityDrivingRoutesOnTripAddressChange = onDocumentUpdated(
       .collection('activities')
       .get();
 
+    const tripOrigin = await tripOriginOf(afterAddr);
     for (const doc of activitiesSnap.docs) {
-      const activityAddress = normalizeString(doc.data()?.address);
-      if (!activityAddress) continue;
-      await writeTripDrivingRouteForActivity(doc.ref, afterAddr, activityAddress, apiKey);
+      const data = doc.data() || {};
+      if (!normalizeString(data.address) && !pointOf(data.location)) continue;
+      await writeTripDrivingRouteForActivity(doc.ref, afterAddr, tripOrigin, data);
     }
   }
 );
 
 const refreshActivityDrivingRoute = onCall(
-  { secrets: ['GOOGLE_PLACES_API_KEY'], timeoutSeconds: 60, memory: '256MiB' },
+  { timeoutSeconds: 60, memory: '256MiB' },
   async (request) => {
     const uid = normalizeString(request.auth?.uid);
     if (!uid) {
@@ -273,11 +278,6 @@ const refreshActivityDrivingRoute = onCall(
     const activityId = normalizeString(request.data?.activityId);
     if (!tripId || !activityId) {
       throw new HttpsError('invalid-argument', 'Paramètres invalides');
-    }
-
-    const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-    if (!apiKey) {
-      throw new HttpsError('failed-precondition', 'Clé API Google indisponible');
     }
 
     const originType = normalizeString(request.data?.originType) || 'trip_address';
@@ -306,7 +306,6 @@ const refreshActivityDrivingRoute = onCall(
     }
 
     const activityData = activitySnap.data() || {};
-    const activityAddress = normalizeString(activityData.address);
     const tripAddress = normalizeString(tripData.address);
 
     if (originType === 'trip_address') {
@@ -323,8 +322,8 @@ const refreshActivityDrivingRoute = onCall(
       await writeTripDrivingRouteForActivity(
         activityRef,
         tripAddress,
-        activityAddress,
-        apiKey
+        await tripOriginOf(tripAddress),
+        activityData
       );
       return { ok: true };
     }
@@ -337,47 +336,17 @@ const refreshActivityDrivingRoute = onCall(
     if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
       throw new HttpsError('invalid-argument', 'Coordonnées hors limites');
     }
-    if (!activityAddress) {
+    if (!normalizeString(activityData.address) && !pointOf(activityData.location)) {
       return {
         ok: true,
         route: { status: 'missing_activity_address' },
       };
     }
 
-    try {
-      const result = await fetchDrivingMatrix(
-        { latitude, longitude },
-        activityAddress,
-        apiKey
-      );
-      if (result.elementStatus) {
-        return {
-          ok: true,
-          route: {
-            status: 'no_result',
-            detail: result.elementStatus,
-          },
-        };
-      }
-      return {
-        ok: true,
-        route: {
-          status: 'ok',
-          distanceMeters: result.distanceMeters,
-          durationSeconds: result.durationSeconds,
-          distanceText: result.distanceText,
-          durationText: result.durationText,
-        },
-      };
-    } catch (e) {
-      return {
-        ok: true,
-        route: {
-          status: 'error',
-          errorMessage: String(e),
-        },
-      };
-    }
+    return {
+      ok: true,
+      route: await drivingRouteToActivity({ latitude, longitude }, activityData),
+    };
   }
 );
 
@@ -386,7 +355,9 @@ module.exports = {
   recomputeActivityDrivingRoutesOnTripAddressChange,
   refreshActivityDrivingRoute,
   normalizeString,
-  parseRoutesApiResponse,
-  fetchDrivingMatrix,
+  activityPlaceKey,
+  parsePhotonPoint,
+  parseOsrmResponse,
+  fetchDrivingRoute,
   writeTripDrivingRouteForActivity,
 };

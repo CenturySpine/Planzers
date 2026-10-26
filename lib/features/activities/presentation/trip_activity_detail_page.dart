@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cross_cache/cross_cache.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
@@ -17,9 +18,12 @@ import 'package:planerz/features/activities/presentation/trip_activity_duration.
 import 'package:planerz/features/activities/presentation/trip_photos_card.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_place_field.dart';
 import 'package:planerz/features/activities/presentation/trip_place_picker_page.dart';
+import 'package:planerz/features/activities/presentation/trip_transport_connection.dart';
+import 'package:planerz/features/activities/presentation/trip_transport_connection_sheet.dart';
 import 'package:planerz/features/activities/presentation/trip_transport_mode_presentation.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
+import 'package:planerz/features/messaging/presentation/chat_image_viewer.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
@@ -214,9 +218,9 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
   Future<void> _confirmAndDelete(TripActivity activity) async {
     if (_deleting) return;
     final label =
-        activity.label.trim().isEmpty
+        activity.displayLabel.isEmpty
             ? AppLocalizations.of(context)!.activitiesUntitled
-            : activity.label.trim();
+            : activity.displayLabel;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -361,9 +365,9 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                     ),
                   ),
                   TextSpan(
-                    text: activity.label.trim().isEmpty
+                    text: activity.displayLabel.isEmpty
                         ? l10n.activitiesUntitled
-                        : activity.label.trim(),
+                        : activity.displayLabel,
                   ),
                 ],
               ),
@@ -489,6 +493,16 @@ class _ReadBody extends ConsumerStatefulWidget {
 
 class _ReadBodyState extends ConsumerState<_ReadBody> {
   bool _locating = false;
+  final _crossCache = CrossCache();
+
+  /// Shows a photo of the place (or of its link) full screen.
+  void _showPhoto(String imageUrl) {
+    showChatImageViewer(
+      context: context,
+      crossCache: _crossCache,
+      imageUrl: imageUrl,
+    );
+  }
 
   /// Places the activity on the map; its address is filled only when it had
   /// none.
@@ -722,11 +736,24 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
           : false,
       orElse: () => false,
     );
+    // Like a transport to fill in, the second part is added already
+    // planned; the first part is edited.
+    final canAddConnection = widget.canEditActivity &&
+        canPlanActivity &&
+        canAddTripTransportConnection(widget.activity) &&
+        tripAsync.maybeWhen(
+          data: (trip) =>
+              trip != null &&
+              canSuggestActivityForTrip(trip: trip, userId: myUid),
+          orElse: () => false,
+        );
     final tripMemberPublicLabels =
         ref.watch(tripMemberResolvedLabelsProvider(widget.tripId));
     final isTransport =
         widget.activity.category == TripActivityCategory.transport;
     final mapPoints = tripActivityMapPoints(widget.activity);
+    final placeImageUrl =
+        ((widget.activity.placePreview['imageUrl'] as String?) ?? '').trim();
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -735,6 +762,9 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
           LinkPreviewCompact(
             url: widget.activity.linkUrl.trim(),
             preview: widget.activity.linkPreview,
+            onImageTap: () => _showPhoto(
+              (widget.activity.linkPreview['imageUrl'] as String?) ?? '',
+            ),
           ),
           const SizedBox(height: 16),
         ],
@@ -742,6 +772,23 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
             (widget.activity.transportMode != null ||
                 widget.activity.departureAddress.trim().isNotEmpty)) ...[
           _TransportCard(activity: widget.activity),
+          const SizedBox(height: 12),
+        ],
+        if (canAddConnection) ...[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: () => showTripTransportConnectionSheet(
+                context,
+                tripId: widget.tripId,
+                transport: widget.activity,
+              ),
+              icon: const Icon(PhosphorIconsRegular.path),
+              label: Text(
+                AppLocalizations.of(context)!.activitiesTransportConnectionAdd,
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
         ],
         if (mapPoints.isNotEmpty) ...[
@@ -786,6 +833,15 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      if (placeImageUrl.isNotEmpty) ...[
+                        GestureDetector(
+                          onTap: () => _showPhoto(placeImageUrl),
+                          child: LinkPreviewThumbnail(
+                            preview: widget.activity.placePreview,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
                       Expanded(
                         child: Text(
                           widget.activity.address.trim(),

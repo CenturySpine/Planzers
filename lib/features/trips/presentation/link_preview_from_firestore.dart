@@ -19,12 +19,17 @@ class LinkPreviewCompact extends StatelessWidget {
     required this.preview,
     this.trailing,
     this.showCard = true,
+    this.onImageTap,
   });
 
   final String url;
   final Map<String, dynamic> preview;
   final Widget? trailing;
   final bool showCard;
+
+  /// When set, tapping the preview image calls it (e.g. to show it full
+  /// screen) instead of opening the link.
+  final VoidCallback? onImageTap;
 
   Future<void> _openLink(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
@@ -54,6 +59,7 @@ class LinkPreviewCompact extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final previewTitle = ((preview['title'] as String?) ?? '').trim();
     final primaryText = previewTitle.isNotEmpty ? previewTitle : url;
+    final hasImage = ((preview['imageUrl'] as String?) ?? '').trim().isNotEmpty;
 
     final row = Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -67,7 +73,13 @@ class LinkPreviewCompact extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  LinkPreviewThumbnail(preview: preview, size: 48),
+                  if (onImageTap != null && hasImage)
+                    GestureDetector(
+                      onTap: onImageTap,
+                      child: LinkPreviewThumbnail(preview: preview, size: 48),
+                    )
+                  else
+                    LinkPreviewThumbnail(preview: preview, size: 48),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

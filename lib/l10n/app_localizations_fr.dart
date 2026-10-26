@@ -1999,6 +1999,19 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get activitiesTransportConnectionAdd => 'Ajouter une correspondance';
+
+  @override
+  String get activitiesTransportConnectionStop => 'Lieu de correspondance';
+
+  @override
+  String get activitiesTransportConnectionMode =>
+      'Mode de transport après la correspondance';
+
+  @override
+  String get activitiesTransportConnectionAdded => 'Correspondance ajoutée';
+
+  @override
   String get activitiesJourneyMapTitle => 'Carte du voyage';
 
   @override
@@ -6210,6 +6223,19 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String activitiesMissingTransportLabel(Object from, Object to) {
     return '$from → $to';
   }
+
+  @override
+  String get activitiesTransportConnectionAdd => 'Ajouter une correspondance';
+
+  @override
+  String get activitiesTransportConnectionStop => 'Lieu de correspondance';
+
+  @override
+  String get activitiesTransportConnectionMode =>
+      'Mode de transport après la correspondance';
+
+  @override
+  String get activitiesTransportConnectionAdded => 'Correspondance ajoutée';
 
   @override
   String get activitiesJourneyMapTitle => 'Carte du voyage';

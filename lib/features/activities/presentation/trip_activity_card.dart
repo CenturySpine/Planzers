@@ -175,13 +175,13 @@ class TripActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final label = activity.label.trim().isEmpty
+    final label = activity.displayLabel.isEmpty
         ? l10n.activitiesUntitled
-        : activity.label.trim();
+        : activity.displayLabel;
     final filterGroup = activity.category.filterGroup;
     final categoryColor = filterGroup.filterColor;
     final categoryLightBg = filterGroup.filterLightBgColor;
-    final preview = activity.linkPreview;
+    final preview = activity.photoPreview;
     final imageUrl = ((preview['imageUrl'] as String?) ?? '').trim();
     final hasImage = imageUrl.isNotEmpty;
     final hasLink = activity.linkUrl.trim().isNotEmpty;
