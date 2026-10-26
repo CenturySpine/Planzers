@@ -19,14 +19,20 @@ import 'package:planerz/features/activities/presentation/trip_activity_duration.
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_searchable_tab_list.dart';
 import 'package:planerz/features/activities/presentation/trip_journey.dart';
+import 'package:planerz/features/activities/presentation/trip_lodging_nights.dart';
 import 'package:planerz/features/activities/presentation/trip_missing_transport.dart';
 import 'package:planerz/features/activities/presentation/trip_missing_transport_sheet.dart';
 import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/meals/presentation/trip_meal_card.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_lodging.dart';
+import 'package:planerz/features/trips/data/trip_lodging_plan.dart';
+import 'package:planerz/features/trips/data/trip_lodgings_repository.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
-import 'package:planerz/features/activities/presentation/trip_activities_dictate_page.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/presentation/trip_lodging_editor_sheet.dart';
+import 'package:planerz/features/trips/presentation/trip_lodging_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -158,6 +164,33 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
     );
   }
 
+  /// Opens the lodging editor on the stage of [night], or else its link.
+  void _openLodgingNight(
+    TripLodgingNight night, {
+    required Trip trip,
+    required List<TripLodging> storedLodgings,
+    required bool canEditLodgings,
+  }) {
+    if (canEditLodgings) {
+      final stages = tripLodgingStages(
+        tripNights(trip),
+        effectiveTripLodgings(trip, storedLodgings),
+      );
+      final stage =
+          stages.where((s) => s.containsNight(night.night)).firstOrNull;
+      if (stage == null) return;
+      editTripLodgingStageNow(
+        context,
+        trip: trip,
+        stored: storedLodgings,
+        stage: stage,
+      );
+      return;
+    }
+    final link = night.lodging?.linkUrl.trim() ?? '';
+    if (link.isNotEmpty) openTripLodgingLink(context, link);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -177,6 +210,12 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
     _syncPresenceIfNeeded(trip.id);
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(trip.id));
     final mealsAsync = ref.watch(tripMealsStreamProvider(trip.id));
+    final storedLodgings =
+        ref.watch(tripLodgingsStreamProvider(trip.id)).asData?.value;
+    final canEditLodgings = canEditTripGeneralInfoForTrip(
+      trip: trip,
+      userId: myUid,
+    );
 
     final activitiesError = activitiesAsync.error;
     final mealsError = mealsAsync.error;
@@ -210,6 +249,18 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       body = Builder(builder: (context) {
           final items = activities;
           _markActivitiesAsReadIfNeeded(tripId: trip.id, items: items);
+          // Worked out from the trip's lodgings, once they are loaded.
+          final lodgingNights = storedLodgings == null
+              ? const <TripLodgingNight>[]
+              : tripLodgingNightsForPlanning(
+                  nights: tripNights(trip),
+                  lodgings: effectiveTripLodgings(trip, storedLodgings),
+                  activities: items,
+                );
+          final lodgingStops = [
+            for (final night in lodgingNights)
+              if (!night.isMissing) night.stop,
+          ];
           // Shown with the transports, before the activity they lead to.
           final showMissingTransports = canAddMissingTransport &&
               (_activeFilters.isEmpty ||
@@ -218,13 +269,21 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
               ? {
                   for (final missing in tripMissingTransports(
                     buildTripJourney(
-                      items,
+                      [...items, ...lodgingStops],
                       mealStops: tripJourneyMealStops(meals, items),
                     ),
                   ))
                     missing.to.id: missing,
                 }
               : const <String, TripMissingTransport>{};
+          // Nights not filled in are offered to those who can fill them in.
+          final showLodgingNights = _activeFilters.isEmpty ||
+              _activeFilters.contains(ActivityFilterGroup.nuits);
+          final agendaLodgingNights = [
+            if (showLodgingNights)
+              for (final night in lodgingNights)
+                if (!night.isMissing || canEditLodgings) night,
+          ];
           final creatorIds = items
               .map((activity) => activity.createdBy.trim())
               .where((id) => id.isNotEmpty)
@@ -293,7 +352,10 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
             dayLabelFor: (day) => _dayLabelFor(day, l10n),
           );
           final agendaEntries = tripActivitiesAgendaEntriesForDayMixed(
-            activities: filteredActivities,
+            activities: [
+              ...filteredActivities,
+              for (final night in agendaLodgingNights) night.stop,
+            ],
             meals: filteredMeals,
             selectedDay: _agendaSelectedDay,
           );
@@ -317,6 +379,11 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
             dayGroups
                 .putIfAbsent(tripActivityDateOnly(day), () => {})
                 .add(ActivityFilterGroup.repas);
+          }
+          for (final stop in lodgingStops) {
+            dayGroups
+                .putIfAbsent(tripActivityDateOnly(stop.plannedAt!), () => {})
+                .add(ActivityFilterGroup.nuits);
           }
 
           final filterLabels = {
@@ -391,6 +458,16 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                           () => _agendaSelectedDay = day,
                         ),
                         missingTransportsByArrival: missingTransportsByArrival,
+                        lodgingNightsByStopId: {
+                          for (final night in agendaLodgingNights)
+                            night.stop.id: night,
+                        },
+                        onLodgingNightTap: (night) => _openLodgingNight(
+                          night,
+                          trip: trip,
+                          storedLodgings: storedLodgings ?? const [],
+                          canEditLodgings: canEditLodgings,
+                        ),
                       ),
                       TripActivitiesSearchableTabList(
                         searchController: _plannedSearchController,
@@ -457,6 +534,8 @@ class _ActivitiesAgendaTab extends StatelessWidget {
     required this.onMoveForward,
     required this.onSelectDay,
     required this.missingTransportsByArrival,
+    required this.lodgingNightsByStopId,
+    required this.onLodgingNightTap,
   });
 
   final DateTime centerDay;
@@ -476,6 +555,10 @@ class _ActivitiesAgendaTab extends StatelessWidget {
 
   /// Transports to fill in, by the id of the activity they lead to.
   final Map<String, TripMissingTransport> missingTransportsByArrival;
+
+  /// The nights shown among the agenda's entries, by the id of their stop.
+  final Map<String, TripLodgingNight> lodgingNightsByStopId;
+  final ValueChanged<TripLodgingNight> onLodgingNightTap;
 
   @override
   Widget build(BuildContext context) {
@@ -575,6 +658,24 @@ class _ActivitiesAgendaTab extends StatelessWidget {
     required bool isLast,
   }) {
     final activity = entry.activity;
+    final night = activity == null ? null : lodgingNightsByStopId[activity.id];
+    if (night != null) {
+      return TripAgendaTimelineRow(
+        timeLabel: '',
+        color: ActivityFilterGroup.nuits.filterColor,
+        isFirst: isFirst,
+        isLast: isLast,
+        child: switch (night.lodging) {
+          final lodging? => TripLodgingNightCard(
+              lodging: lodging,
+              onTap: () => onLodgingNightTap(night),
+            ),
+          null => TripMissingLodgingCard(
+              onTap: () => onLodgingNightTap(night),
+            ),
+        },
+      );
+    }
     if (activity != null) {
       final plannedAt = activity.plannedAt;
       final end = tripActivityEndTime(context, activity);
@@ -683,19 +784,9 @@ class _ActivitiesExpandableFab extends StatelessWidget {
                     l10n.activitiesFilterRepas,
                     () => context.push('/trips/$tripId/meals/new'),
                   ),
-                option(
-                  ActivityFilterGroup.nuits,
-                  l10n.activitiesFilterNuits,
-                  () => _openActivityCreate(
-                      context, [TripActivityCategory.accommodation]),
-                ),
-                // Transports are not added here: the planning offers them
-                // between places, with times fitting the activities around.
-                TripActivitiesDictateMenuTile(
-                  onTap: () => Navigator.of(sheetContext).pop(
-                    () => context.push('/trips/$tripId/activities/dictate'),
-                  ),
-                ),
+                // Nights and transports are not added here: nights follow the
+                // trip's lodgings, and the planning offers transports between
+                // places, with times fitting the activities around.
               ],
             ),
           ),

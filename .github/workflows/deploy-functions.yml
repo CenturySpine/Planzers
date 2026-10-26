@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       functions:
-        description: "Functions to deploy, comma-separated (e.g. extractTripActivityFromText,extractTripActivitiesFromDocuments), or 'all'"
+        description: "Functions to deploy, comma-separated (e.g. refreshActivityDrivingRoute,exportTrip), or 'all'"
         required: true
         type: string
 

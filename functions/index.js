@@ -20,6 +20,10 @@ const {
   deleteActivityPhotoRecords,
   deleteMealPhotoRecords,
 } = require('./wallet_cleanup');
+const {
+  activityPlaceQuery,
+  activityPlaceQueryKey,
+} = require('./activity_place_preview');
 const { runTripLifecycle } = require('./trip_lifecycle');
 const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate');
 const {
@@ -1601,25 +1605,7 @@ exports.notifyTripActivityRecipients = onDocumentCreated(
     let actorLabel = await resolveTripMemberLabel(trip, actorId);
     if (!actorLabel) actorLabel = "Quelqu'un";
 
-    // Activities imported together (document import) share one notification:
-    // every trigger of the batch targets the same queue doc, created once.
-    const importId = normalizeString(activity.importId);
-    let docId = buildNotificationQueueDocId('trip_activity', { tripId, activityId });
-    let body = `${actorLabel} a proposé : ${label}`;
-    if (importId) {
-      docId = buildNotificationQueueDocId('trip_activity_import', { tripId, importId });
-      const countSnap = await db
-        .collection('trips')
-        .doc(tripId)
-        .collection('activities')
-        .where('importId', '==', importId)
-        .count()
-        .get();
-      const count = countSnap.data().count;
-      if (count > 1) {
-        body = `${actorLabel} a ajouté ${count} activités au planning`;
-      }
-    }
+    const docId = buildNotificationQueueDocId('trip_activity', { tripId, activityId });
     await enqueueTripNotification(db, {
       docId,
       payload: {
@@ -1629,7 +1615,7 @@ exports.notifyTripActivityRecipients = onDocumentCreated(
         actorId,
         targetPath: `/trips/${tripId}/activities`,
         title: `Activités · ${tripTitle}`,
-        body,
+        body: `${actorLabel} a proposé : ${label}`,
         candidateRecipients,
         skipPresenceCheck: false,
         androidChannelId: ANDROID_CHANNEL_IDS.activities,
@@ -2300,6 +2286,25 @@ exports.generateActivityLinkPreview = onDocumentUpdated(
   }
 );
 
+exports.generateLodgingLinkPreview = onDocumentUpdated(
+  {
+    document: 'trips/{tripId}/lodgings/{lodgingId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const before = event.data.before.data() || {};
+    const after = event.data.after.data() || {};
+    await generateLinkPreview(
+      event.data.after.ref,
+      before.linkUrl,
+      after.linkUrl,
+      'linkPreview'
+    );
+  }
+);
+
 exports.generateMealLinkPreview = onDocumentUpdated(
   {
     document: 'trips/{tripId}/meals/{mealId}',
@@ -2348,6 +2353,67 @@ exports.generateTripShoppingMeetupLinkPreviewOnCreate = onDocumentCreated(
 exports.generateActivityLinkPreviewOnCreate = onDocumentCreated(
   {
     document: 'trips/{tripId}/activities/{activityId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const data = event.data.data() || {};
+    await generateLinkPreview(event.data.ref, undefined, data.linkUrl, 'linkPreview');
+  }
+);
+
+// The photo and name of an activity's place, looked up on Google Places from
+// the place picked on OpenStreetMap. Shown on the activity (cards, its page),
+// never on the trip map, which only shows the travelers' own photos.
+exports.refreshActivityPlacePreview = onDocumentWritten(
+  {
+    document: 'trips/{tripId}/activities/{activityId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    if (!event.data.after.exists) return;
+    const before = event.data.before.exists ? event.data.before.data() || {} : {};
+    const after = event.data.after.data() || {};
+    const placeKey = activityPlaceQueryKey(after);
+    if (event.data.before.exists && activityPlaceQueryKey(before) === placeKey) {
+      return;
+    }
+
+    const docRef = event.data.after.ref;
+    const place = activityPlaceQuery(after);
+    if (!place) {
+      if (after.placePreview) {
+        await docRef.set({ placePreview: FieldValue.delete() }, { merge: true });
+      }
+      return;
+    }
+
+    const found = await enrichWithGooglePlaces(place.query, place.lat, place.lng);
+    // The activity may have been deleted or moved meanwhile.
+    const current = await docRef.get();
+    if (!current.exists || activityPlaceQueryKey(current.data()) !== placeKey) return;
+    await docRef.set(
+      {
+        placePreview: found
+          ? {
+              status: 'ok',
+              title: found.title,
+              imageUrl: found.imageUrl,
+              fetchedAt: FieldValue.serverTimestamp(),
+            }
+          : { status: 'empty', fetchedAt: FieldValue.serverTimestamp() },
+      },
+      { merge: true }
+    );
+  }
+);
+
+exports.generateLodgingLinkPreviewOnCreate = onDocumentCreated(
+  {
+    document: 'trips/{tripId}/lodgings/{lodgingId}',
     timeoutSeconds: 30,
     memory: '256MiB',
     secrets: ['GOOGLE_PLACES_API_KEY'],
@@ -5216,27 +5282,16 @@ exports.refreshExpenseGroupSettlement = refreshExpenseGroupSettlement;
 const {
   computeActivityDrivingRouteFromTrip,
   recomputeActivityDrivingRoutesOnTripAddressChange,
+  recomputeActivityDrivingRoutesOnLodgingChange,
   refreshActivityDrivingRoute,
 } = require('./activity_driving_route');
 
 exports.computeActivityDrivingRouteFromTrip = computeActivityDrivingRouteFromTrip;
 exports.recomputeActivityDrivingRoutesOnTripAddressChange =
   recomputeActivityDrivingRoutesOnTripAddressChange;
+exports.recomputeActivityDrivingRoutesOnLodgingChange =
+  recomputeActivityDrivingRoutesOnLodgingChange;
 exports.refreshActivityDrivingRoute = refreshActivityDrivingRoute;
-
-// --- AI import of planning activities from travel documents ---
-const {
-  extractTripActivitiesFromDocuments,
-  importTripActivitiesFromDocuments,
-} = require('./ai_document_activity_import');
-
-exports.extractTripActivitiesFromDocuments = extractTripActivitiesFromDocuments;
-exports.importTripActivitiesFromDocuments = importTripActivitiesFromDocuments;
-
-// --- AI interpretation of a free-text account of the activities done ---
-const { extractTripActivitiesFromText } = require('./ai_text_activity_create');
-
-exports.extractTripActivitiesFromText = extractTripActivitiesFromText;
 
 // --- Administration: delete the activities of a trip ---
 const {

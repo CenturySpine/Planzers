@@ -18,6 +18,7 @@ class TripActivity {
     this.durationMinutes,
     this.doneAt,
     this.linkPreview = const {},
+    this.placePreview = const {},
     this.tripDrivingRoute,
     this.votes = const [],
     this.location,
@@ -31,7 +32,7 @@ class TripActivity {
   final TripActivityCategory category;
   final String linkUrl;
 
-  /// Place address for driving directions from the trip base address (optional).
+  /// Place address for driving directions from the lodging (optional).
   /// For a transport, where it arrives.
   final String address;
 
@@ -60,7 +61,13 @@ class TripActivity {
   /// Same shape as trip `linkPreview` (filled by Cloud Function).
   final Map<String, dynamic> linkPreview;
 
-  /// Driving distance/duration from trip `address` (Cloud Function).
+  /// Photo and name of the place, found on Google Places from the place
+  /// picked on OpenStreetMap (filled by Cloud Function). Shown on the
+  /// activity, never on the trip map.
+  final Map<String, dynamic> placePreview;
+
+  /// Driving distance/duration from the lodging where the activity's day
+  /// starts (Cloud Function).
   final ActivityTripDrivingRoute? tripDrivingRoute;
 
   /// UIDs of members who upvoted this suggestion.
@@ -70,6 +77,26 @@ class TripActivity {
       Duration(minutes: durationMinutes ?? category.defaultDurationMinutes);
 
   DateTime? get plannedEndAt => plannedAt?.add(effectiveDuration);
+
+  /// The name shown on the activity (not on the trip map): for a
+  /// restaurant, the one found for its place, else from its link, when there
+  /// is one; otherwise the label.
+  String get displayLabel {
+    if (category == TripActivityCategory.restaurant) {
+      for (final preview in [placePreview, linkPreview]) {
+        final title = ((preview['title'] as String?) ?? '').trim();
+        if (title.isNotEmpty) return title;
+      }
+    }
+    return label.trim();
+  }
+
+  /// The preview whose photo stands for the activity: its place's, else its
+  /// link's.
+  Map<String, dynamic> get photoPreview {
+    final placeImage = ((placePreview['imageUrl'] as String?) ?? '').trim();
+    return placeImage.isNotEmpty ? placePreview : linkPreview;
+  }
 
   static Map<String, dynamic> _previewFromFirestore(dynamic raw) {
     if (raw is! Map) return const {};
@@ -123,6 +150,7 @@ class TripActivity {
       durationMinutes: _durationFromFirestore(data['durationMinutes']),
       doneAt: done ? doneAt : null,
       linkPreview: _previewFromFirestore(data['linkPreview']),
+      placePreview: _previewFromFirestore(data['placePreview']),
       tripDrivingRoute:
           ActivityTripDrivingRoute.fromFirestore(data['tripDrivingRoute']),
       votes: _votesFromFirestore(data['votes']),

@@ -1978,6 +1978,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get activitiesTransportConnectionAdd => 'Add a connection';
+
+  @override
+  String get activitiesTransportConnectionStop => 'Connection point';
+
+  @override
+  String get activitiesTransportConnectionMode =>
+      'Mode of transport after the connection';
+
+  @override
+  String get activitiesTransportConnectionAdded => 'Connection added';
+
+  @override
   String get activitiesJourneyMapTitle => 'Trip map';
 
   @override
@@ -2250,6 +2263,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activitiesFromLodgingByCar => 'From lodging (car)';
 
   @override
+  String activitiesFromNamedLodgingByCar(String lodging) {
+    return 'From $lodging (car)';
+  }
+
+  @override
   String get activitiesFromCurrentLocationByCar =>
       'From current location (car)';
 
@@ -2275,8 +2293,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Link preview will be updated after saving.';
 
   @override
-  String get activitiesRouteCalculating =>
-      'Calculating route from trip address.';
+  String get activitiesRouteCalculating => 'Calculating route.';
 
   @override
   String get activitiesRouteNotCalculatedYet => 'Not calculated yet.';
@@ -2295,8 +2312,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activitiesRouteCalculated => 'Route calculated.';
 
   @override
-  String get activitiesRouteMissingTripAddress =>
-      'Trip address missing: fill it in trip overview.';
+  String get activitiesRouteMissingLodging =>
+      'No lodging address for this night.';
+
+  @override
+  String get activitiesRouteMissingActivityDate =>
+      'Activity without date: starting lodging unknown.';
 
   @override
   String get activitiesRouteNoResult => 'No route found.';
@@ -3130,6 +3151,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripOverviewSectionAccommodation => 'Destination';
+
+  @override
+  String get tripOverviewSectionLodgings => 'Lodging';
+
+  @override
+  String get tripLodgingTitle => 'Lodging';
+
+  @override
+  String get tripLodgingEveryNight => 'Every night';
+
+  @override
+  String tripLodgingNightsRange(String start, String end, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nights',
+      one: '1 night',
+    );
+    return '$start to $end · $_temp0';
+  }
+
+  @override
+  String get tripLodgingMissing => 'Lodging not filled in';
+
+  @override
+  String get tripLodgingPrevious => 'Previous stage';
+
+  @override
+  String get tripLodgingNext => 'Next stage';
+
+  @override
+  String get tripLodgingReuseLabel => 'Already in this trip';
+
+  @override
+  String get tripLodgingAddressLabel => 'Address';
+
+  @override
+  String get tripLodgingPlaceRequired =>
+      'Fill in at least a name, an address or a link.';
+
+  @override
+  String get tripLodgingRemove => 'Remove';
+
+  @override
+  String get tripCreateLodgingAllNights => 'Same lodging for every night';
+
+  @override
+  String get activitiesMissingLodging => 'Lodging to fill in';
 
   @override
   String get tripOverviewSectionGroup => 'The group';
@@ -4047,100 +4116,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get walletLinkDocumentPickerTitle => 'Choose a document';
-
-  @override
-  String get walletGenerateActivities => 'Generate activities';
-
-  @override
-  String get walletActivityImportDocumentsTitle => 'Documents to analyze';
-
-  @override
-  String get walletActivityImportAnalyze => 'Analyze';
-
-  @override
-  String get walletActivityImportAnalyzing => 'Analyzing documents…';
-
-  @override
-  String get walletActivityImportNoResult =>
-      'No activity found in these documents';
-
-  @override
-  String get walletActivityImportNoDate => 'No date';
-
-  @override
-  String walletActivityImportAdd(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Add $count activities',
-      one: 'Add 1 activity',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String walletActivityImportDone(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count activities added to the planning',
-      one: '1 activity added to the planning',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get walletActivityImportInstructions => 'Instructions (optional)';
-
-  @override
-  String get activitiesAiTextLabel => 'Tell what you did';
-
-  @override
-  String get activitiesAiTextNoResult => 'No activity recognized in this text';
-
-  @override
-  String get activitiesAiTextMenu => 'Dictate activities';
-
-  @override
-  String get activitiesAiTextAnalyze => 'Analyze';
-
-  @override
-  String activitiesAiTextAdd(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Add $count activities',
-      one: 'Add 1 activity',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String activitiesAiTextAdded(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count activities added to the planning',
-      one: '1 activity added to the planning',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get activitiesAiTextEditTitle => 'Edit activity';
-
-  @override
-  String get activitiesAiTextNoDate => 'No date';
-
-  @override
-  String get activitiesAiTextDictation => 'Dictate';
-
-  @override
-  String get activitiesAiTextDictationStop => 'Stop dictation';
-
-  @override
-  String get activitiesAiTextDictationUnavailable =>
-      'Dictation unavailable: check microphone access';
 
   @override
   String get activityPhotosTitle => 'Photos';
@@ -6105,6 +6080,19 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   }
 
   @override
+  String get activitiesTransportConnectionAdd => 'Add a connection';
+
+  @override
+  String get activitiesTransportConnectionStop => 'Connection point';
+
+  @override
+  String get activitiesTransportConnectionMode =>
+      'Mode of transport after the connection';
+
+  @override
+  String get activitiesTransportConnectionAdded => 'Connection added';
+
+  @override
   String get activitiesJourneyMapTitle => 'Trip map';
 
   @override
@@ -6377,6 +6365,11 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get activitiesFromLodgingByCar => 'From lodging (car)';
 
   @override
+  String activitiesFromNamedLodgingByCar(String lodging) {
+    return 'From $lodging (car)';
+  }
+
+  @override
   String get activitiesFromCurrentLocationByCar =>
       'From current location (car)';
 
@@ -6402,8 +6395,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Link preview will be updated after saving.';
 
   @override
-  String get activitiesRouteCalculating =>
-      'Calculating route from trip address.';
+  String get activitiesRouteCalculating => 'Calculating route.';
 
   @override
   String get activitiesRouteNotCalculatedYet => 'Not calculated yet.';
@@ -6422,8 +6414,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get activitiesRouteCalculated => 'Route calculated.';
 
   @override
-  String get activitiesRouteMissingTripAddress =>
-      'Trip address missing: fill it in trip overview.';
+  String get activitiesRouteMissingLodging =>
+      'No lodging address for this night.';
+
+  @override
+  String get activitiesRouteMissingActivityDate =>
+      'Activity without date: starting lodging unknown.';
 
   @override
   String get activitiesRouteNoResult => 'No route found.';
@@ -7257,6 +7253,54 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewSectionAccommodation => 'Destination';
+
+  @override
+  String get tripOverviewSectionLodgings => 'Lodging';
+
+  @override
+  String get tripLodgingTitle => 'Lodging';
+
+  @override
+  String get tripLodgingEveryNight => 'Every night';
+
+  @override
+  String tripLodgingNightsRange(String start, String end, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nights',
+      one: '1 night',
+    );
+    return '$start to $end · $_temp0';
+  }
+
+  @override
+  String get tripLodgingMissing => 'Lodging not filled in';
+
+  @override
+  String get tripLodgingPrevious => 'Previous stage';
+
+  @override
+  String get tripLodgingNext => 'Next stage';
+
+  @override
+  String get tripLodgingReuseLabel => 'Already in this trip';
+
+  @override
+  String get tripLodgingAddressLabel => 'Address';
+
+  @override
+  String get tripLodgingPlaceRequired =>
+      'Fill in at least a name, an address or a link.';
+
+  @override
+  String get tripLodgingRemove => 'Remove';
+
+  @override
+  String get tripCreateLodgingAllNights => 'Same lodging for every night';
+
+  @override
+  String get activitiesMissingLodging => 'Lodging to fill in';
 
   @override
   String get tripOverviewSectionGroup => 'The group';
@@ -8174,100 +8218,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get walletLinkDocumentPickerTitle => 'Choose a document';
-
-  @override
-  String get walletGenerateActivities => 'Generate activities';
-
-  @override
-  String get walletActivityImportDocumentsTitle => 'Documents to analyze';
-
-  @override
-  String get walletActivityImportAnalyze => 'Analyze';
-
-  @override
-  String get walletActivityImportAnalyzing => 'Analyzing documents…';
-
-  @override
-  String get walletActivityImportNoResult =>
-      'No activity found in these documents';
-
-  @override
-  String get walletActivityImportNoDate => 'No date';
-
-  @override
-  String walletActivityImportAdd(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Add $count activities',
-      one: 'Add 1 activity',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String walletActivityImportDone(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count activities added to the planning',
-      one: '1 activity added to the planning',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get walletActivityImportInstructions => 'Instructions (optional)';
-
-  @override
-  String get activitiesAiTextLabel => 'Tell what you did';
-
-  @override
-  String get activitiesAiTextNoResult => 'No activity recognized in this text';
-
-  @override
-  String get activitiesAiTextMenu => 'Dictate activities';
-
-  @override
-  String get activitiesAiTextAnalyze => 'Analyze';
-
-  @override
-  String activitiesAiTextAdd(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Add $count activities',
-      one: 'Add 1 activity',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String activitiesAiTextAdded(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count activities added to the planning',
-      one: '1 activity added to the planning',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get activitiesAiTextEditTitle => 'Edit activity';
-
-  @override
-  String get activitiesAiTextNoDate => 'No date';
-
-  @override
-  String get activitiesAiTextDictation => 'Dictate';
-
-  @override
-  String get activitiesAiTextDictationStop => 'Stop dictation';
-
-  @override
-  String get activitiesAiTextDictationUnavailable =>
-      'Dictation unavailable: check microphone access';
 
   @override
   String get activityPhotosTitle => 'Photos';

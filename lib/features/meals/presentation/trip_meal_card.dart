@@ -157,7 +157,7 @@ class TripMealCard extends ConsumerWidget {
     }
     final restaurant = activities.where((a) => a.id == activityId).firstOrNull;
     if (restaurant == null) return null;
-    return restaurant.label.trim();
+    return restaurant.displayLabel;
   }
 }
 

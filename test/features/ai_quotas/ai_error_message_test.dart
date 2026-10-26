@@ -17,7 +17,7 @@ void main() {
       );
 
       expect(
-        aiErrorMessage(l10n, error, AiFeature.textActivityCreate),
+        aiErrorMessage(l10n, error, AiFeature.shoppingConsolidation),
         l10n.aiServiceUnavailable,
       );
       expect(
@@ -33,8 +33,8 @@ void main() {
       );
 
       expect(
-        aiErrorMessage(l10n, error, AiFeature.textActivityCreate),
-        l10n.aiQuotaTripExceeded(20),
+        aiErrorMessage(l10n, error, AiFeature.shoppingConsolidation),
+        l10n.aiQuotaTripExceeded(3),
       );
     });
 
@@ -45,7 +45,7 @@ void main() {
       );
 
       expect(
-        aiErrorMessage(l10n, error, AiFeature.documentActivityImport),
+        aiErrorMessage(l10n, error, AiFeature.recipeIngredients),
         l10n.commonErrorWithDetails('Réservé au créateur'),
       );
     });

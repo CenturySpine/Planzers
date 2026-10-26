@@ -226,4 +226,50 @@ void main() {
       [DateTime(2026, 5, 1), DateTime(2026, 5, 2)],
     );
   });
+
+  test('restaurants show their place name, the trip map their label', () {
+    TripActivity restaurant(Map<String, dynamic> preview) => TripActivity(
+          id: 'r',
+          label: "dej' spaghetti & co",
+          category: TripActivityCategory.restaurant,
+          linkUrl: 'https://maps.app.goo.gl/x',
+          address: '',
+          freeComments: '',
+          createdBy: 'u1',
+          createdAt: DateTime(2026, 1, 1),
+          linkPreview: preview,
+          location: _catania,
+        );
+
+    expect(restaurant({'title': ' Spaghetti & Co. '}).displayLabel,
+        'Spaghetti & Co.');
+    final placed = TripActivity(
+      id: 'r',
+      label: "dej' spaghetti & co",
+      category: TripActivityCategory.restaurant,
+      linkUrl: '',
+      address: '',
+      freeComments: '',
+      createdBy: 'u1',
+      createdAt: DateTime(2026, 1, 1),
+      linkPreview: const {'title': 'Lien', 'imageUrl': 'link.jpg'},
+      placePreview: const {'title': 'Spaghetti & Co', 'imageUrl': 'place.jpg'},
+    );
+    expect(placed.displayLabel, 'Spaghetti & Co');
+    expect(placed.photoPreview['imageUrl'], 'place.jpg');
+    expect(restaurant(const {}).displayLabel, "dej' spaghetti & co");
+    expect(
+      tripJourneyMealStops(
+        [
+          _meal('lunch',
+              dateKey: '2026-05-01', time: '12:30', restaurantId: 'r'),
+        ],
+        [
+          restaurant({'title': 'Spaghetti & Co.'})
+        ],
+      ).single.activity.label,
+      "dej' spaghetti & co",
+    );
+    expect(_activity('cave').displayLabel, 'cave');
+  });
 }

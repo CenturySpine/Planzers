@@ -16,7 +16,9 @@ import 'package:planerz/l10n/app_localizations.dart';
 
 /// Planning categories offered when creating an activity from a document:
 /// the same groups as the planning "+" menu, picked from the document type.
-({List<TripActivityCategory> allowed, TripActivityCategory initial})
+/// Null for a lodging document: nights follow the trip's lodgings, not
+/// activities.
+({List<TripActivityCategory> allowed, TripActivityCategory initial})?
     activityCategoriesForWalletDocument(WalletDocumentCategory category) {
   switch (category) {
     case WalletDocumentCategory.plane:
@@ -29,10 +31,7 @@ import 'package:planerz/l10n/app_localizations.dart';
         initial: TripActivityCategory.transport,
       );
     case WalletDocumentCategory.lodging:
-      return (
-        allowed: const [TripActivityCategory.accommodation],
-        initial: TripActivityCategory.accommodation,
-      );
+      return null;
     case WalletDocumentCategory.activity:
     case WalletDocumentCategory.identity:
     case WalletDocumentCategory.insurance:
@@ -97,7 +96,7 @@ List<TripActivity> _sortedForPicker(List<TripActivity> activities) {
     if (aAt != null && bAt != null) return aAt.compareTo(bAt);
     if (aAt != null) return -1;
     if (bAt != null) return 1;
-    return a.label.toLowerCase().compareTo(b.label.toLowerCase());
+    return a.displayLabel.toLowerCase().compareTo(b.displayLabel.toLowerCase());
   });
   return sorted;
 }
@@ -117,9 +116,9 @@ Future<String?> pickActivityForWalletDocument(
         (
           id: activity.id,
           leading: _ActivityCategoryAvatar(activity: activity),
-          title: activity.label.trim().isEmpty
+          title: activity.displayLabel.isEmpty
               ? l10n.activitiesUntitled
-              : activity.label.trim(),
+              : activity.displayLabel,
           subtitle: _plannedLabel(context, activity),
         ),
     ],
@@ -264,9 +263,9 @@ class WalletLinkedActivitiesBar extends StatelessWidget {
                   ListTile(
                     leading: _ActivityCategoryAvatar(activity: activity),
                     title: Text(
-                      activity.label.trim().isEmpty
+                      activity.displayLabel.isEmpty
                           ? l10n.activitiesUntitled
-                          : activity.label.trim(),
+                          : activity.displayLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -317,7 +316,8 @@ class WalletCreateActivityPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final categories = activityCategoriesForWalletDocument(document.category);
+    // Only opened for a document offering categories (see the viewer).
+    final categories = activityCategoriesForWalletDocument(document.category)!;
     final eventDate = document.eventDate;
     return TripActivityCreateForm(
       tripId: tripId,

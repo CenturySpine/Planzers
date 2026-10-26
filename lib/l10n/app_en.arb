@@ -833,6 +833,10 @@
   "@activitiesMissingTransportRoute": {"placeholders": {"from": {}, "to": {}, "distance": {}}},
   "activitiesMissingTransportLabel": "{from} → {to}",
   "@activitiesMissingTransportLabel": {"placeholders": {"from": {}, "to": {}}},
+  "activitiesTransportConnectionAdd": "Add a connection",
+  "activitiesTransportConnectionStop": "Connection point",
+  "activitiesTransportConnectionMode": "Mode of transport after the connection",
+  "activitiesTransportConnectionAdded": "Connection added",
   "activitiesJourneyMapTitle": "Trip map",
   "activitiesJourneyAllTrip": "Whole trip",
   "activitiesJourneyEmpty": "No located activity",
@@ -920,6 +924,12 @@
   "activitiesPlannedDateHelp": "Planned date",
   "activitiesAddressCardTitle": "Location address",
   "activitiesFromLodgingByCar": "From lodging (car)",
+  "activitiesFromNamedLodgingByCar": "From {lodging} (car)",
+  "@activitiesFromNamedLodgingByCar": {
+    "placeholders": {
+      "lodging": {"type": "String"}
+    }
+  },
   "activitiesFromCurrentLocationByCar": "From current location (car)",
   "commonDash": "—",
   "activitiesDone": "Activity done",
@@ -928,14 +938,15 @@
   "@activitiesPlannedOn": {"placeholders": {"date": {}}},
   "activitiesRemovePlannedDate": "Remove planned date",
   "activitiesLinkPreviewAfterSave": "Link preview will be updated after saving.",
-  "activitiesRouteCalculating": "Calculating route from trip address.",
+  "activitiesRouteCalculating": "Calculating route.",
   "activitiesRouteNotCalculatedYet": "Not calculated yet.",
   "activitiesRouteDistance": "Distance: {distance}",
   "@activitiesRouteDistance": {"placeholders": {"distance": {}}},
   "activitiesRouteDuration": "Duration: {duration}",
   "@activitiesRouteDuration": {"placeholders": {"duration": {}}},
   "activitiesRouteCalculated": "Route calculated.",
-  "activitiesRouteMissingTripAddress": "Trip address missing: fill it in trip overview.",
+  "activitiesRouteMissingLodging": "No lodging address for this night.",
+  "activitiesRouteMissingActivityDate": "Activity without date: starting lodging unknown.",
   "activitiesRouteNoResult": "No route found.",
   "activitiesRouteNoResultWithDetail": "No route found ({detail}).",
   "@activitiesRouteNoResultWithDetail": {"placeholders": {"detail": {}}},
@@ -1232,6 +1243,26 @@
   "tripGamesDeleted": "Game deleted",
   "tripOverviewTopTabAnnouncements": "Announcements",
   "tripOverviewSectionAccommodation": "Destination",
+  "tripOverviewSectionLodgings": "Lodging",
+  "tripLodgingTitle": "Lodging",
+  "tripLodgingEveryNight": "Every night",
+  "tripLodgingNightsRange": "{start} to {end} · {count, plural, =1{1 night} other{{count} nights}}",
+  "@tripLodgingNightsRange": {
+    "placeholders": {
+      "start": {"type": "String"},
+      "end": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+  "tripLodgingMissing": "Lodging not filled in",
+  "tripLodgingPrevious": "Previous stage",
+  "tripLodgingNext": "Next stage",
+  "tripLodgingReuseLabel": "Already in this trip",
+  "tripLodgingAddressLabel": "Address",
+  "tripLodgingPlaceRequired": "Fill in at least a name, an address or a link.",
+  "tripLodgingRemove": "Remove",
+  "tripCreateLodgingAllNights": "Same lodging for every night",
+  "activitiesMissingLodging": "Lodging to fill in",
   "tripOverviewSectionGroup": "The group",
   "tripOverviewSectionModules": "Trip modules",
   "tripOverviewSectionSettings": "Trip settings",
@@ -1658,54 +1689,6 @@
   "walletActivityUnlinked": "Link removed",
   "walletLinkDocument": "Link a document",
   "walletLinkDocumentPickerTitle": "Choose a document",
-  "walletGenerateActivities": "Generate activities",
-  "walletActivityImportDocumentsTitle": "Documents to analyze",
-  "walletActivityImportAnalyze": "Analyze",
-  "walletActivityImportAnalyzing": "Analyzing documents…",
-  "walletActivityImportNoResult": "No activity found in these documents",
-  "walletActivityImportNoDate": "No date",
-  "walletActivityImportAdd": "{count, plural, =1{Add 1 activity} other{Add {count} activities}}",
-  "@walletActivityImportAdd": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "walletActivityImportDone": "{count, plural, =1{1 activity added to the planning} other{{count} activities added to the planning}}",
-  "@walletActivityImportDone": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "walletActivityImportInstructions": "Instructions (optional)",
-  "activitiesAiTextLabel": "Tell what you did",
-  "activitiesAiTextNoResult": "No activity recognized in this text",
-  "activitiesAiTextMenu": "Dictate activities",
-  "activitiesAiTextAnalyze": "Analyze",
-  "activitiesAiTextAdd": "{count, plural, =1{Add 1 activity} other{Add {count} activities}}",
-  "@activitiesAiTextAdd": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "activitiesAiTextAdded": "{count, plural, =1{1 activity added to the planning} other{{count} activities added to the planning}}",
-  "@activitiesAiTextAdded": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "activitiesAiTextEditTitle": "Edit activity",
-  "activitiesAiTextNoDate": "No date",
-  "activitiesAiTextDictation": "Dictate",
-  "activitiesAiTextDictationStop": "Stop dictation",
-  "activitiesAiTextDictationUnavailable": "Dictation unavailable: check microphone access",
   "activityPhotosTitle": "Photos",
   "activityPhotosAdd": "Add photos",
   "activityPhotosDayCount": "{count}/{max} for the day",

@@ -19,6 +19,21 @@ bool isTripRoleAllowed({
   return currentRole.allows(minRole);
 }
 
+/// Trip general info, its lodgings included.
+bool canEditTripGeneralInfoForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(
+    currentRole: role,
+    minRole: trip.generalPermissions.editGeneralInfoMinRole,
+  );
+}
+
 bool canCreateExpensePostForTrip({
   required Trip trip,
   required String? userId,

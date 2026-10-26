@@ -3613,6 +3613,30 @@ abstract class AppLocalizations {
   /// **'{from} → {to}'**
   String activitiesMissingTransportLabel(Object from, Object to);
 
+  /// No description provided for @activitiesTransportConnectionAdd.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter une correspondance'**
+  String get activitiesTransportConnectionAdd;
+
+  /// No description provided for @activitiesTransportConnectionStop.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lieu de correspondance'**
+  String get activitiesTransportConnectionStop;
+
+  /// No description provided for @activitiesTransportConnectionMode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mode de transport après la correspondance'**
+  String get activitiesTransportConnectionMode;
+
+  /// No description provided for @activitiesTransportConnectionAdded.
+  ///
+  /// In fr, this message translates to:
+  /// **'Correspondance ajoutée'**
+  String get activitiesTransportConnectionAdded;
+
   /// No description provided for @activitiesJourneyMapTitle.
   ///
   /// In fr, this message translates to:
@@ -4111,6 +4135,12 @@ abstract class AppLocalizations {
   /// **'Depuis le logement (voiture)'**
   String get activitiesFromLodgingByCar;
 
+  /// No description provided for @activitiesFromNamedLodgingByCar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Depuis {lodging} (voiture)'**
+  String activitiesFromNamedLodgingByCar(String lodging);
+
   /// No description provided for @activitiesFromCurrentLocationByCar.
   ///
   /// In fr, this message translates to:
@@ -4156,7 +4186,7 @@ abstract class AppLocalizations {
   /// No description provided for @activitiesRouteCalculating.
   ///
   /// In fr, this message translates to:
-  /// **'Calcul en cours depuis l\'adresse du voyage.'**
+  /// **'Calcul en cours.'**
   String get activitiesRouteCalculating;
 
   /// No description provided for @activitiesRouteNotCalculatedYet.
@@ -4183,11 +4213,17 @@ abstract class AppLocalizations {
   /// **'Trajet calculé.'**
   String get activitiesRouteCalculated;
 
-  /// No description provided for @activitiesRouteMissingTripAddress.
+  /// No description provided for @activitiesRouteMissingLodging.
   ///
   /// In fr, this message translates to:
-  /// **'Adresse du voyage manquante : renseignez-la dans l\'aperçu du voyage.'**
-  String get activitiesRouteMissingTripAddress;
+  /// **'Aucune adresse d\'hébergement pour cette nuit.'**
+  String get activitiesRouteMissingLodging;
+
+  /// No description provided for @activitiesRouteMissingActivityDate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Activité sans date : hébergement de départ inconnu.'**
+  String get activitiesRouteMissingActivityDate;
 
   /// No description provided for @activitiesRouteNoResult.
   ///
@@ -5664,6 +5700,84 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Destination'**
   String get tripOverviewSectionAccommodation;
+
+  /// No description provided for @tripOverviewSectionLodgings.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergements'**
+  String get tripOverviewSectionLodgings;
+
+  /// No description provided for @tripLodgingTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergement'**
+  String get tripLodgingTitle;
+
+  /// No description provided for @tripLodgingEveryNight.
+  ///
+  /// In fr, this message translates to:
+  /// **'Toutes les nuits'**
+  String get tripLodgingEveryNight;
+
+  /// No description provided for @tripLodgingNightsRange.
+  ///
+  /// In fr, this message translates to:
+  /// **'Du {start} au {end} · {count, plural, =1{1 nuit} other{{count} nuits}}'**
+  String tripLodgingNightsRange(String start, String end, int count);
+
+  /// No description provided for @tripLodgingMissing.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergement non renseigné'**
+  String get tripLodgingMissing;
+
+  /// No description provided for @tripLodgingPrevious.
+  ///
+  /// In fr, this message translates to:
+  /// **'Étape précédente'**
+  String get tripLodgingPrevious;
+
+  /// No description provided for @tripLodgingNext.
+  ///
+  /// In fr, this message translates to:
+  /// **'Étape suivante'**
+  String get tripLodgingNext;
+
+  /// No description provided for @tripLodgingReuseLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déjà dans le voyage'**
+  String get tripLodgingReuseLabel;
+
+  /// No description provided for @tripLodgingAddressLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Adresse'**
+  String get tripLodgingAddressLabel;
+
+  /// No description provided for @tripLodgingPlaceRequired.
+  ///
+  /// In fr, this message translates to:
+  /// **'Renseigne au moins un nom, une adresse ou un lien.'**
+  String get tripLodgingPlaceRequired;
+
+  /// No description provided for @tripLodgingRemove.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer'**
+  String get tripLodgingRemove;
+
+  /// No description provided for @tripCreateLodgingAllNights.
+  ///
+  /// In fr, this message translates to:
+  /// **'Même hébergement pour toutes les nuits'**
+  String get tripCreateLodgingAllNights;
+
+  /// No description provided for @activitiesMissingLodging.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergement à renseigner'**
+  String get activitiesMissingLodging;
 
   /// No description provided for @tripOverviewSectionGroup.
   ///
@@ -7239,126 +7353,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Choisir un document'**
   String get walletLinkDocumentPickerTitle;
-
-  /// No description provided for @walletGenerateActivities.
-  ///
-  /// In fr, this message translates to:
-  /// **'Générer les activités'**
-  String get walletGenerateActivities;
-
-  /// No description provided for @walletActivityImportDocumentsTitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Documents à analyser'**
-  String get walletActivityImportDocumentsTitle;
-
-  /// No description provided for @walletActivityImportAnalyze.
-  ///
-  /// In fr, this message translates to:
-  /// **'Analyser'**
-  String get walletActivityImportAnalyze;
-
-  /// No description provided for @walletActivityImportAnalyzing.
-  ///
-  /// In fr, this message translates to:
-  /// **'Analyse des documents…'**
-  String get walletActivityImportAnalyzing;
-
-  /// No description provided for @walletActivityImportNoResult.
-  ///
-  /// In fr, this message translates to:
-  /// **'Aucune activité trouvée dans ces documents'**
-  String get walletActivityImportNoResult;
-
-  /// No description provided for @walletActivityImportNoDate.
-  ///
-  /// In fr, this message translates to:
-  /// **'Sans date'**
-  String get walletActivityImportNoDate;
-
-  /// No description provided for @walletActivityImportAdd.
-  ///
-  /// In fr, this message translates to:
-  /// **'{count, plural, =1{Ajouter 1 activité} other{Ajouter {count} activités}}'**
-  String walletActivityImportAdd(int count);
-
-  /// No description provided for @walletActivityImportDone.
-  ///
-  /// In fr, this message translates to:
-  /// **'{count, plural, =1{1 activité ajoutée au planning} other{{count} activités ajoutées au planning}}'**
-  String walletActivityImportDone(int count);
-
-  /// No description provided for @walletActivityImportInstructions.
-  ///
-  /// In fr, this message translates to:
-  /// **'Consignes (facultatif)'**
-  String get walletActivityImportInstructions;
-
-  /// No description provided for @activitiesAiTextLabel.
-  ///
-  /// In fr, this message translates to:
-  /// **'Raconte ce que vous avez fait'**
-  String get activitiesAiTextLabel;
-
-  /// No description provided for @activitiesAiTextNoResult.
-  ///
-  /// In fr, this message translates to:
-  /// **'Aucune activité reconnue dans ce texte'**
-  String get activitiesAiTextNoResult;
-
-  /// No description provided for @activitiesAiTextMenu.
-  ///
-  /// In fr, this message translates to:
-  /// **'Dicter des activités'**
-  String get activitiesAiTextMenu;
-
-  /// No description provided for @activitiesAiTextAnalyze.
-  ///
-  /// In fr, this message translates to:
-  /// **'Analyser'**
-  String get activitiesAiTextAnalyze;
-
-  /// No description provided for @activitiesAiTextAdd.
-  ///
-  /// In fr, this message translates to:
-  /// **'{count, plural, =1{Ajouter 1 activité} other{Ajouter {count} activités}}'**
-  String activitiesAiTextAdd(int count);
-
-  /// No description provided for @activitiesAiTextAdded.
-  ///
-  /// In fr, this message translates to:
-  /// **'{count, plural, =1{1 activité ajoutée au planning} other{{count} activités ajoutées au planning}}'**
-  String activitiesAiTextAdded(int count);
-
-  /// No description provided for @activitiesAiTextEditTitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Modifier l\'activité'**
-  String get activitiesAiTextEditTitle;
-
-  /// No description provided for @activitiesAiTextNoDate.
-  ///
-  /// In fr, this message translates to:
-  /// **'Sans date'**
-  String get activitiesAiTextNoDate;
-
-  /// No description provided for @activitiesAiTextDictation.
-  ///
-  /// In fr, this message translates to:
-  /// **'Dicter'**
-  String get activitiesAiTextDictation;
-
-  /// No description provided for @activitiesAiTextDictationStop.
-  ///
-  /// In fr, this message translates to:
-  /// **'Arrêter la dictée'**
-  String get activitiesAiTextDictationStop;
-
-  /// No description provided for @activitiesAiTextDictationUnavailable.
-  ///
-  /// In fr, this message translates to:
-  /// **'Dictée impossible : vérifie l\'accès au micro'**
-  String get activitiesAiTextDictationUnavailable;
 
   /// No description provided for @activityPhotosTitle.
   ///

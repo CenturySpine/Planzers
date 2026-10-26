@@ -22,7 +22,6 @@ import 'package:planerz/features/trips/presentation/invite_join_page.dart';
 import 'package:planerz/features/oauth/presentation/oauth_authorize_page.dart';
 import 'package:planerz/features/oauth/presentation/external_connection_callback_page.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_page.dart';
-import 'package:planerz/features/activities/presentation/trip_activities_dictate_page.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_create_page.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
@@ -410,12 +409,6 @@ final GoRouter appRouter = GoRouter(
                   DateTime.tryParse(state.uri.queryParameters['day'] ?? ''),
             );
           },
-        ),
-        GoRoute(
-          path: 'activities/dictate',
-          builder: (context, state) => TripActivitiesDictatePage(
-            tripId: state.pathParameters['tripId']!,
-          ),
         ),
         GoRoute(
           path: 'activities/map',

@@ -1,5 +1,5 @@
 VIE PRIVÉE / RGPD
-Dernière mise à jour : 23/10/2026
+Dernière mise à jour : 26/10/2026
 
 1) Responsable du traitement
 - Bruno Chappe
@@ -54,12 +54,6 @@ Sous-traitants techniques :
 Certaines fonctionnalités facultatives s'appuient sur l'API Gemini de Google.
 Des données ne lui sont envoyées que lorsque l'utilisateur déclenche l'une de
 ces fonctionnalités :
-- Création d'activités à partir d'un récit libre (saisi ou dicté) : le
-  texte, la date et l'heure de l'appareil, le titre, la destination et les
-  dates du voyage
-- Génération d'activités à partir de documents : les documents choisis dans
-  « Mes documents » (fichiers et contenu des codes scannés), les consignes
-  saisies, le titre, la destination et les dates du voyage
 - Consolidation de la liste de courses : les libellés et quantités des
   articles et des ingrédients des repas
 - Génération de recettes : le nom de la recette et le nombre de personnes
@@ -72,11 +66,6 @@ Gemini, ces données ne sont pas utilisées pour améliorer les produits de
 Google ; elles peuvent être conservées par Google pendant une durée limitée
 pour détecter les abus et répondre à ses obligations légales. Ce traitement
 peut avoir lieu en dehors de l'Union européenne.
-
-Dictée vocale : lorsque l'utilisateur dicte un texte, sa voix est
-convertie en texte par le service de reconnaissance vocale de son navigateur
-ou de son appareil (par exemple Google ou Apple), selon les conditions de ce
-fournisseur. L'application ne reçoit et n'enregistre que le texte obtenu.
 
 6) Cartes et recherche de lieux
 Les cartes et la recherche de lieux s'appuient sur des services publics issus

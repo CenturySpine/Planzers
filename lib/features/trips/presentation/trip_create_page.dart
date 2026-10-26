@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,8 +10,13 @@ import 'package:intl/intl.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/display_name_length.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/core/presentation/osm_map.dart';
+import 'package:planerz/features/activities/presentation/trip_place_picker_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/trips/data/trip_lodging.dart';
+import 'package:planerz/features/trips/data/trip_lodging_plan.dart';
+import 'package:planerz/features/trips/data/trip_lodgings_repository.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
@@ -18,6 +24,8 @@ import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_create_creator_name_dialog.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/presentation/trip_date_range_picker_sheet.dart';
+import 'package:planerz/features/trips/presentation/trip_lodging_editor_sheet.dart';
+import 'package:planerz/features/trips/presentation/trip_lodging_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_participant_name_dialog.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -43,6 +51,22 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   late final TextEditingController _linkController;
   late final TextEditingController _photosStorageController;
   late final TextEditingController _descriptionController;
+  late final TextEditingController _lodgingNameController;
+  late final TextEditingController _lodgingAddressController;
+  late final TextEditingController _lodgingLinkController;
+  GeoPoint? _lodgingLocation;
+
+  /// Same lodging for every night, filled in with the fields above;
+  /// otherwise [_lodgings] are set stage by stage.
+  bool _lodgingAllNights = true;
+
+  /// The lodging the fields above stand for, if already known.
+  String _allNightsLodgingId = '';
+  List<TripLodging> _lodgings = const [];
+  bool _lodgingsLoaded = false;
+
+  /// Lodgings are stored only once changed here.
+  bool _lodgingsChanged = false;
   late TripMemberStay _stay;
   DateTime? _singleDayDate;
   bool _isDayTrip = false;
@@ -87,6 +111,10 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     _photosStorageController = TextEditingController();
     _photosStorageController.addListener(_onPhotosStorageChanged);
     _descriptionController = TextEditingController();
+    _lodgingNameController = TextEditingController();
+    _lodgingAddressController = TextEditingController();
+    _lodgingLinkController = TextEditingController();
+    _lodgingsLoaded = !widget.isEditing;
     _stay = TripMemberStay.defaultForNewTripEditor();
     _singleDayDate = DateUtils.dateOnly(DateTime.now());
     WidgetsBinding.instance.addPostFrameCallback((_) => _initCreatorName());
@@ -104,7 +132,137 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     _photosStorageController.removeListener(_onPhotosStorageChanged);
     _photosStorageController.dispose();
     _descriptionController.dispose();
+    _lodgingNameController.dispose();
+    _lodgingAddressController.dispose();
+    _lodgingLinkController.dispose();
     super.dispose();
+  }
+
+  void _seedLodgingsOnce(Trip trip, List<TripLodging> stored) {
+    if (_lodgingsLoaded) return;
+    _lodgingsLoaded = true;
+    final lodgings = effectiveTripLodgings(trip, stored);
+    if (lodgings.isEmpty || (lodgings.length == 1 && lodgings.single.allNights)) {
+      _lodgingAllNights = true;
+      _fillAllNightsFields(lodgings.firstOrNull);
+    } else {
+      _lodgingAllNights = false;
+      _lodgings = lodgings;
+    }
+  }
+
+  void _fillAllNightsFields(TripLodging? lodging) {
+    _allNightsLodgingId = lodging?.id ?? '';
+    _lodgingNameController.text = lodging?.name ?? '';
+    _lodgingAddressController.text = lodging?.address ?? '';
+    _lodgingLinkController.text = lodging?.linkUrl ?? '';
+    _lodgingLocation = lodging?.location;
+  }
+
+  TripLodging get _allNightsPlace => TripLodging(
+        id: _allNightsLodgingId,
+        name: _lodgingNameController.text.trim(),
+        address: _lodgingAddressController.text.trim(),
+        location: _lodgingLocation,
+        linkUrl: _lodgingLinkController.text.trim(),
+        allNights: true,
+      );
+
+  List<DateTime> get _formNights => tripNightsBetween(
+        TripMemberStay.parseDateKey(_stay.startDateKey),
+        TripMemberStay.parseDateKey(_stay.endDateKey),
+      );
+
+  void _onLodgingFieldChanged() {
+    _lodgingsChanged = true;
+    if (_errorMessage != null) setState(() => _errorMessage = null);
+  }
+
+  void _toggleLodgingAllNights(bool allNights) {
+    setState(() {
+      _lodgingsChanged = true;
+      _errorMessage = null;
+      if (allNights) {
+        final nights = _formNights;
+        final first = nights.isEmpty
+            ? _lodgings.firstOrNull
+            : tripLodgingForNight(_lodgings, tripNightKey(nights.first)) ??
+                _lodgings.firstOrNull;
+        _fillAllNightsFields(first);
+      } else {
+        final place = _allNightsPlace;
+        _lodgings = place.hasPlace ? [place] : const [];
+      }
+      _lodgingAllNights = allNights;
+    });
+  }
+
+  Future<void> _pickLodgingPlace() async {
+    final picked = await TripPlacePickerPage.open(
+      context,
+      tripId: widget.tripId?.trim() ?? '',
+      initialPoint: _lodgingLocation?.toLatLng(),
+      initialAddress: _lodgingAddressController.text,
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      if (picked.address.isNotEmpty) {
+        _lodgingAddressController.text = picked.address;
+      }
+      _lodgingLocation = GeoPoint(picked.lat, picked.lng);
+      _lodgingsChanged = true;
+    });
+  }
+
+  Future<void> _editLodgingStage(TripLodgingStage stage) async {
+    final nights = _formNights;
+    final edit = await showTripLodgingStageEditor(
+      context,
+      tripId: widget.tripId?.trim() ?? '',
+      tripNights: nights,
+      stage: stage,
+      lodgings: _lodgings,
+    );
+    if (edit == null || !mounted) return;
+    setState(() {
+      _lodgings = applyTripLodgingStageEdit(
+        lodgings: _lodgings,
+        nights: nights,
+        stage: stage,
+        edit: edit,
+      );
+      _lodgingsChanged = true;
+      _errorMessage = null;
+    });
+  }
+
+  /// The lodgings to store, or null to leave them as they are.
+  List<TripLodging>? _lodgingsToSave() {
+    if (_isDayTrip || !_lodgingsLoaded || !_lodgingsChanged) return null;
+    if (_lodgingAllNights) {
+      final place = _allNightsPlace;
+      return place.hasPlace ? [place] : const [];
+    }
+    return tripLodgingsWithinNights(
+      _lodgings,
+      [for (final night in _formNights) tripNightKey(night)],
+    );
+  }
+
+  Future<void> _saveLodgings(String tripId, List<TripLodging>? next) async {
+    if (next == null) return;
+    // The latest stored lodgings: what is set here replaces them all.
+    final stored = widget.isEditing
+        ? await ref
+            .read(tripLodgingsRepositoryProvider)
+            .watchLodgings(tripId)
+            .first
+        : const <TripLodging>[];
+    await ref.read(tripLodgingsRepositoryProvider).saveLodgings(
+          tripId: tripId,
+          next: next,
+          stored: stored,
+        );
   }
 
   void _seedFromTripOnce(Trip trip) {
@@ -373,11 +531,17 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     final linkUrl = _linkController.text.trim();
     final photosStorageUrl = _photosStorageController.text.trim();
 
-    final linkError = _validateLinkUrl(linkUrl);
+    // Only the link shown is checked: a day trip's, or the lodging's.
+    final linkError = _isDayTrip
+        ? _validateLinkUrl(linkUrl)
+        : (_lodgingAllNights
+            ? _validateLinkUrl(_lodgingLinkController.text)
+            : null);
     if (linkError != null) {
       setState(() => _errorMessage = linkError);
       return;
     }
+    final lodgingsToSave = _lodgingsToSave();
 
     if (_isEditing) {
       if (!_isCreatorNameValid) {
@@ -435,6 +599,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
         linkUrl: linkUrl,
         photosStorageUrl: photosStorageUrl,
         creatorName: creatorName,
+        lodgings: lodgingsToSave,
       );
       return;
     }
@@ -482,6 +647,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             tripEndDayPart: tripEndDayPart,
             isDayTrip: _isDayTrip,
           );
+      await _saveLodgings(tripId, lodgingsToSave);
 
       final participantId = _creatorParticipantId?.trim() ?? '';
       if (participantId.isNotEmpty) {
@@ -521,6 +687,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     required String linkUrl,
     required String photosStorageUrl,
     required String creatorName,
+    required List<TripLodging>? lodgings,
   }) async {
     DateTime? startDate;
     DateTime? endDate;
@@ -538,6 +705,8 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
       }
     }
 
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
     setState(() {
       _saving = true;
       _errorMessage = null;
@@ -549,7 +718,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             description: description,
             creatorName: creatorName,
             useProfileName: _useProfileName,
-            linkUrl: linkUrl,
+            linkUrl: _isDayTrip ? linkUrl : '',
             photosStorageUrl: photosStorageUrl,
             cupidonModeEnabled: _cupidonModeEnabled,
             carpoolModuleEnabled: _carpoolModuleEnabled,
@@ -561,6 +730,15 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             tripEndDayPart: _isDayTrip ? null : _stay.endDayPart,
             isDayTrip: _isDayTrip,
           );
+      // The trip exists from now on: a failure here must not lead to
+      // creating it again.
+      try {
+        await _saveLodgings(tripId, lodgings);
+      } catch (e) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+        );
+      }
 
       if (_coverBytes != null && _coverExt != null) {
         await ref.read(tripsRepositoryProvider).upsertTripBannerImage(
@@ -610,6 +788,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
         );
       }
       _seedFromTripOnce(trip);
+      final storedLodgings =
+          ref.watch(tripLodgingsStreamProvider(tripId)).asData?.value;
+      if (storedLodgings != null) _seedLodgingsOnce(trip, storedLodgings);
       final myMember = ref.watch(myTripMemberStreamProvider(tripId)).value;
       if (myMember != null) {
         _seedFromCreatorOnce(myMember);
@@ -713,43 +894,45 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                     ),
                   ),
                 ],
-                _FormSection(
-                  child: _TripCreateLabel(
-                    label: l10n.tripOverviewLinkLabel,
-                    child: _TripCreateInputShell(
-                      icon: PhosphorIconsRegular.link,
-                      enabled: !_saving,
-                      builder: (focusNode) => TextField(
-                        controller: _linkController,
-                        focusNode: focusNode,
+                // Multi-day trips set their link per lodging instead.
+                if (_isDayTrip)
+                  _FormSection(
+                    child: _TripCreateLabel(
+                      label: l10n.tripOverviewLinkLabel,
+                      child: _TripCreateInputShell(
+                        icon: PhosphorIconsRegular.link,
                         enabled: !_saving,
-                        keyboardType: TextInputType.url,
-                        textInputAction: TextInputAction.next,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: AppTokens.deep,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: l10n.tripCreateLinkPlaceholder,
-                          hintStyle: const TextStyle(
-                            color: AppTokens.outline,
+                        builder: (focusNode) => TextField(
+                          controller: _linkController,
+                          focusNode: focusNode,
+                          enabled: !_saving,
+                          keyboardType: TextInputType.url,
+                          textInputAction: TextInputAction.next,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: AppTokens.deep,
                           ),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          filled: false,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
+                          decoration: InputDecoration(
+                            hintText: l10n.tripCreateLinkPlaceholder,
+                            hintStyle: const TextStyle(
+                              color: AppTokens.outline,
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            filled: false,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          onChanged: (_) {
+                            if (_errorMessage != null) {
+                              setState(() => _errorMessage = null);
+                            }
+                          },
                         ),
-                        onChanged: (_) {
-                          if (_errorMessage != null) {
-                            setState(() => _errorMessage = null);
-                          }
-                        },
                       ),
                     ),
                   ),
-                ),
                   if (_isDayTrip)
                     _FormSection(
                       child: _TripCreateLabel(
@@ -882,6 +1065,13 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                         ],
                       ),
                     ),
+                    if (_lodgingsLoaded)
+                      _FormSection(
+                        child: _TripCreateLabel(
+                          label: l10n.tripLodgingTitle,
+                          child: _buildLodgingSection(l10n),
+                        ),
+                      ),
                   ],
                   _FormSection(
                     child: _TripCreateLabel(
@@ -972,6 +1162,111 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             ),
           ],
         ),
+    );
+  }
+
+  Widget _buildLodgingSection(AppLocalizations l10n) {
+    InputDecoration decoration(String hint) => InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: AppTokens.outline),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          filled: false,
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+        );
+    const fieldStyle = TextStyle(fontSize: 15, color: AppTokens.deep);
+
+    final nights = _formNights;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _NeonFeatureToggleCard(
+          value: _lodgingAllNights,
+          enabled: !_saving,
+          icon: PhosphorIconsRegular.bed,
+          title: l10n.tripCreateLodgingAllNights,
+          onChanged: _toggleLodgingAllNights,
+        ),
+        const SizedBox(height: 10),
+        if (_lodgingAllNights) ...[
+          _TripCreateInputShell(
+            icon: PhosphorIconsRegular.bed,
+            enabled: !_saving,
+            builder: (focusNode) => TextField(
+              controller: _lodgingNameController,
+              focusNode: focusNode,
+              enabled: !_saving,
+              textInputAction: TextInputAction.next,
+              textCapitalization: TextCapitalization.sentences,
+              style: fieldStyle,
+              decoration: decoration(l10n.commonName),
+              onChanged: (_) => _onLodgingFieldChanged(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          _TripCreateInputShell(
+            icon: PhosphorIconsRegular.mapPin,
+            enabled: !_saving,
+            builder: (focusNode) => Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _lodgingAddressController,
+                    focusNode: focusNode,
+                    enabled: !_saving,
+                    textInputAction: TextInputAction.next,
+                    style: fieldStyle,
+                    decoration: decoration(l10n.tripLodgingAddressLabel),
+                    onChanged: (_) => _onLodgingFieldChanged(),
+                  ),
+                ),
+                IconButton(
+                  tooltip: l10n.activitiesPlacePickOnMap,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: _saving ? null : _pickLodgingPlace,
+                  icon: Icon(
+                    _lodgingLocation == null
+                        ? PhosphorIconsRegular.mapTrifold
+                        : PhosphorIconsFill.mapPin,
+                    color: AppTokens.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          _TripCreateInputShell(
+            icon: PhosphorIconsRegular.link,
+            enabled: !_saving,
+            builder: (focusNode) => TextField(
+              controller: _lodgingLinkController,
+              focusNode: focusNode,
+              enabled: !_saving,
+              keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.next,
+              style: fieldStyle,
+              decoration: decoration(l10n.tripCreateLinkPlaceholder),
+              onChanged: (_) => _onLodgingFieldChanged(),
+            ),
+          ),
+        ] else
+          for (final stage in tripLodgingStages(
+            nights,
+            tripLodgingsWithinNights(
+              _lodgings,
+              [for (final night in nights) tripNightKey(night)],
+            ),
+          ))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: TripLodgingStageCard(
+                stage: stage,
+                onTap: _saving ? null : () => _editLodgingStage(stage),
+              ),
+            ),
+      ],
     );
   }
 
@@ -1254,7 +1549,7 @@ class _NeonFeatureToggleCard extends StatelessWidget {
     required this.enabled,
     required this.icon,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.onChanged,
   });
 
@@ -1262,7 +1557,7 @@ class _NeonFeatureToggleCard extends StatelessWidget {
   final bool enabled;
   final IconData icon;
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final ValueChanged<bool> onChanged;
 
   @override
@@ -1319,15 +1614,17 @@ class _NeonFeatureToggleCard extends StatelessWidget {
                         color: AppTokens.deep,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        height: 1.4,
-                        color: AppTokens.onSurfaceVariant,
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.4,
+                          color: AppTokens.onSurfaceVariant,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
