@@ -67,7 +67,7 @@ firebase deploy --project planerz
 Workflow manuel **Deploy Cloud Functions** (`.github/workflows/deploy-functions.yml`) : onglet *Actions* du dépôt → *Run workflow*.
 
 - Branche `develop` → `planerz-preview`, branche `main` → `planerz` (aucune autre branche acceptée).
-- Champ *functions* : noms séparés par des virgules (ex. `extractTripActivityFromText,extractTripActivitiesFromDocuments`) ou `all`.
+- Champ *functions* : noms séparés par des virgules (ex. `refreshActivityDrivingRoute,exportTrip`) ou `all`.
 - Après le déploiement, vérifie l'IAM d'invocation Cloud Run des fonctions appelables et ajoute `allUsers` / `roles/run.invoker` si absent (récapitulatif dans le résumé du run).
 - Secrets du dépôt requis : `GCP_SA_KEY_PREVIEW` et `GCP_SA_KEY_PROD` (clé JSON d'un compte de service par projet).
 - Le fichier du workflow doit être présent sur `main` pour que *Run workflow* soit proposé.
