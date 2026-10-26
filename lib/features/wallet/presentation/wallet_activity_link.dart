@@ -16,7 +16,9 @@ import 'package:planerz/l10n/app_localizations.dart';
 
 /// Planning categories offered when creating an activity from a document:
 /// the same groups as the planning "+" menu, picked from the document type.
-({List<TripActivityCategory> allowed, TripActivityCategory initial})
+/// Null for a lodging document: nights follow the trip's lodgings, not
+/// activities.
+({List<TripActivityCategory> allowed, TripActivityCategory initial})?
     activityCategoriesForWalletDocument(WalletDocumentCategory category) {
   switch (category) {
     case WalletDocumentCategory.plane:
@@ -29,10 +31,7 @@ import 'package:planerz/l10n/app_localizations.dart';
         initial: TripActivityCategory.transport,
       );
     case WalletDocumentCategory.lodging:
-      return (
-        allowed: const [TripActivityCategory.accommodation],
-        initial: TripActivityCategory.accommodation,
-      );
+      return null;
     case WalletDocumentCategory.activity:
     case WalletDocumentCategory.identity:
     case WalletDocumentCategory.insurance:
@@ -317,7 +316,8 @@ class WalletCreateActivityPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final categories = activityCategoriesForWalletDocument(document.category);
+    // Only opened for a document offering categories (see the viewer).
+    final categories = activityCategoriesForWalletDocument(document.category)!;
     final eventDate = document.eventDate;
     return TripActivityCreateForm(
       tripId: tripId,

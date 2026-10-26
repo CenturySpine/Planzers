@@ -129,6 +129,8 @@ class _WalletDocumentViewerPageState
         ref.watch(tripActivitiesStreamProvider(_tripId)).asData?.value;
     final trip = ref.watch(tripStreamProvider(_tripId)).asData?.value;
     final canCreateActivity = trip != null &&
+        document != null &&
+        activityCategoriesForWalletDocument(document.category) != null &&
         canSuggestActivityForTrip(
           trip: trip,
           userId: FirebaseAuth.instance.currentUser?.uid.trim(),

@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/features/activities/data/activity_text_ai_repository.dart';
 import 'package:planerz/features/activities/data/activity_trip_driving_route.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/core/firebase/firebase_functions_region.dart';
@@ -155,63 +154,6 @@ class ActivitiesRepository {
       departureLocation: activity.departureLocation,
       transportMode: activity.transportMode,
     );
-  }
-
-  /// Adds activities already done (read from an account of the trip) in one
-  /// write. They share an import id so members get one grouped notification.
-  /// Date and duration are kept only for members allowed to plan.
-  Future<void> addDoneActivities({
-    required String tripId,
-    required List<TripActivityTextProposal> activities,
-  }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    if (cleanTripId.isEmpty) {
-      throw StateError('Voyage invalide');
-    }
-    if (activities.isEmpty) return;
-
-    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
-    if (!tripSnap.exists || tripSnap.data() == null) {
-      throw StateError('Voyage introuvable');
-    }
-    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
-    if (!canSuggestActivityForTrip(trip: trip, userId: user.uid)) {
-      throw StateError('Droits insuffisants pour suggerer une activite');
-    }
-    final canPlan = canPlanActivityForTrip(trip: trip, userId: user.uid);
-
-    final col = _activitiesCol(cleanTripId);
-    final importId = col.doc().id;
-    final batch = firestore.batch();
-    for (final activity in activities) {
-      final label = activity.label.trim();
-      if (label.isEmpty) {
-        throw StateError('Libelle obligatoire');
-      }
-      final plannedAt = canPlan ? activity.plannedAt : null;
-      final durationMinutes = canPlan ? activity.durationMinutes : null;
-      _checkDuration(durationMinutes);
-      batch.set(col.doc(), {
-        'label': label,
-        'category': activity.category.firestoreValue,
-        'linkUrl': '',
-        'address': activity.address.trim(),
-        'freeComments': activity.freeComments.trim(),
-        if (plannedAt != null) 'plannedAt': Timestamp.fromDate(plannedAt),
-        if (durationMinutes != null) 'durationMinutes': durationMinutes,
-        'done': true,
-        'doneAt': FieldValue.serverTimestamp(),
-        'importId': importId,
-        'createdBy': user.uid,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-    }
-    await batch.commit();
   }
 
   /// Departure and mode, kept for a transport only. With [deleteMissing]

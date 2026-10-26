@@ -43,10 +43,6 @@
 		<string>comgooglemaps</string>
 		<string>waze</string>
 	</array>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Permet de dicter la description d’une activité.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Permet de transformer la description dictée d’une activité en texte.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Permet de scanner le QR code ou le code-barres d’un billet.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
