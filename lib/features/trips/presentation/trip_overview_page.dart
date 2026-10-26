@@ -23,6 +23,7 @@ import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
 import 'package:planerz/features/games/data/trip_games_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
+import 'package:planerz/features/rooms/data/trip_room_lodgings.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_archive_repository.dart';
@@ -697,9 +698,14 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             .map((m) => m.id)
             .firstOrNull
         : null;
+    // Tonight's rooms (the first night's before the trip).
+    final nightRooms = TripRoomLodgings.forTrip(
+      _trip,
+      effectiveTripLodgings(_trip, storedLodgings ?? const []),
+    ).roomsForDay(rooms, DateTime.now());
     final myAssignedRoomNames = myParticipantId == null
         ? const <String>[]
-        : rooms
+        : nightRooms
             .where((room) => room.assignedMemberIds.contains(myParticipantId))
             .map(
               (room) => room.name.trim().isEmpty

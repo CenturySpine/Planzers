@@ -1439,6 +1439,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roomsCreate => 'Create';
 
   @override
+  String get roomsSetNightApart => 'Customize this night';
+
+  @override
+  String get roomsUseSharedRooms => 'Back to shared rooms';
+
+  @override
+  String get roomsUseSharedRoomsBody =>
+      'This night\'s own rooms will be deleted.';
+
+  @override
   String get roomsCreateTitle => 'Create a room';
 
   @override
@@ -5539,6 +5549,16 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get roomsCreate => 'Create';
+
+  @override
+  String get roomsSetNightApart => 'Customize this night';
+
+  @override
+  String get roomsUseSharedRooms => 'Back to shared rooms';
+
+  @override
+  String get roomsUseSharedRoomsBody =>
+      'This night\'s own rooms will be deleted.';
 
   @override
   String get roomsCreateTitle => 'Create a room';

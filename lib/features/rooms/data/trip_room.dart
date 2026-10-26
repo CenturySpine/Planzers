@@ -75,6 +75,8 @@ class TripRoom {
     required this.beds,
     required this.createdAt,
     this.createdBy,
+    this.lodgingId,
+    this.nightKey,
   });
 
   final String id;
@@ -82,6 +84,14 @@ class TripRoom {
   final List<TripRoomBed> beds;
   final DateTime createdAt;
   final String? createdBy;
+
+  /// The lodging the room is in; null for rooms set before lodgings were set
+  /// night by night (see `TripRoomLodgings`).
+  final String? lodgingId;
+
+  /// Set for the rooms of one night only (`yyyy-MM-dd`, its evening); null
+  /// for the rooms shared by every night of the lodging.
+  final String? nightKey;
 
   int get capacity => beds.fold<int>(0, (total, bed) => total + bed.capacity);
 
@@ -128,7 +138,14 @@ class TripRoom {
       beds: hydratedBeds,
       createdAt: createdAt,
       createdBy: (data['createdBy'] as String?)?.trim(),
+      lodgingId: _optionalString(data['lodgingId']),
+      nightKey: _optionalString(data['nightKey']),
     );
+  }
+
+  static String? _optionalString(dynamic raw) {
+    final value = raw is String ? raw.trim() : '';
+    return value.isEmpty ? null : value;
   }
 }
 

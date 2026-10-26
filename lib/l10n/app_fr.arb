@@ -609,6 +609,9 @@
     }
   },
   "roomsCreate": "Créer",
+  "roomsSetNightApart": "Personnaliser cette nuit",
+  "roomsUseSharedRooms": "Revenir aux chambres communes",
+  "roomsUseSharedRoomsBody": "Les chambres propres à cette nuit seront supprimées.",
   "roomsCreateTitle": "Créer une chambre",
   "roomsCreated": "Chambre créée",
   "roomsUpdated": "Chambre mise à jour",
