@@ -26,18 +26,21 @@ import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_archive_repository.dart';
+import 'package:planerz/features/trips/data/trip_lodging_plan.dart';
+import 'package:planerz/features/trips/data/trip_lodgings_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/packing/data/packing_item.dart';
 import 'package:planerz/features/packing/data/packing_repository.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
-import 'package:planerz/features/trips/presentation/open_route_in_map_apps.dart';
 import 'package:planerz/features/trips/presentation/ridgegear_module_card.dart';
 import 'package:planerz/features/trips/presentation/ridgegear_project_picker.dart';
 import 'package:planerz/features/trips/presentation/traveler_modules_toggle_list.dart';
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
+import 'package:planerz/features/trips/presentation/trip_lodging_editor_sheet.dart';
+import 'package:planerz/features/trips/presentation/trip_lodging_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/features/trips/presentation/trip_transfer_actions.dart';
@@ -650,6 +653,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final roomsAsync = ref.watch(tripRoomsStreamProvider(_trip.id));
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(_trip.id));
     final rooms = roomsAsync.asData?.value ?? const [];
+    // Null while loading, so that the former single link is not shown first.
+    final storedLodgings =
+        ref.watch(tripLodgingsStreamProvider(_trip.id)).asData?.value;
     final carpools =
         ref.watch(tripCarpoolsStreamProvider(_trip.id)).asData?.value ??
             const [];
@@ -904,10 +910,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       ? l10n.tripOverviewUnknownDestination
                       : _trip.destination);
 
-              final isMapsLink = livePreview['isGoogleMaps'] == true;
-              final hasAddress = _trip.address.trim().isNotEmpty;
-              final showDirections =
-                  !_trip.isDayTrip && (isMapsLink || hasAddress);
+              final lodgingNights = tripNights(_trip);
+              final lodgingStages = storedLodgings == null
+                  ? const <TripLodgingStage>[]
+                  : tripLodgingStages(
+                      lodgingNights,
+                      effectiveTripLodgings(_trip, storedLodgings),
+                    );
+              // Only those who can fill them in see stages all missing.
+              final showLodgings = lodgingStages.isNotEmpty &&
+                  (canEditGeneralInfo ||
+                      lodgingStages.any((stage) => !stage.isMissing));
 
               return ColoredBox(
                 color: AppTokens.scaffoldBackground,
@@ -944,7 +957,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           ),
                         ),
                       ),
-                    if (linkUrlForUi.isNotEmpty) ...[
+                    if (_trip.isDayTrip && linkUrlForUi.isNotEmpty) ...[
                       TripOverviewSectionHeader(
                         label: l10n.tripOverviewSectionAccommodation,
                       ),
@@ -954,33 +967,32 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           url: linkUrlForUi,
                           preview: livePreview,
                           onOpen: () => _openLinkUrl(linkUrlForUi),
-                          trailing: showDirections
-                              ? IconButton(
-                                  tooltip: l10n.tripOverviewOpenLocation,
-                                  icon: const Icon(PhosphorIconsRegular.signpost),
-                                  color: AppTokens.secondary,
-                                  onPressed: () {
-                                    final destination =
-                                        _trip.address.trim().isNotEmpty
-                                            ? _trip.address.trim()
-                                            : ((livePreview['description']
-                                                        as String?) ??
-                                                    '')
-                                                .trim();
-                                    if (destination.isNotEmpty) {
-                                      openRouteInMapAppsSelector(
-                                        context,
-                                        destinationAddress: destination,
-                                      );
-                                    } else if (isMapsLink) {
-                                      _openLinkUrl(linkUrlForUi);
-                                    }
-                                  },
-                                )
-                              : null,
                         ),
                       ),
                     ],
+                    if (showLodgings)
+                      TripLodgingCarousel(
+                        key: ValueKey('lodgings-${_trip.id}'),
+                        title: l10n.tripOverviewSectionLodgings,
+                        stages: lodgingStages,
+                        initialIndex: tripLodgingStageIndexForDay(
+                          lodgingStages,
+                          today,
+                        ),
+                        onStageTap: (stage) {
+                          if (canEditGeneralInfo) {
+                            return () => editTripLodgingStageNow(
+                                  context,
+                                  trip: _trip,
+                                  stored: storedLodgings!,
+                                  stage: stage,
+                                );
+                          }
+                          final link = stage.lodging?.linkUrl.trim() ?? '';
+                          if (link.isEmpty) return null;
+                          return () => openTripLodgingLink(context, link);
+                        },
+                      ),
                     TripOverviewSectionHeader(
                       label: l10n.tripOverviewSectionGroup,
                     ),

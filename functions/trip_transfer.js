@@ -96,6 +96,7 @@ const TRANSFERRED_COLLECTIONS = {
   expenses: {},
   expenses_states: {},
   rooms: {},
+  lodgings: {},
   activities: {},
   boardGames: {},
   shoppingItems: {},

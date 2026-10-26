@@ -893,6 +893,39 @@ class TripOverviewModuleAddCard extends StatelessWidget {
   }
 }
 
+/// Card drawn with the dashed border of [TripOverviewModuleAddCard], for
+/// something still to fill in.
+class TripOverviewDashedCard extends StatelessWidget {
+  const TripOverviewDashedCard({
+    super.key,
+    required this.child,
+    this.onTap,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _TripOverviewDashedCardBorderPainter(
+        color: AppTokens.overviewModuleAddBorder,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _TripOverviewDashedCardBorderPainter extends CustomPainter {
   const _TripOverviewDashedCardBorderPainter({required this.color});
 
