@@ -34,10 +34,16 @@ class TripLodgingNight {
   bool get isMissing => lodging == null;
 
   /// The night as an accommodation planned at its lodging, for the agenda
-  /// and the journey; with no place while not filled in.
+  /// and the journey; with no place while not filled in. Like the other
+  /// stops of the trip map, it goes by what the group typed (name, else
+  /// address), never by content found from the link.
   TripActivity get stop => TripActivity(
         id: '$_lodgingStopIdPrefix${tripNightKey(night)}',
-        label: lodging?.displayTitle ?? '',
+        label: switch (lodging) {
+          final l? when l.name.trim().isNotEmpty => l.name.trim(),
+          final l? => l.address.trim(),
+          null => '',
+        },
         category: TripActivityCategory.accommodation,
         linkUrl: lodging?.linkUrl ?? '',
         address: lodging?.address ?? '',
@@ -52,7 +58,6 @@ class TripLodgingNight {
         ),
         durationMinutes:
             (24 - tripLodgingNightStartHour + tripLodgingNightEndHour) * 60,
-        linkPreview: lodging?.linkPreview ?? const {},
         location: lodging?.location,
       );
 }
