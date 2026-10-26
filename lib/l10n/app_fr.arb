@@ -924,6 +924,12 @@
   "activitiesPlannedDateHelp": "Date prévue",
   "activitiesAddressCardTitle": "Adresse du lieu",
   "activitiesFromLodgingByCar": "Depuis le logement (voiture)",
+  "activitiesFromNamedLodgingByCar": "Depuis {lodging} (voiture)",
+  "@activitiesFromNamedLodgingByCar": {
+    "placeholders": {
+      "lodging": {"type": "String"}
+    }
+  },
   "activitiesFromCurrentLocationByCar": "Depuis l'emplacement actuel (voiture)",
   "commonDash": "—",
   "activitiesDone": "Activité faite",
@@ -932,14 +938,15 @@
   "@activitiesPlannedOn": {"placeholders": {"date": {}}},
   "activitiesRemovePlannedDate": "Retirer la date prévue",
   "activitiesLinkPreviewAfterSave": "L'aperçu du lien sera mis à jour après enregistrement.",
-  "activitiesRouteCalculating": "Calcul en cours depuis l'adresse du voyage.",
+  "activitiesRouteCalculating": "Calcul en cours.",
   "activitiesRouteNotCalculatedYet": "Pas encore calculé.",
   "activitiesRouteDistance": "Distance : {distance}",
   "@activitiesRouteDistance": {"placeholders": {"distance": {}}},
   "activitiesRouteDuration": "Durée : {duration}",
   "@activitiesRouteDuration": {"placeholders": {"duration": {}}},
   "activitiesRouteCalculated": "Trajet calculé.",
-  "activitiesRouteMissingTripAddress": "Adresse du voyage manquante : renseignez-la dans l'aperçu du voyage.",
+  "activitiesRouteMissingLodging": "Aucune adresse d'hébergement pour cette nuit.",
+  "activitiesRouteMissingActivityDate": "Activité sans date : hébergement de départ inconnu.",
   "activitiesRouteNoResult": "Aucun trajet trouvé.",
   "activitiesRouteNoResultWithDetail": "Aucun trajet trouvé ({detail}).",
   "@activitiesRouteNoResultWithDetail": {"placeholders": {"detail": {}}},

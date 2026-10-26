@@ -883,7 +883,15 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    AppLocalizations.of(context)!.activitiesFromLodgingByCar,
+                                    switch (widget.activity.tripDrivingRoute
+                                        ?.originLabel) {
+                                      final name? when name.isNotEmpty =>
+                                        AppLocalizations.of(context)!
+                                            .activitiesFromNamedLodgingByCar(
+                                                name),
+                                      _ => AppLocalizations.of(context)!
+                                          .activitiesFromLodgingByCar,
+                                    },
                                     style: Theme.of(context).textTheme.labelLarge,
                                   ),
                                 ),
@@ -1689,8 +1697,12 @@ String _drivingRouteBodyText(
         ].join('\n');
       }
       return l10n.activitiesRouteCalculated;
+    // Routes computed before lodgings were set night by night.
     case 'missing_trip_address':
-      return l10n.activitiesRouteMissingTripAddress;
+    case 'missing_lodging':
+      return l10n.activitiesRouteMissingLodging;
+    case 'missing_activity_date':
+      return l10n.activitiesRouteMissingActivityDate;
     case 'no_result':
       final detail = route.detail?.trim() ?? '';
       if (detail.isEmpty) return l10n.activitiesRouteNoResult;

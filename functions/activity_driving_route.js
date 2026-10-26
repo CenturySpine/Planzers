@@ -133,6 +133,174 @@ function formatDurationText(durationSeconds) {
   return `${hours} h ${minutes} min`;
 }
 
+const TIME_ZONE = 'Europe/Paris';
+
+const parisDateFormat = new Intl.DateTimeFormat('en-CA', {
+  timeZone: TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+/**
+ * Calendar day of [value] in Europe/Paris, as `yyyy-mm-dd`; '' when none.
+ * Night keys of lodgings are calendar days in the same form.
+ * @param {unknown} value a Firestore Timestamp, a Date or an ISO string
+ */
+function parisDateKey(value) {
+  let date = null;
+  if (value && typeof value.toDate === 'function') date = value.toDate();
+  else if (value instanceof Date) date = value;
+  else if (typeof value === 'string' && value.trim()) date = new Date(value);
+  if (!date || Number.isNaN(date.getTime())) return '';
+  return parisDateFormat.format(date);
+}
+
+/**
+ * @param {string} key `yyyy-mm-dd`
+ * @param {number} days
+ */
+function shiftDateKey(key, days) {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+/**
+ * Evenings of the trip's nights (`yyyy-mm-dd`), first to last; none for a
+ * day trip or without both dates.
+ * @param {FirebaseFirestore.DocumentData} tripData
+ */
+function tripNightKeys(tripData) {
+  if (tripData?.isDayTrip === true) return [];
+  const start = parisDateKey(tripData?.startDate);
+  const end = parisDateKey(tripData?.endDate);
+  if (!start || !end) return [];
+  const keys = [];
+  for (let key = start; key < end; key = shiftDateKey(key, 1)) keys.push(key);
+  return keys;
+}
+
+/**
+ * A lodging document (`trips/{tripId}/lodgings/{lodgingId}`) as used here.
+ * @param {string} id
+ * @param {FirebaseFirestore.DocumentData} data
+ */
+function lodgingOf(id, data) {
+  return {
+    id,
+    name: normalizeString(data?.name),
+    address: normalizeString(data?.address),
+    location: pointOf(data?.location),
+    nights: Array.isArray(data?.nights)
+      ? data.nights.map((n) => normalizeString(n)).filter(Boolean)
+      : [],
+    allNights: data?.allNights === true,
+  };
+}
+
+/**
+ * The trip's lodgings: those stored, or its former single address for
+ * every night while none is stored (as `effectiveTripLodgings` in the app).
+ * @param {FirebaseFirestore.DocumentData} tripData
+ * @param {ReturnType<typeof lodgingOf>[]} lodgings
+ */
+function effectiveLodgings(tripData, lodgings) {
+  if (tripData?.isDayTrip === true) return [];
+  if (lodgings.length > 0 || tripData?.lodgingsByNight === true) return lodgings;
+  const address = normalizeString(tripData?.address);
+  if (!address) return [];
+  return [lodgingOf('legacy', { address, allNights: true })];
+}
+
+/**
+ * Where the night of [nightKey] is spent (as `tripLodgingForNight` in the
+ * app): the lodging having this night, else the one for every night.
+ * @param {ReturnType<typeof lodgingOf>[]} lodgings
+ * @param {string} nightKey
+ */
+function lodgingForNight(lodgings, nightKey) {
+  return (
+    lodgings.find((l) => !l.allNights && l.nights.includes(nightKey)) ??
+    lodgings.find((l) => l.allNights) ??
+    null
+  );
+}
+
+/**
+ * The lodging an activity's route starts from: the one of the night before
+ * its day, where that day starts, or of the first night on the arrival day.
+ * Without a date, the lodging of every night, or the trip's only lodging.
+ * @param {FirebaseFirestore.DocumentData} tripData
+ * @param {ReturnType<typeof lodgingOf>[]} lodgings stored ones
+ * @param {FirebaseFirestore.DocumentData} activityData
+ * @returns {{ lodging: ReturnType<typeof lodgingOf> } | { status: 'missing_lodging' | 'missing_activity_date' }}
+ */
+function originLodgingForActivity(tripData, lodgings, activityData) {
+  const effective = effectiveLodgings(tripData, lodgings);
+  const day = parisDateKey(activityData?.plannedAt);
+  if (!day) {
+    const lodging =
+      effective.find((l) => l.allNights) ?? (effective.length === 1 ? effective[0] : null);
+    if (lodging) return { lodging };
+    return { status: effective.length > 0 ? 'missing_activity_date' : 'missing_lodging' };
+  }
+  const nights = new Set(tripNightKeys(tripData));
+  const previous = shiftDateKey(day, -1);
+  const nightKey = !nights.has(previous) && nights.has(day) ? day : previous;
+  const lodging = lodgingForNight(effective, nightKey);
+  return lodging ? { lodging } : { status: 'missing_lodging' };
+}
+
+/**
+ * What an activity's route starts from, to compute it again only when it
+ * changes: the lodging, its name shown with the route and its place, or
+ * why there is none.
+ * @param {ReturnType<typeof originLodgingForActivity>} origin
+ */
+function originKeyOf(origin) {
+  if (!origin.lodging) return origin.status;
+  const { id, name, address, location } = origin.lodging;
+  const point = location ? `${location.latitude},${location.longitude}` : '';
+  return `${id}|${name}|${address}|${point}`;
+}
+
+/**
+ * Whether the route stored on an activity already starts from [origin].
+ * @param {FirebaseFirestore.DocumentData} activityData
+ * @param {ReturnType<typeof originLodgingForActivity>} origin
+ */
+function routeStartsFrom(activityData, origin) {
+  const stored = activityData?.tripDrivingRoute;
+  return (
+    stored != null &&
+    stored.status !== 'error' &&
+    stored.status !== 'calculating' &&
+    stored.originKey === originKeyOf(origin)
+  );
+}
+
+/**
+ * The point of a lodging: its own, else its address placed by Photon, once
+ * per run. Null when not found or Photon fails (the route then reads as not
+ * found).
+ */
+function lodgingPointResolver() {
+  const cache = new Map();
+  return async (lodging) => {
+    if (lodging.location) return lodging.location;
+    if (!cache.has(lodging.address)) {
+      cache.set(
+        lodging.address,
+        geocodeAddress(lodging.address).catch((e) => {
+          console.error('Lodging address geocoding failed', String(e));
+          return null;
+        })
+      );
+    }
+    return cache.get(lodging.address);
+  };
+}
+
 /**
  * Where the route to an activity ends: its point, or else its address
  * placed by Photon. Null when it has neither or the address is not found.
@@ -164,43 +332,85 @@ async function drivingRouteToActivity(origin, activityData) {
 }
 
 /**
- * Stores the route from the trip address to the activity. [tripOrigin] is
- * the trip address placed by Photon (null when not found).
+ * Stores on the activity the route from its lodging (see
+ * [originLodgingForActivity]) to its place, or removes it when the activity
+ * has no place.
  * @param {FirebaseFirestore.DocumentReference} docRef
- * @param {string} tripAddress
- * @param {{ latitude: number, longitude: number } | null} tripOrigin
  * @param {FirebaseFirestore.DocumentData} activityData
+ * @param {{ tripData: FirebaseFirestore.DocumentData, lodgings: ReturnType<typeof lodgingOf>[] }} trip
+ * @param {ReturnType<typeof lodgingPointResolver>} pointOfLodging
  */
-async function writeTripDrivingRouteForActivity(docRef, tripAddress, tripOrigin, activityData) {
+async function writeTripDrivingRouteForActivity(docRef, activityData, trip, pointOfLodging) {
   if (!normalizeString(activityData?.address) && !pointOf(activityData?.location)) {
     await docRef.set({ tripDrivingRoute: FieldValue.delete() }, { merge: true });
     return;
   }
 
-  const route = !tripAddress
-    ? { status: 'missing_trip_address' }
-    : !tripOrigin
-      ? { status: 'no_result', detail: 'TRIP_ADDRESS_NOT_FOUND' }
-      : await drivingRouteToActivity(tripOrigin, activityData);
+  const origin = originLodgingForActivity(trip.tripData, trip.lodgings, activityData);
+  const lodging = origin.lodging;
+  let route;
+  if (!lodging) {
+    route = { status: origin.status };
+  } else if (!lodging.address && !lodging.location) {
+    route = { status: 'missing_lodging' };
+  } else {
+    const point = await pointOfLodging(lodging);
+    route = point
+      ? await drivingRouteToActivity(point, activityData)
+      : { status: 'no_result', detail: 'LODGING_ADDRESS_NOT_FOUND' };
+  }
 
   await docRef.set(
-    { tripDrivingRoute: { ...route, calculatedAt: FieldValue.serverTimestamp() } },
+    {
+      tripDrivingRoute: {
+        ...route,
+        originKey: originKeyOf(origin),
+        // What the group typed, never content found from the lodging's link.
+        ...(lodging ? { originLabel: lodging.name || lodging.address } : {}),
+        calculatedAt: FieldValue.serverTimestamp(),
+      },
+    },
     { merge: true }
   );
 }
 
 /**
- * The trip address placed by Photon; null when empty, not found or Photon
- * fails (the route then reads as not found).
- * @param {string} tripAddress
+ * The trip and its stored lodgings.
+ * @param {string} tripId
  */
-async function tripOriginOf(tripAddress) {
-  if (!tripAddress) return null;
-  try {
-    return await geocodeAddress(tripAddress);
-  } catch (e) {
-    console.error('Trip address geocoding failed', String(e));
-    return null;
+async function loadTripForRoutes(tripId) {
+  const tripRef = admin.firestore().collection('trips').doc(tripId);
+  const [tripSnap, lodgingsSnap] = await Promise.all([
+    tripRef.get(),
+    tripRef.collection('lodgings').get(),
+  ]);
+  return {
+    tripData: tripSnap.data() || {},
+    lodgings: lodgingsSnap.docs.map((doc) => lodgingOf(doc.id, doc.data())),
+  };
+}
+
+/**
+ * Computes again the routes of the trip's activities with a place whose
+ * starting lodging changed, among those [onlyIf] keeps.
+ * @param {string} tripId
+ * @param {(activityData: FirebaseFirestore.DocumentData, origin: ReturnType<typeof originLodgingForActivity>) => boolean} [onlyIf]
+ */
+async function recomputeTripDrivingRoutes(tripId, onlyIf = () => true) {
+  const trip = await loadTripForRoutes(tripId);
+  const activitiesSnap = await admin
+    .firestore()
+    .collection('trips')
+    .doc(tripId)
+    .collection('activities')
+    .get();
+  const pointOfLodging = lodgingPointResolver();
+  for (const doc of activitiesSnap.docs) {
+    const data = doc.data() || {};
+    if (!normalizeString(data.address) && !pointOf(data.location)) continue;
+    const origin = originLodgingForActivity(trip.tripData, trip.lodgings, data);
+    if (routeStartsFrom(data, origin) || !onlyIf(data, origin)) continue;
+    await writeTripDrivingRouteForActivity(doc.ref, data, trip, pointOfLodging);
   }
 }
 
@@ -217,23 +427,55 @@ const computeActivityDrivingRouteFromTrip = onDocumentWritten(
 
     const before = event.data.before.exists ? event.data.before.data() || {} : {};
     const after = event.data.after.data() || {};
-    if (event.data.before.exists && activityPlaceKey(before) === activityPlaceKey(after)) {
+    // The day sets the lodging the route starts from.
+    if (
+      event.data.before.exists &&
+      activityPlaceKey(before) === activityPlaceKey(after) &&
+      parisDateKey(before.plannedAt) === parisDateKey(after.plannedAt)
+    ) {
       return;
     }
 
-    const tripId = event.params.tripId;
-    const tripSnap = await admin.firestore().collection('trips').doc(tripId).get();
-    const tripAddress = normalizeString(tripSnap.data()?.address);
-
     await writeTripDrivingRouteForActivity(
       event.data.after.ref,
-      tripAddress,
-      await tripOriginOf(tripAddress),
-      after
+      after,
+      await loadTripForRoutes(event.params.tripId),
+      lodgingPointResolver()
     );
   }
 );
 
+/**
+ * What of a trip sets the lodgings of its nights: its former single
+ * address, its dates, and whether its lodgings are set night by night.
+ * @param {FirebaseFirestore.DocumentData} data
+ */
+function tripLodgingNightsKey(data) {
+  return JSON.stringify([
+    normalizeString(data?.address),
+    tripNightKeys(data),
+    data?.lodgingsByNight === true,
+  ]);
+}
+
+/**
+ * What of a lodging sets the routes starting from it.
+ * @param {FirebaseFirestore.DocumentData | undefined} data
+ */
+function lodgingRouteKey(data) {
+  if (!data) return '';
+  const lodging = lodgingOf('', data);
+  return JSON.stringify([
+    lodging.name,
+    lodging.address,
+    lodging.location,
+    [...lodging.nights].sort(),
+    lodging.allNights,
+  ]);
+}
+
+// Kept under its former name, already deployed: now follows everything of
+// the trip that sets the lodgings of its nights.
 const recomputeActivityDrivingRoutesOnTripAddressChange = onDocumentUpdated(
   {
     document: 'trips/{tripId}',
@@ -243,26 +485,34 @@ const recomputeActivityDrivingRoutesOnTripAddressChange = onDocumentUpdated(
   async (event) => {
     const before = event.data.before.data() || {};
     const after = event.data.after.data() || {};
-    const beforeAddr = normalizeString(before.address);
-    const afterAddr = normalizeString(after.address);
-    if (beforeAddr === afterAddr) {
+    if (tripLodgingNightsKey(before) === tripLodgingNightsKey(after)) {
       return;
     }
+    await recomputeTripDrivingRoutes(event.params.tripId);
+  }
+);
 
-    const tripId = event.params.tripId;
-    const activitiesSnap = await admin
-      .firestore()
-      .collection('trips')
-      .doc(tripId)
-      .collection('activities')
-      .get();
-
-    const tripOrigin = await tripOriginOf(afterAddr);
-    for (const doc of activitiesSnap.docs) {
-      const data = doc.data() || {};
-      if (!normalizeString(data.address) && !pointOf(data.location)) continue;
-      await writeTripDrivingRouteForActivity(doc.ref, afterAddr, tripOrigin, data);
+const recomputeActivityDrivingRoutesOnLodgingChange = onDocumentWritten(
+  {
+    document: 'trips/{tripId}/lodgings/{lodgingId}',
+    timeoutSeconds: 120,
+    memory: '512MiB',
+  },
+  async (event) => {
+    const before = event.data.before.exists ? event.data.before.data() : undefined;
+    const after = event.data.after.exists ? event.data.after.data() : undefined;
+    // Its link preview, among others, leaves the routes as they are.
+    if (lodgingRouteKey(before) === lodgingRouteKey(after)) {
+      return;
     }
+    const lodgingId = event.params.lodgingId;
+    // Other lodgings saved along with this one see to their own activities.
+    await recomputeTripDrivingRoutes(
+      event.params.tripId,
+      (activityData, origin) =>
+        origin.lodging?.id === lodgingId ||
+        normalizeString(activityData.tripDrivingRoute?.originKey).startsWith(`${lodgingId}|`)
+    );
   }
 );
 
@@ -306,8 +556,8 @@ const refreshActivityDrivingRoute = onCall(
     }
 
     const activityData = activitySnap.data() || {};
-    const tripAddress = normalizeString(tripData.address);
 
+    // Kept under its former name: the route from the activity's lodging.
     if (originType === 'trip_address') {
       await activityRef.set(
         {
@@ -321,9 +571,9 @@ const refreshActivityDrivingRoute = onCall(
 
       await writeTripDrivingRouteForActivity(
         activityRef,
-        tripAddress,
-        await tripOriginOf(tripAddress),
-        activityData
+        activityData,
+        await loadTripForRoutes(tripId),
+        lodgingPointResolver()
       );
       return { ok: true };
     }
@@ -353,6 +603,7 @@ const refreshActivityDrivingRoute = onCall(
 module.exports = {
   computeActivityDrivingRouteFromTrip,
   recomputeActivityDrivingRoutesOnTripAddressChange,
+  recomputeActivityDrivingRoutesOnLodgingChange,
   refreshActivityDrivingRoute,
   normalizeString,
   activityPlaceKey,
@@ -360,4 +611,12 @@ module.exports = {
   parseOsrmResponse,
   fetchDrivingRoute,
   writeTripDrivingRouteForActivity,
+  parisDateKey,
+  tripNightKeys,
+  lodgingOf,
+  originLodgingForActivity,
+  originKeyOf,
+  routeStartsFrom,
+  lodgingRouteKey,
+  tripLodgingNightsKey,
 };

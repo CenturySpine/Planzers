@@ -4135,6 +4135,12 @@ abstract class AppLocalizations {
   /// **'Depuis le logement (voiture)'**
   String get activitiesFromLodgingByCar;
 
+  /// No description provided for @activitiesFromNamedLodgingByCar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Depuis {lodging} (voiture)'**
+  String activitiesFromNamedLodgingByCar(String lodging);
+
   /// No description provided for @activitiesFromCurrentLocationByCar.
   ///
   /// In fr, this message translates to:
@@ -4180,7 +4186,7 @@ abstract class AppLocalizations {
   /// No description provided for @activitiesRouteCalculating.
   ///
   /// In fr, this message translates to:
-  /// **'Calcul en cours depuis l\'adresse du voyage.'**
+  /// **'Calcul en cours.'**
   String get activitiesRouteCalculating;
 
   /// No description provided for @activitiesRouteNotCalculatedYet.
@@ -4207,11 +4213,17 @@ abstract class AppLocalizations {
   /// **'Trajet calculé.'**
   String get activitiesRouteCalculated;
 
-  /// No description provided for @activitiesRouteMissingTripAddress.
+  /// No description provided for @activitiesRouteMissingLodging.
   ///
   /// In fr, this message translates to:
-  /// **'Adresse du voyage manquante : renseignez-la dans l\'aperçu du voyage.'**
-  String get activitiesRouteMissingTripAddress;
+  /// **'Aucune adresse d\'hébergement pour cette nuit.'**
+  String get activitiesRouteMissingLodging;
+
+  /// No description provided for @activitiesRouteMissingActivityDate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Activité sans date : hébergement de départ inconnu.'**
+  String get activitiesRouteMissingActivityDate;
 
   /// No description provided for @activitiesRouteNoResult.
   ///

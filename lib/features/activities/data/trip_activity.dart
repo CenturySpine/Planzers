@@ -32,7 +32,7 @@ class TripActivity {
   final TripActivityCategory category;
   final String linkUrl;
 
-  /// Place address for driving directions from the trip base address (optional).
+  /// Place address for driving directions from the lodging (optional).
   /// For a transport, where it arrives.
   final String address;
 
@@ -66,7 +66,8 @@ class TripActivity {
   /// activity, never on the trip map.
   final Map<String, dynamic> placePreview;
 
-  /// Driving distance/duration from trip `address` (Cloud Function).
+  /// Driving distance/duration from the lodging where the activity's day
+  /// starts (Cloud Function).
   final ActivityTripDrivingRoute? tripDrivingRoute;
 
   /// UIDs of members who upvoted this suggestion.
