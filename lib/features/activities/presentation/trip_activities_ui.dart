@@ -11,7 +11,8 @@ const double tripActivitiesCardGap = 8;
 const double tripActivitiesCardPaddingY = 10;
 
 /// Category filter chips — Repas / Nuits / Loisirs / Trajets + Présences
-/// (disabled), as a single compact scrollable row.
+/// (disabled), as a single compact row. When they all fit, they share the
+/// whole width; otherwise the row scrolls.
 class TripActivitiesFilterChips extends StatelessWidget {
   const TripActivitiesFilterChips({
     super.key,
@@ -27,41 +28,77 @@ class TripActivitiesFilterChips extends StatelessWidget {
   final ValueChanged<ActivityFilterGroup> onToggle;
 
   static const _chipGroups = ActivityFilterGroup.values;
+  static const _padding = EdgeInsets.fromLTRB(16, 8, 16, 6);
+  static const double _gap = 6;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final chips = <TripCategoryFilterChip>[
+      for (final group in _chipGroups)
+        if (filterLabels[group] case final label?)
+          TripCategoryFilterChip(
+            label: label,
+            icon: group.filterIcon,
+            color: group.filterColor,
+            lightBg: group.filterLightBgColor,
+            ink: group.filterInkColor,
+            selected: activeFilters.contains(group),
+            onToggle: () => onToggle(group),
+          ),
+      TripCategoryFilterChip(
+        label: l10n.activitiesFilterPresences,
+        icon: PresenceCategoryColors.icon,
+        color: PresenceCategoryColors.color,
+        lightBg: PresenceCategoryColors.lightBg,
+        ink: PresenceCategoryColors.ink,
+        selected: false,
+        disabled: true,
+        disabledTooltip: l10n.commonComingSoon,
+        onToggle: () {},
+      ),
+    ];
     return SizedBox(
       height: 46,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
-        children: [
-          for (final group in _chipGroups)
-            if (filterLabels[group] case final label?) ...[
-              TripCategoryFilterChip(
-                label: label,
-                icon: group.filterIcon,
-                color: group.filterColor,
-                lightBg: group.filterLightBgColor,
-                ink: group.filterInkColor,
-                selected: activeFilters.contains(group),
-                onToggle: () => onToggle(group),
-              ),
-              const SizedBox(width: 6),
-            ],
-          TripCategoryFilterChip(
-            label: l10n.activitiesFilterPresences,
-            icon: PresenceCategoryColors.icon,
-            color: PresenceCategoryColors.color,
-            lightBg: PresenceCategoryColors.lightBg,
-            ink: PresenceCategoryColors.ink,
-            selected: false,
-            disabled: true,
-            disabledTooltip: l10n.commonComingSoon,
-            onToggle: () {},
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final widths = [
+            for (final chip in chips) chip.naturalWidth(context),
+          ];
+          final spare = constraints.maxWidth -
+              _padding.horizontal -
+              _gap * (chips.length - 1) -
+              widths.fold<double>(0, (sum, width) => sum + width);
+          // A pixel per chip of leeway for rounding.
+          if (spare < chips.length) {
+            return ListView(
+              scrollDirection: Axis.horizontal,
+              padding: _padding,
+              children: [
+                for (var i = 0; i < chips.length; i++) ...[
+                  if (i > 0) const SizedBox(width: _gap),
+                  chips[i],
+                ],
+              ],
+            );
+          }
+          // Each chip gets the same share of the space left.
+          final extra = spare / chips.length;
+          return Padding(
+            padding: _padding,
+            child: Row(
+              children: [
+                for (var i = 0; i < chips.length; i++) ...[
+                  if (i > 0) const SizedBox(width: _gap),
+                  Expanded(
+                    flex: ((widths[i] + extra) * 10).round(),
+                    child: chips[i],
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -93,32 +130,58 @@ class TripCategoryFilterChip extends StatelessWidget {
   final bool disabled;
   final String? disabledTooltip;
 
+  static const double _paddingX = 10;
+  static const double _selectedBorderWidth = 1.4;
+  static const double _iconSize = 16;
+  static const double _iconGap = 5;
+  static const _labelStyle = TextStyle(
+    fontSize: 12.5,
+    fontWeight: FontWeight.w700,
+  );
+
+  /// The width the chip takes with nothing to stretch it, selected or not.
+  double naturalWidth(BuildContext context) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: DefaultTextStyle.of(context).style.merge(_labelStyle),
+      ),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final labelWidth = painter.width;
+    painter.dispose();
+    return labelWidth +
+        2 * (_paddingX + _selectedBorderWidth) +
+        _iconSize +
+        _iconGap;
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget chip = AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       curve: Curves.easeOut,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: _paddingX),
       decoration: BoxDecoration(
         color: selected ? lightBg : AppTokens.surface,
         borderRadius: BorderRadius.circular(AppTokens.radiusSm),
         border: Border.all(
           color: selected ? color : AppTokens.divider,
-          width: selected ? 1.4 : 1,
+          width: selected ? _selectedBorderWidth : 1,
         ),
       ),
       alignment: Alignment.center,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 5),
+          Icon(icon, size: _iconSize, color: color),
+          const SizedBox(width: _iconGap),
           Text(
             label,
             maxLines: 1,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
+            style: _labelStyle.copyWith(
               color: selected ? ink : AppTokens.deep,
             ),
           ),

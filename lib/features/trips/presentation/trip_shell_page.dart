@@ -491,6 +491,10 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
   final String Function(String label) localizedLabel;
 
   static const int _planningIdx = 2;
+
+  /// Slots of the bar: a missing fifth tab leaves its slot empty, so that
+  /// Planning stays in the middle.
+  static const int _slotCount = 5;
   static const Curve _tabCurve = Cubic(0.2, 0, 0, 1);
   static const Duration _tabDuration = Duration(milliseconds: 180);
 
@@ -541,6 +545,8 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
                             tabDuration: tabDuration,
                           ),
                   ),
+                for (var slot = destinations.length; slot < _slotCount; slot++)
+                  const Spacer(flex: 10),
               ],
             ),
           ),
