@@ -106,21 +106,28 @@ class TripGeneralPermissions {
 
 enum TripParticipantsPermissionAction {
   manageParticipants,
-  toggleAdminRole;
+  toggleAdminRole,
+  editOwnStay;
 }
 
 class TripParticipantsPermissions {
   const TripParticipantsPermissions({
     required this.manageParticipantsMinRole,
     required this.toggleAdminRoleMinRole,
+    required this.editOwnStayMinRole,
   });
 
   final TripPermissionRole manageParticipantsMinRole;
   final TripPermissionRole toggleAdminRoleMinRole;
 
+  /// A traveler changing their own stay dates. Changing someone else's
+  /// stays under [manageParticipantsMinRole].
+  final TripPermissionRole editOwnStayMinRole;
+
   static const defaults = TripParticipantsPermissions(
     manageParticipantsMinRole: TripPermissionRole.owner,
     toggleAdminRoleMinRole: TripPermissionRole.owner,
+    editOwnStayMinRole: TripPermissionRole.participant,
   );
 
   factory TripParticipantsPermissions.fromFirestore(dynamic raw) {
@@ -134,6 +141,9 @@ class TripParticipantsPermissions {
       toggleAdminRoleMinRole: raw['toggleAdminRole'] == null
           ? TripPermissionRole.owner
           : TripPermissionRole.fromFirestore(raw['toggleAdminRole']),
+      editOwnStayMinRole: raw['editOwnStay'] == null
+          ? defaults.editOwnStayMinRole
+          : TripPermissionRole.fromFirestore(raw['editOwnStay']),
     );
   }
 
@@ -141,6 +151,44 @@ class TripParticipantsPermissions {
     return <String, dynamic>{
       'manageParticipants': manageParticipantsMinRole.toFirestore(),
       'toggleAdminRole': toggleAdminRoleMinRole.toFirestore(),
+      'editOwnStay': editOwnStayMinRole.toFirestore(),
+    };
+  }
+}
+
+enum TripRoomsPermissionAction {
+  manageRooms,
+}
+
+/// Permissions for trip rooms: creating, changing and deleting rooms and
+/// beds, and who sleeps where.
+///
+/// Firestore: `trips/{id}.permissions.rooms`.
+class TripRoomsPermissions {
+  const TripRoomsPermissions({
+    required this.manageRoomsMinRole,
+  });
+
+  final TripPermissionRole manageRoomsMinRole;
+
+  static const defaults = TripRoomsPermissions(
+    manageRoomsMinRole: TripPermissionRole.participant,
+  );
+
+  factory TripRoomsPermissions.fromFirestore(dynamic raw) {
+    if (raw is! Map) {
+      return defaults;
+    }
+    return TripRoomsPermissions(
+      manageRoomsMinRole: raw['manageRooms'] == null
+          ? defaults.manageRoomsMinRole
+          : TripPermissionRole.fromFirestore(raw['manageRooms']),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return <String, dynamic>{
+      'manageRooms': manageRoomsMinRole.toFirestore(),
     };
   }
 }

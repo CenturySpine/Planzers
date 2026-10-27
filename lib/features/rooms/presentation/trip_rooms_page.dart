@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,7 @@ import 'package:planerz/features/rooms/data/trip_room_lodgings.dart';
 import 'package:planerz/features/trips/data/trip_lodging_plan.dart';
 import 'package:planerz/features/trips/data/trip_lodgings_repository.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -43,6 +45,9 @@ class _TripRoomsPageState extends ConsumerState<TripRoomsPage>
 
   /// The night chosen, by lodging (`''` for none); absent for every night.
   final Map<String, String> _nightByLodging = {};
+
+  /// Lodgings whose nights were asked for, before any is set apart.
+  final Set<String> _nightsShownByLodging = {};
   bool _busy = false;
 
   @override
@@ -133,6 +138,10 @@ class _TripRoomsPageState extends ConsumerState<TripRoomsPage>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
+    final canManageRooms = canManageRoomsForTrip(
+      trip: trip,
+      userId: FirebaseAuth.instance.currentUser?.uid,
+    );
     final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
     final roomsAsync = ref.watch(tripRoomsStreamProvider(trip.id));
     final lodgingsAsync = ref.watch(tripLodgingsStreamProvider(trip.id));
@@ -189,7 +198,7 @@ class _TripRoomsPageState extends ConsumerState<TripRoomsPage>
     };
 
     Widget? action;
-    if (view == _RoomsView.nightUsingShared) {
+    if (canManageRooms && view == _RoomsView.nightUsingShared) {
       action = OutlinedButton.icon(
         onPressed: _busy
             ? null
@@ -202,7 +211,9 @@ class _TripRoomsPageState extends ConsumerState<TripRoomsPage>
         icon: const Icon(PhosphorIconsRegular.copy),
         label: Text(l10n.roomsSetNightApart),
       );
-    } else if (view == _RoomsView.nightApart && nightRooms.isNotEmpty) {
+    } else if (canManageRooms &&
+        view == _RoomsView.nightApart &&
+        nightRooms.isNotEmpty) {
       action = OutlinedButton.icon(
         onPressed: _busy
             ? null
@@ -227,7 +238,11 @@ class _TripRoomsPageState extends ConsumerState<TripRoomsPage>
                   Tab(text: l.lodging?.displayTitle ?? l10n.tripLodgingTitle),
               ],
             ),
-          if (nightKeys.length > 1)
+          // Nights stay out of the way until one is set apart, or asked for.
+          if (nightKeys.length > 1 &&
+              (nightsApart.isNotEmpty ||
+                  _nightByLodging.containsKey(lodgingKey) ||
+                  _nightsShownByLodging.contains(lodgingKey)))
             _RoomNightChips(
               nights: lodging.nights,
               selectedKey: nightKey,
@@ -239,6 +254,19 @@ class _TripRoomsPageState extends ConsumerState<TripRoomsPage>
                   _nightByLodging[lodgingKey] = key;
                 }
               }),
+            )
+          else if (nightKeys.length > 1 && canManageRooms)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 16, 0),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  onPressed: () =>
+                      setState(() => _nightsShownByLodging.add(lodgingKey)),
+                  icon: const Icon(PhosphorIconsRegular.calendarDots, size: 18),
+                  label: Text(l10n.roomsCustomizeNight),
+                ),
+              ),
             ),
           Expanded(
             child: _TripRoomsBody(
@@ -247,7 +275,7 @@ class _TripRoomsPageState extends ConsumerState<TripRoomsPage>
               tripId: trip.id,
               memberLabels: memberLabels,
               rooms: shownRooms,
-              readOnly: view == _RoomsView.nightUsingShared,
+              readOnly: !canManageRooms || view == _RoomsView.nightUsingShared,
               action: action,
               roomSetOf: (room) =>
                   '${split.lodgingIdOf(room) ?? ''}|${room.nightKey ?? ''}',
@@ -255,7 +283,8 @@ class _TripRoomsPageState extends ConsumerState<TripRoomsPage>
           ),
         ],
       ),
-      floatingActionButton: view == _RoomsView.nightUsingShared
+      floatingActionButton: !canManageRooms ||
+              view == _RoomsView.nightUsingShared
           ? null
           : FloatingActionButton(
               heroTag: 'trip_rooms_add',

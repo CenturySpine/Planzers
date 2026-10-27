@@ -221,6 +221,7 @@ abstract final class PhosphorIconsFill {
   static const IconData heart = IconData(0xe2a8, fontFamily: 'PhosphorFill');
   static const IconData lock = IconData(0xe2fa, fontFamily: 'PhosphorFill');
   static const IconData mapPin = IconData(0xe316, fontFamily: 'PhosphorFill');
+  static const IconData mapTrifold = IconData(0xe31a, fontFamily: 'PhosphorFill');
   static const IconData megaphone = IconData(0xe324, fontFamily: 'PhosphorFill');
   static const IconData navigationArrow = IconData(0xeade, fontFamily: 'PhosphorFill');
   static const IconData paperPlaneRight = IconData(0xe396, fontFamily: 'PhosphorFill');

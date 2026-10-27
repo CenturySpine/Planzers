@@ -437,3 +437,29 @@ bool canToggleTripParticipantAdminRoleForUser({
     minRole: trip.participantsPermissions.toggleAdminRoleMinRole,
   );
 }
+
+/// A traveler changing their own stay dates. Someone not yet on the trip
+/// counts as a participant, as they will once joined.
+bool canEditOwnStayForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  return isTripRoleAllowed(
+    currentRole: resolveTripPermissionRole(trip: trip, userId: userId),
+    minRole: trip.participantsPermissions.editOwnStayMinRole,
+  );
+}
+
+/// Creating, changing and deleting rooms and beds, and who sleeps where.
+bool canManageRoomsForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
+  return isTripRoleAllowed(
+    currentRole: resolveTripPermissionRole(trip: trip, userId: uid),
+    minRole: trip.roomsPermissions.manageRoomsMinRole,
+  );
+}

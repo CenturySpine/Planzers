@@ -216,38 +216,41 @@ class _TripMealsPermissionsPageState
                           minRole: role,
                         ),
                       ),
-                      TripPermissionItemRow(
-                        title: l10n.tripPermissionMealsAddContribution,
-                        minRole: trip.mealsPermissions.addContributionMinRole,
-                        icon: PhosphorIconsRegular.handHeart,
-                        busy: _savingActions.contains(
-                          TripMealsPermissionAction.addContribution,
+                      // Contributions and recipes belong to home meals.
+                      if (trip.homeMealsModuleEnabled) ...[
+                        TripPermissionItemRow(
+                          title: l10n.tripPermissionMealsAddContribution,
+                          minRole: trip.mealsPermissions.addContributionMinRole,
+                          icon: PhosphorIconsRegular.handHeart,
+                          busy: _savingActions.contains(
+                            TripMealsPermissionAction.addContribution,
+                          ),
+                          enabled: !_isResettingDefaults,
+                          onChanged: (role) => _updatePermission(
+                            action: TripMealsPermissionAction.addContribution,
+                            minRole: role,
+                          ),
                         ),
-                        enabled: !_isResettingDefaults,
-                        onChanged: (role) => _updatePermission(
-                          action: TripMealsPermissionAction.addContribution,
-                          minRole: role,
+                        TripPermissionItemRow(
+                          title: l10n.tripPermissionMealsManageRecipe,
+                          minRole: trip.mealsPermissions.manageRecipeMinRole,
+                          icon: PhosphorIconsRegular.bookOpen,
+                          availableRoles: const <TripPermissionRole>[
+                            TripPermissionRole.participant,
+                            TripPermissionRole.chef,
+                            TripPermissionRole.admin,
+                            TripPermissionRole.owner,
+                          ],
+                          busy: _savingActions.contains(
+                            TripMealsPermissionAction.manageRecipe,
+                          ),
+                          enabled: !_isResettingDefaults,
+                          onChanged: (role) => _updatePermission(
+                            action: TripMealsPermissionAction.manageRecipe,
+                            minRole: role,
+                          ),
                         ),
-                      ),
-                      TripPermissionItemRow(
-                        title: l10n.tripPermissionMealsManageRecipe,
-                        minRole: trip.mealsPermissions.manageRecipeMinRole,
-                        icon: PhosphorIconsRegular.bookOpen,
-                        availableRoles: const <TripPermissionRole>[
-                          TripPermissionRole.participant,
-                          TripPermissionRole.chef,
-                          TripPermissionRole.admin,
-                          TripPermissionRole.owner,
-                        ],
-                        busy: _savingActions.contains(
-                          TripMealsPermissionAction.manageRecipe,
-                        ),
-                        enabled: !_isResettingDefaults,
-                        onChanged: (role) => _updatePermission(
-                          action: TripMealsPermissionAction.manageRecipe,
-                          minRole: role,
-                        ),
-                      ),
+                      ],
                     ],
                   ),
                 ),

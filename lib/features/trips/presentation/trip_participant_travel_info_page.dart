@@ -369,7 +369,10 @@ class _TripParticipantTravelInfoPageState
                         ),
                       ],
                     ),
-                    if (!trip.isDayTrip)
+                    // One's own dates may be the organizer's to set.
+                    if (!trip.isDayTrip &&
+                        (participant.userId != myUid ||
+                            canEditOwnStayForTrip(trip: trip, userId: myUid)))
                       TripMemberStayOptionsEditor(
                         mode: TripMemberStayOptionsEditorMode.draft,
                         grouped: true,
@@ -380,6 +383,7 @@ class _TripParticipantTravelInfoPageState
                         tripEndDate: trip.endDate,
                         trip: trip,
                         showStayDates: true,
+                        showDayParts: trip.homeMealsModuleEnabled,
                         isCupidonModeEnabled: false,
                         initialStay: stayDraft,
                         initialCupidonEnabled: false,

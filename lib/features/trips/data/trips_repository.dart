@@ -109,7 +109,10 @@ final tripStreamProvider =
 enum TripGenericModule {
   carpool('carpoolModuleEnabled'),
   rooms('roomsModuleEnabled'),
-  games('gamesModuleEnabled');
+  games('gamesModuleEnabled'),
+  journey('journeyModuleEnabled'),
+  homeMeals('homeMealsModuleEnabled'),
+  shopping('shoppingModuleEnabled');
 
   const TripGenericModule(this.firestoreField);
 
@@ -137,6 +140,7 @@ class TripsRepository {
       'meals': TripMealsPermissions.defaults.toFirestore(),
       'shopping': TripShoppingPermissions.defaults.toFirestore(),
       'carpool': TripCarpoolPermissions.defaults.toFirestore(),
+      'rooms': TripRoomsPermissions.defaults.toFirestore(),
     };
   }
 
@@ -282,11 +286,17 @@ class TripsRepository {
     bool carpoolModuleEnabled = false,
     bool roomsModuleEnabled = false,
     bool gamesModuleEnabled = false,
+    bool journeyModuleEnabled = true,
+    bool homeMealsModuleEnabled = true,
+    bool shoppingModuleEnabled = true,
     DateTime? startDate,
     DateTime? endDate,
     TripDayPart? tripStartDayPart,
     TripDayPart? tripEndDayPart,
     bool isDayTrip = false,
+
+    /// The trip's whole permissions block; the defaults when null.
+    Map<String, dynamic>? permissions,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -305,9 +315,12 @@ class TripsRepository {
       'carpoolModuleEnabled': carpoolModuleEnabled,
       'roomsModuleEnabled': isDayTrip ? false : roomsModuleEnabled,
       'gamesModuleEnabled': gamesModuleEnabled,
+      'journeyModuleEnabled': journeyModuleEnabled,
+      'homeMealsModuleEnabled': homeMealsModuleEnabled,
+      'shoppingModuleEnabled': shoppingModuleEnabled,
       'ownerId': user.uid,
       'memberUserIds': <String>[user.uid],
-      'permissions': _defaultPermissionsFirestoreMap(),
+      'permissions': permissions ?? _defaultPermissionsFirestoreMap(),
       'inviteToken': _generateInviteToken(),
       'createdAt': FieldValue.serverTimestamp(),
     };
@@ -352,6 +365,9 @@ class TripsRepository {
         carpoolModuleEnabled: carpoolModuleEnabled,
         roomsModuleEnabled: isDayTrip ? false : roomsModuleEnabled,
         gamesModuleEnabled: gamesModuleEnabled,
+        journeyModuleEnabled: journeyModuleEnabled,
+        homeMealsModuleEnabled: homeMealsModuleEnabled,
+        shoppingModuleEnabled: shoppingModuleEnabled,
         ownerId: user.uid,
         memberUserIds: [user.uid],
         createdAt: DateTime.now(),
@@ -423,6 +439,9 @@ class TripsRepository {
     bool? carpoolModuleEnabled,
     bool? roomsModuleEnabled,
     bool? gamesModuleEnabled,
+    bool? journeyModuleEnabled,
+    bool? homeMealsModuleEnabled,
+    bool? shoppingModuleEnabled,
     DateTime? startDate,
     DateTime? endDate,
     TripDayPart? tripStartDayPart,
@@ -475,6 +494,12 @@ class TripsRepository {
       if (roomsModuleEnabled != null)
         'roomsModuleEnabled': savingAsDayTrip ? false : roomsModuleEnabled,
       if (gamesModuleEnabled != null) 'gamesModuleEnabled': gamesModuleEnabled,
+      if (journeyModuleEnabled != null)
+        'journeyModuleEnabled': journeyModuleEnabled,
+      if (homeMealsModuleEnabled != null)
+        'homeMealsModuleEnabled': homeMealsModuleEnabled,
+      if (shoppingModuleEnabled != null)
+        'shoppingModuleEnabled': shoppingModuleEnabled,
     };
 
     if (isDayTrip != null) {
@@ -696,6 +721,8 @@ class TripsRepository {
       tripEndDayPart:
           tripDayPartFromFirestore(raw['tripEndDayPart'] as String?),
       isDayTrip: raw['isDayTrip'] == true,
+      stayDatesLocked: raw['stayDatesLocked'] == true,
+      homeMealsModuleEnabled: raw['homeMealsModuleEnabled'] != false,
     );
   }
 
@@ -1181,6 +1208,7 @@ class TripsRepository {
     final fieldName = switch (action) {
       TripParticipantsPermissionAction.manageParticipants => 'manageParticipants',
       TripParticipantsPermissionAction.toggleAdminRole => 'toggleAdminRole',
+      TripParticipantsPermissionAction.editOwnStay => 'editOwnStay',
     };
 
     await tripRef.update(<String, dynamic>{
@@ -1583,6 +1611,76 @@ class TripsRepository {
 
     await tripRef.update(<String, dynamic>{
       'permissions.carpool': TripCarpoolPermissions.defaults.toFirestore(),
+    });
+  }
+
+  Future<void> updateTripRoomsPermission({
+    required String tripId,
+    required TripRoomsPermissionAction action,
+    required TripPermissionRole minRole,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.manageTripSettingsMinRole,
+    );
+
+    final fieldName = switch (action) {
+      TripRoomsPermissionAction.manageRooms => 'manageRooms',
+    };
+
+    await tripRef.update(<String, dynamic>{
+      'permissions.rooms.$fieldName': minRole.toFirestore(),
+    });
+  }
+
+  Future<void> resetTripRoomsPermissionsToDefaults({
+    required String tripId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.manageTripSettingsMinRole,
+    );
+
+    await tripRef.update(<String, dynamic>{
+      'permissions.rooms': TripRoomsPermissions.defaults.toFirestore(),
     });
   }
 }

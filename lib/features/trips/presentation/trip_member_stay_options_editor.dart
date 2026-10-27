@@ -43,6 +43,7 @@ class TripMemberStayOptionsEditor extends StatefulWidget {
     this.phoneVisibilityTitle,
     this.isCupidonModeEnabled = true,
     this.showStayDates = true,
+    this.showDayParts = true,
     this.trip,
     this.grouped = false,
     this.showOptionsSection = true,
@@ -71,6 +72,9 @@ class TripMemberStayOptionsEditor extends StatefulWidget {
   final String? phoneVisibilityTitle;
   final bool isCupidonModeEnabled;
   final bool showStayDates;
+
+  /// False without home meals: dates only, kept as whole days.
+  final bool showDayParts;
   final Trip? trip;
   final bool grouped;
   final bool showOptionsSection;
@@ -186,10 +190,11 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
     );
     if (!mounted || result == null) return;
     setState(() {
-      _stay = _stay.copyWith(
+      final next = _stay.copyWith(
         startDateKey: TripMemberStay.dateKeyFromDateTime(result.start),
         endDateKey: TripMemberStay.dateKeyFromDateTime(result.end),
       );
+      _stay = widget.showDayParts ? next : next.asWholeDays();
     });
     _emitDraft();
   }
@@ -564,32 +569,34 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                   ),
                 ],
               ),
-              TripMealBoundCard(
-                bordered: false,
-                dayLabel: l10n.tripCreateArrivalMealDay(
-                  formatTripStayShortDate(context, startDate),
+              if (widget.showDayParts) ...[
+                TripMealBoundCard(
+                  bordered: false,
+                  dayLabel: l10n.tripCreateArrivalMealDay(
+                    formatTripStayShortDate(context, startDate),
+                  ),
+                  dayIcon: PhosphorIconsRegular.airplaneTakeoff,
+                  question: l10n.tripCreateFirstMealQuestion,
+                  selected: _stay.startDayPart,
+                  onSelected: (part) {
+                    setState(() => _stay = _stay.copyWith(startDayPart: part));
+                    _emitDraft();
+                  },
                 ),
-                dayIcon: PhosphorIconsRegular.airplaneTakeoff,
-                question: l10n.tripCreateFirstMealQuestion,
-                selected: _stay.startDayPart,
-                onSelected: (part) {
-                  setState(() => _stay = _stay.copyWith(startDayPart: part));
-                  _emitDraft();
-                },
-              ),
-              TripMealBoundCard(
-                bordered: false,
-                dayLabel: l10n.tripCreateDepartureMealDay(
-                  formatTripStayShortDate(context, endDate),
+                TripMealBoundCard(
+                  bordered: false,
+                  dayLabel: l10n.tripCreateDepartureMealDay(
+                    formatTripStayShortDate(context, endDate),
+                  ),
+                  dayIcon: PhosphorIconsRegular.airplaneLanding,
+                  question: l10n.tripCreateLastMealQuestion,
+                  selected: _stay.endDayPart,
+                  onSelected: (part) {
+                    setState(() => _stay = _stay.copyWith(endDayPart: part));
+                    _emitDraft();
+                  },
                 ),
-                dayIcon: PhosphorIconsRegular.airplaneLanding,
-                question: l10n.tripCreateLastMealQuestion,
-                selected: _stay.endDayPart,
-                onSelected: (part) {
-                  setState(() => _stay = _stay.copyWith(endDayPart: part));
-                  _emitDraft();
-                },
-              ),
+              ],
             ],
           ),
         ],
@@ -663,36 +670,38 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: TripMealBoundCard(
-              dayLabel: l10n.tripCreateArrivalMealDay(
-                formatTripStayShortDate(context, startDate),
+          if (widget.showDayParts) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: TripMealBoundCard(
+                dayLabel: l10n.tripCreateArrivalMealDay(
+                  formatTripStayShortDate(context, startDate),
+                ),
+                dayIcon: PhosphorIconsRegular.airplaneTakeoff,
+                question: l10n.tripCreateFirstMealQuestion,
+                selected: _stay.startDayPart,
+                onSelected: (part) {
+                  setState(() => _stay = _stay.copyWith(startDayPart: part));
+                  _emitDraft();
+                },
               ),
-              dayIcon: PhosphorIconsRegular.airplaneTakeoff,
-              question: l10n.tripCreateFirstMealQuestion,
-              selected: _stay.startDayPart,
-              onSelected: (part) {
-                setState(() => _stay = _stay.copyWith(startDayPart: part));
-                _emitDraft();
-              },
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            child: TripMealBoundCard(
-              dayLabel: l10n.tripCreateDepartureMealDay(
-                formatTripStayShortDate(context, endDate),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: TripMealBoundCard(
+                dayLabel: l10n.tripCreateDepartureMealDay(
+                  formatTripStayShortDate(context, endDate),
+                ),
+                dayIcon: PhosphorIconsRegular.airplaneLanding,
+                question: l10n.tripCreateLastMealQuestion,
+                selected: _stay.endDayPart,
+                onSelected: (part) {
+                  setState(() => _stay = _stay.copyWith(endDayPart: part));
+                  _emitDraft();
+                },
               ),
-              dayIcon: PhosphorIconsRegular.airplaneLanding,
-              question: l10n.tripCreateLastMealQuestion,
-              selected: _stay.endDayPart,
-              onSelected: (part) {
-                setState(() => _stay = _stay.copyWith(endDayPart: part));
-                _emitDraft();
-              },
             ),
-          ),
+          ],
         ],
         _buildDraftNeonOptions(context),
         const SizedBox(height: 8),
@@ -734,6 +743,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
             initialStay: _stay,
             trip: widget.trip,
             showTitle: false,
+            showDayParts: widget.showDayParts,
             onDraftChanged: null,
             onLiveChanged: widget.onLiveStayChanged,
           ),

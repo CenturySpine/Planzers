@@ -267,7 +267,8 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                       (id) => id.trim() == myParticipantId,
                     ),
                   );
-              final showGlobalShoppingMeetupSection = myParticipantId != null &&
+              final showGlobalShoppingMeetupSection = trip.shoppingModuleEnabled &&
+                  myParticipantId != null &&
                   carpools.any(
                     (carpool) =>
                         carpool.goesShopping &&
@@ -703,7 +704,8 @@ class _TripCarpoolCard extends StatelessWidget {
                                 maxLines: 1,
                               ),
                             ),
-                            if (carpool.goesShopping) ...[
+                            if (carpool.goesShopping &&
+                                TripScope.of(context).shoppingModuleEnabled) ...[
                               const SizedBox(width: 6),
                               Icon(
                                 PhosphorIconsRegular.shoppingCartSimple,

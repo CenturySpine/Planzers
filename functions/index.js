@@ -2664,6 +2664,13 @@ exports.getInviteJoinContext = onCall(
       tripStartDayPart: normalizeString(data.tripStartDayPart) || null,
       tripEndDayPart: normalizeString(data.tripEndDayPart) || null,
       isDayTrip: data.isDayTrip === true,
+      // A newcomer is a participant: their dates are locked when changing
+      // one's own stay needs more.
+      stayDatesLocked:
+        roleRank(
+          tripParticipantPermissionMinRole(data, 'editOwnStay', 'participant')
+        ) > 0,
+      homeMealsModuleEnabled: data.homeMealsModuleEnabled !== false,
     };
   }
 );
@@ -3883,6 +3890,7 @@ exports.updateParticipantProfile = onCall(
     }
 
     let participantRef;
+    let isOwnProfile = true;
     if (participantId) {
       participantRef = tripRef.collection('participants').doc(participantId);
       const participantSnap = await participantRef.get();
@@ -3891,6 +3899,7 @@ exports.updateParticipantProfile = onCall(
       }
       const participantUserId = normalizeString(participantSnap.data()?.userId);
       if (participantUserId !== uid) {
+        isOwnProfile = false;
         await assertTripParticipantPermission({
           tripData,
           uid,
@@ -3909,6 +3918,17 @@ exports.updateParticipantProfile = onCall(
         throw new HttpsError('not-found', 'Tu n\'es pas inscrit comme participant');
       }
       participantRef = snap.docs[0].ref;
+    }
+
+    // The organizer may set every traveler's dates (as in a guided trip).
+    if (hasStay && isOwnProfile) {
+      await assertTripParticipantPermission({
+        tripData,
+        uid,
+        permissionKey: 'editOwnStay',
+        fallbackRole: 'participant',
+        deniedMessage: 'Les dates de présence sont fixées par l\'organisateur.',
+      });
     }
 
     const update = { updatedAt: FieldValue.serverTimestamp() };
