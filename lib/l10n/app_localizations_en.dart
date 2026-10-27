@@ -369,6 +369,113 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripsCreateDialogTitle => 'New trip';
 
   @override
+  String get tripTemplateSectionLabel => 'Trip type';
+
+  @override
+  String get tripTemplateChange => 'Change';
+
+  @override
+  String get tripTemplateFooter =>
+      'This choice sets up your trip: you can then switch each module on or off and adjust the permissions.';
+
+  @override
+  String get tripTemplateFriendsStayTitle => 'Stay with friends';
+
+  @override
+  String get tripTemplateFriendsStayTagline =>
+      'The whole group in one place (a chalet, a house, a cottage) for a weekend or a holiday.';
+
+  @override
+  String get tripTemplateFriendsStayPoint1 =>
+      'Assign rooms and beds, night by night when arrivals are spread out.';
+
+  @override
+  String get tripTemplateFriendsStayPoint2 =>
+      'Organize meals: who cooks, who brings what, with a shared shopping list.';
+
+  @override
+  String get tripTemplateFriendsStayPoint3 =>
+      'Suggest activities, the group votes for its favorites.';
+
+  @override
+  String get tripTemplateFriendsStayPoint4 =>
+      'Share cars to get there and settle up at the end of the stay.';
+
+  @override
+  String get tripTemplateRoadTripTitle => 'Road trip';
+
+  @override
+  String get tripTemplateRoadTripTagline =>
+      'You move from stage to stage, alone or together: road trip, rail tour, backpacking, hut-to-hut trek.';
+
+  @override
+  String get tripTemplateRoadTripPoint1 =>
+      'Say where you sleep each night: the stages follow one another on the trip map.';
+
+  @override
+  String get tripTemplateRoadTripPoint2 =>
+      'Plan activities and restaurants day by day, and spot the transports to plan between two places.';
+
+  @override
+  String get tripTemplateRoadTripPoint3 =>
+      'Your photos find their place on the map, stage after stage.';
+
+  @override
+  String get tripTemplateRoadTripPoint4 =>
+      'Share expenses and chat with your travel companions.';
+
+  @override
+  String get tripTemplateGuidedTripTitle => 'Organized trip';
+
+  @override
+  String get tripTemplateGuidedTripTagline =>
+      'An organizer (agency, guide, club or a friend who takes charge) prepares the trip for the group.';
+
+  @override
+  String get tripTemplateGuidedTripPoint1 =>
+      'The organizer sets the dates, stages, lodgings, rooms and the hour-by-hour program.';
+
+  @override
+  String get tripTemplateGuidedTripPoint2 =>
+      'Travelers see the program and the map, without changing them.';
+
+  @override
+  String get tripTemplateGuidedTripPoint3 =>
+      'Everyone adds their photos to the activities.';
+
+  @override
+  String get tripTemplateGuidedTripPoint4 =>
+      'Travelers share expenses among themselves and chat in the messaging.';
+
+  @override
+  String get tripTemplateGuidedTripPoint5 =>
+      'Only the organizer invites new travelers.';
+
+  @override
+  String get tripTemplateDayOutingTitle => 'Day outing';
+
+  @override
+  String get tripTemplateDayOutingTagline =>
+      'A day together, with no night there: birthday, picnic, hike, beach day.';
+
+  @override
+  String get tripTemplateDayOutingPoint1 => 'Share cars to get there.';
+
+  @override
+  String get tripTemplateDayOutingPoint2 =>
+      'Organize the picnic: who brings what, with a shared shopping list.';
+
+  @override
+  String get tripTemplateDayOutingPoint3 =>
+      'Suggest activities, the group votes for its favorites.';
+
+  @override
+  String get tripTemplateDayOutingPoint4 => 'Settle up at the end of the day.';
+
+  @override
+  String get roomsCustomizeNight => 'Customize a night';
+
+  @override
   String get tripsTitleLabel => 'Trip name';
 
   @override
@@ -4581,6 +4688,113 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripsCreateDialogTitle => 'New trip';
+
+  @override
+  String get tripTemplateSectionLabel => 'Trip type';
+
+  @override
+  String get tripTemplateChange => 'Change';
+
+  @override
+  String get tripTemplateFooter =>
+      'This choice sets up your trip: you can then switch each module on or off and adjust the permissions.';
+
+  @override
+  String get tripTemplateFriendsStayTitle => 'Stay with friends';
+
+  @override
+  String get tripTemplateFriendsStayTagline =>
+      'The whole group in one place (a chalet, a house, a cottage) for a weekend or a holiday.';
+
+  @override
+  String get tripTemplateFriendsStayPoint1 =>
+      'Assign rooms and beds, night by night when arrivals are spread out.';
+
+  @override
+  String get tripTemplateFriendsStayPoint2 =>
+      'Organize meals: who cooks, who brings what, with a shared shopping list.';
+
+  @override
+  String get tripTemplateFriendsStayPoint3 =>
+      'Suggest activities, the group votes for its favorites.';
+
+  @override
+  String get tripTemplateFriendsStayPoint4 =>
+      'Share cars to get there and settle up at the end of the stay.';
+
+  @override
+  String get tripTemplateRoadTripTitle => 'Road trip';
+
+  @override
+  String get tripTemplateRoadTripTagline =>
+      'You move from stage to stage, alone or together: road trip, rail tour, backpacking, hut-to-hut trek.';
+
+  @override
+  String get tripTemplateRoadTripPoint1 =>
+      'Say where you sleep each night: the stages follow one another on the trip map.';
+
+  @override
+  String get tripTemplateRoadTripPoint2 =>
+      'Plan activities and restaurants day by day, and spot the transports to plan between two places.';
+
+  @override
+  String get tripTemplateRoadTripPoint3 =>
+      'Your photos find their place on the map, stage after stage.';
+
+  @override
+  String get tripTemplateRoadTripPoint4 =>
+      'Share expenses and chat with your travel companions.';
+
+  @override
+  String get tripTemplateGuidedTripTitle => 'Organized trip';
+
+  @override
+  String get tripTemplateGuidedTripTagline =>
+      'An organizer (agency, guide, club or a friend who takes charge) prepares the trip for the group.';
+
+  @override
+  String get tripTemplateGuidedTripPoint1 =>
+      'The organizer sets the dates, stages, lodgings, rooms and the hour-by-hour program.';
+
+  @override
+  String get tripTemplateGuidedTripPoint2 =>
+      'Travelers see the program and the map, without changing them.';
+
+  @override
+  String get tripTemplateGuidedTripPoint3 =>
+      'Everyone adds their photos to the activities.';
+
+  @override
+  String get tripTemplateGuidedTripPoint4 =>
+      'Travelers share expenses among themselves and chat in the messaging.';
+
+  @override
+  String get tripTemplateGuidedTripPoint5 =>
+      'Only the organizer invites new travelers.';
+
+  @override
+  String get tripTemplateDayOutingTitle => 'Day outing';
+
+  @override
+  String get tripTemplateDayOutingTagline =>
+      'A day together, with no night there: birthday, picnic, hike, beach day.';
+
+  @override
+  String get tripTemplateDayOutingPoint1 => 'Share cars to get there.';
+
+  @override
+  String get tripTemplateDayOutingPoint2 =>
+      'Organize the picnic: who brings what, with a shared shopping list.';
+
+  @override
+  String get tripTemplateDayOutingPoint3 =>
+      'Suggest activities, the group votes for its favorites.';
+
+  @override
+  String get tripTemplateDayOutingPoint4 => 'Settle up at the end of the day.';
+
+  @override
+  String get roomsCustomizeNight => 'Customize a night';
 
   @override
   String get tripsTitleLabel => 'Trip name';

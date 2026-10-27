@@ -294,6 +294,9 @@ class TripsRepository {
     TripDayPart? tripStartDayPart,
     TripDayPart? tripEndDayPart,
     bool isDayTrip = false,
+
+    /// The trip's whole permissions block; the defaults when null.
+    Map<String, dynamic>? permissions,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -317,7 +320,7 @@ class TripsRepository {
       'shoppingModuleEnabled': shoppingModuleEnabled,
       'ownerId': user.uid,
       'memberUserIds': <String>[user.uid],
-      'permissions': _defaultPermissionsFirestoreMap(),
+      'permissions': permissions ?? _defaultPermissionsFirestoreMap(),
       'inviteToken': _generateInviteToken(),
       'createdAt': FieldValue.serverTimestamp(),
     };

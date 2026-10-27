@@ -409,8 +409,10 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
           final showMapButton = journeyEnabled &&
               tripModuleTabFor(trip) != TripModuleTab.map;
 
+          // Suggestions are for those who may suggest (the organizer's drafts
+          // in a guided trip).
           return DefaultTabController(
-            length: 3,
+            length: canSuggestActivity ? 3 : 2,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -418,7 +420,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                   labels: [
                     l10n.activitiesTabAgenda,
                     l10n.activitiesTabPlanned,
-                    l10n.activitiesTabSuggestions,
+                    if (canSuggestActivity) l10n.activitiesTabSuggestions,
                   ],
                 ),
                 Row(
@@ -497,18 +499,19 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         currentUserId: myUid,
                         emptyMessage: l10n.activitiesNoPlanned,
                       ),
-                      TripActivitiesSearchableTabList(
-                        searchController: _suggestionsSearchController,
-                        onSearchChanged: (_) => setState(() {}),
-                        entries: suggestionsEntries,
-                        tripId: trip.id,
-                        tripMemberPublicLabels: memberLabels,
-                        usersDataById: creatorsDataById,
-                        currentUserId: myUid,
-                        emptyMessage: l10n.activitiesNoSuggestion,
-                        showVoteButton: true,
-                        myUid: myUid,
-                      ),
+                      if (canSuggestActivity)
+                        TripActivitiesSearchableTabList(
+                          searchController: _suggestionsSearchController,
+                          onSearchChanged: (_) => setState(() {}),
+                          entries: suggestionsEntries,
+                          tripId: trip.id,
+                          tripMemberPublicLabels: memberLabels,
+                          usersDataById: creatorsDataById,
+                          currentUserId: myUid,
+                          emptyMessage: l10n.activitiesNoSuggestion,
+                          showVoteButton: true,
+                          myUid: myUid,
+                        ),
                     ],
                   ),
                 ),

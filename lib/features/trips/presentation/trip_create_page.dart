@@ -20,6 +20,7 @@ import 'package:planerz/features/trips/data/trip_lodgings_repository.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
+import 'package:planerz/features/trips/data/trip_templates.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_create_creator_name_dialog.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
@@ -27,6 +28,7 @@ import 'package:planerz/features/trips/presentation/trip_date_range_picker_sheet
 import 'package:planerz/features/trips/presentation/trip_lodging_editor_sheet.dart';
 import 'package:planerz/features/trips/presentation/trip_lodging_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_participant_name_dialog.dart';
+import 'package:planerz/features/trips/presentation/trip_template_picker.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripCreatePage extends ConsumerStatefulWidget {
@@ -77,6 +79,15 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   bool _journeyModuleEnabled = true;
   bool _homeMealsModuleEnabled = true;
   bool _shoppingModuleEnabled = true;
+
+  /// A new trip starts with the choice of its kind, which presets the form.
+  late bool _choosingTemplate;
+
+  /// The kind the form was preset from.
+  TripTemplate? _template;
+
+  /// The card chosen on the template screen.
+  TripTemplate? _pickedTemplate;
   String? _profileName;
   String _customName = '';
   bool _useProfileName = false;
@@ -118,6 +129,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     _lodgingAddressController = TextEditingController();
     _lodgingLinkController = TextEditingController();
     _lodgingsLoaded = !widget.isEditing;
+    _choosingTemplate = !widget.isEditing;
     _stay = TripMemberStay.defaultForNewTripEditor();
     _singleDayDate = DateUtils.dateOnly(DateTime.now());
     WidgetsBinding.instance.addPostFrameCallback((_) => _initCreatorName());
@@ -182,22 +194,24 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   }
 
   void _toggleLodgingAllNights(bool allNights) {
-    setState(() {
-      _lodgingsChanged = true;
-      _errorMessage = null;
-      if (allNights) {
-        final nights = _formNights;
-        final first = nights.isEmpty
-            ? _lodgings.firstOrNull
-            : tripLodgingForNight(_lodgings, tripNightKey(nights.first)) ??
-                _lodgings.firstOrNull;
-        _fillAllNightsFields(first);
-      } else {
-        final place = _allNightsPlace;
-        _lodgings = place.hasPlace ? [place] : const [];
-      }
-      _lodgingAllNights = allNights;
-    });
+    setState(() => _setLodgingAllNights(allNights));
+  }
+
+  void _setLodgingAllNights(bool allNights) {
+    _lodgingsChanged = true;
+    _errorMessage = null;
+    if (allNights) {
+      final nights = _formNights;
+      final first = nights.isEmpty
+          ? _lodgings.firstOrNull
+          : tripLodgingForNight(_lodgings, tripNightKey(nights.first)) ??
+              _lodgings.firstOrNull;
+      _fillAllNightsFields(first);
+    } else {
+      final place = _allNightsPlace;
+      _lodgings = place.hasPlace ? [place] : const [];
+    }
+    _lodgingAllNights = allNights;
   }
 
   Future<void> _pickLodgingPlace() async {
@@ -442,31 +456,68 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   }
 
   void _toggleDayTrip(bool enabled) {
-    setState(() {
-      _isDayTrip = enabled;
-      _errorMessage = null;
-      if (enabled) {
-        _roomsModuleEnabled = false;
-        final day = _singleDayDate ??
-            TripMemberStay.parseDateKey(_stay.startDateKey) ??
-            DateUtils.dateOnly(DateTime.now());
-        _singleDayDate = day;
-        _stay = _stay.copyWith(
-          startDateKey: TripMemberStay.dateKeyFromDateTime(day),
-          endDateKey: TripMemberStay.dateKeyFromDateTime(day),
-        );
-      } else {
-        final start = TripMemberStay.parseDateKey(_stay.startDateKey) ??
-            DateUtils.dateOnly(DateTime.now());
-        var end = TripMemberStay.parseDateKey(_stay.endDateKey) ?? start;
-        if (!end.isAfter(start)) {
-          end = start.add(const Duration(days: 1));
-        }
-        _stay = _stay.copyWith(
-          startDateKey: TripMemberStay.dateKeyFromDateTime(start),
-          endDateKey: TripMemberStay.dateKeyFromDateTime(end),
-        );
+    setState(() => _setDayTrip(enabled));
+  }
+
+  void _setDayTrip(bool enabled) {
+    _isDayTrip = enabled;
+    _errorMessage = null;
+    if (enabled) {
+      _roomsModuleEnabled = false;
+      final day = _singleDayDate ??
+          TripMemberStay.parseDateKey(_stay.startDateKey) ??
+          DateUtils.dateOnly(DateTime.now());
+      _singleDayDate = day;
+      _stay = _stay.copyWith(
+        startDateKey: TripMemberStay.dateKeyFromDateTime(day),
+        endDateKey: TripMemberStay.dateKeyFromDateTime(day),
+      );
+    } else {
+      final start = TripMemberStay.parseDateKey(_stay.startDateKey) ??
+          DateUtils.dateOnly(DateTime.now());
+      var end = TripMemberStay.parseDateKey(_stay.endDateKey) ?? start;
+      if (!end.isAfter(start)) {
+        end = start.add(const Duration(days: 1));
       }
+      _stay = _stay.copyWith(
+        startDateKey: TripMemberStay.dateKeyFromDateTime(start),
+        endDateKey: TripMemberStay.dateKeyFromDateTime(end),
+      );
+    }
+  }
+
+  /// Presets the form from [template]: its modules, day trip and lodging
+  /// mode, and the permissions given to the new trip. What was typed in
+  /// stays.
+  void _applyTemplate(TripTemplate template) {
+    final settings = template.settings;
+    _template = template;
+    if (_isDayTrip != settings.isDayTrip) _setDayTrip(settings.isDayTrip);
+    _journeyModuleEnabled = settings.journeyModuleEnabled;
+    _homeMealsModuleEnabled = settings.homeMealsModuleEnabled;
+    _shoppingModuleEnabled = settings.shoppingModuleEnabled;
+    _roomsModuleEnabled = settings.roomsModuleEnabled && !settings.isDayTrip;
+    _carpoolModuleEnabled = settings.carpoolModuleEnabled;
+    _gamesModuleEnabled = settings.gamesModuleEnabled;
+    _cupidonModeEnabled = false;
+    if (_lodgingAllNights != settings.lodgingAllNights) {
+      if (_lodgingsChanged) {
+        _setLodgingAllNights(settings.lodgingAllNights);
+      } else {
+        // Nothing typed yet: only the way of filling them in changes.
+        _lodgingAllNights = settings.lodgingAllNights;
+      }
+    }
+  }
+
+  /// Going on with the chosen kind; choosing the same one again keeps what
+  /// was changed in the form.
+  void _confirmTemplate() {
+    final template = _pickedTemplate;
+    if (template == null) return;
+    setState(() {
+      if (template != _template) _applyTemplate(template);
+      _choosingTemplate = false;
     });
   }
 
@@ -751,6 +802,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                     ? _stay.endDayPart
                     : TripDayPart.evening,
             isDayTrip: _isDayTrip,
+            permissions: _template?.settings.permissions.toFirestore(),
           );
       // The trip exists from now on: a failure here must not lead to
       // creating it again.
@@ -820,6 +872,30 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     }
 
     final l10n = AppLocalizations.of(context)!;
+    if (_choosingTemplate) {
+      return _buildShell(
+        context,
+        title: l10n.tripsCreateDialogTitle,
+        body: Column(
+          children: [
+            Expanded(
+              child: TripTemplatePicker(
+                selected: _pickedTemplate,
+                onSelected: (template) =>
+                    setState(() => _pickedTemplate = template),
+              ),
+            ),
+            _CreateTripCtaBar(
+              saving: false,
+              onPressed: _pickedTemplate == null ? null : _confirmTemplate,
+              actionLabel: l10n.commonContinue,
+              icon: PhosphorIconsRegular.arrowRight,
+            ),
+          ],
+        ),
+      );
+    }
+    final template = _template;
     return _buildShell(
       context,
       title: _isEditing ? l10n.tripOverviewEditTrip : l10n.tripsCreateDialogTitle,
@@ -829,6 +905,17 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             child: ListView(
               padding: const EdgeInsets.only(bottom: 16),
               children: [
+                if (template != null)
+                  _FormSection(
+                    child: _TripTemplateRow(
+                      template: template,
+                      enabled: !_saving,
+                      onChange: () => setState(() {
+                        _pickedTemplate = template;
+                        _choosingTemplate = true;
+                      }),
+                    ),
+                  ),
                 _CoverPhotoPicker(
                   preview: _coverPreview,
                   busy: _isCoverBusy,
@@ -1670,6 +1757,67 @@ class _NeonFeatureToggleCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The kind of trip the form was preset from, with a way back to the
+/// choice while the trip is not created.
+class _TripTemplateRow extends StatelessWidget {
+  const _TripTemplateRow({
+    required this.template,
+    required this.enabled,
+    required this.onChange,
+  });
+
+  final TripTemplate template;
+  final bool enabled;
+  final VoidCallback onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Material(
+      color: AppTokens.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppTokens.divider, width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
+        child: Row(
+          children: [
+            _TripCreateModuleIconBadge(icon: template.icon, active: true),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.tripTemplateSectionLabel,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTokens.onSurfaceVariant,
+                    ),
+                  ),
+                  Text(
+                    template.title(l10n),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppTokens.deep,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: enabled ? onChange : null,
+              child: Text(l10n.tripTemplateChange),
+            ),
+          ],
         ),
       ),
     );
@@ -2562,11 +2710,15 @@ class _CreateTripCtaBar extends StatelessWidget {
     required this.saving,
     required this.onPressed,
     required this.actionLabel,
+    this.icon = PhosphorIconsRegular.check,
   });
 
   final bool saving;
-  final VoidCallback onPressed;
+
+  /// Null while the action is not available yet.
+  final VoidCallback? onPressed;
   final String actionLabel;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -2606,7 +2758,7 @@ class _CreateTripCtaBar extends StatelessWidget {
                         color: Colors.white,
                       ),
                     )
-                  : const Icon(PhosphorIconsRegular.check, size: 20),
+                  : Icon(icon, size: 20),
               label: Text(
                 actionLabel,
                 style: const TextStyle(

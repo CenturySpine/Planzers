@@ -766,6 +766,180 @@ abstract class AppLocalizations {
   /// **'Nouveau voyage'**
   String get tripsCreateDialogTitle;
 
+  /// No description provided for @tripTemplateSectionLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Type de voyage'**
+  String get tripTemplateSectionLabel;
+
+  /// No description provided for @tripTemplateChange.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer'**
+  String get tripTemplateChange;
+
+  /// No description provided for @tripTemplateFooter.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce choix prépare ton voyage : tu pourras ensuite activer ou désactiver chaque module et ajuster les permissions.'**
+  String get tripTemplateFooter;
+
+  /// No description provided for @tripTemplateFriendsStayTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Séjour entre amis'**
+  String get tripTemplateFriendsStayTitle;
+
+  /// No description provided for @tripTemplateFriendsStayTagline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tout le groupe au même endroit (un chalet, une maison, un gîte) pour un week-end ou des vacances.'**
+  String get tripTemplateFriendsStayTagline;
+
+  /// No description provided for @tripTemplateFriendsStayPoint1.
+  ///
+  /// In fr, this message translates to:
+  /// **'Répartis les chambres et les lits, nuit par nuit si les arrivées s\'étalent.'**
+  String get tripTemplateFriendsStayPoint1;
+
+  /// No description provided for @tripTemplateFriendsStayPoint2.
+  ///
+  /// In fr, this message translates to:
+  /// **'Organise les repas : qui cuisine, qui ramène quoi, avec une liste de courses commune.'**
+  String get tripTemplateFriendsStayPoint2;
+
+  /// No description provided for @tripTemplateFriendsStayPoint3.
+  ///
+  /// In fr, this message translates to:
+  /// **'Propose des activités, le groupe vote pour ses préférées.'**
+  String get tripTemplateFriendsStayPoint3;
+
+  /// No description provided for @tripTemplateFriendsStayPoint4.
+  ///
+  /// In fr, this message translates to:
+  /// **'Partage les voitures pour venir et fais les comptes en fin de séjour.'**
+  String get tripTemplateFriendsStayPoint4;
+
+  /// No description provided for @tripTemplateRoadTripTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voyage itinérant'**
+  String get tripTemplateRoadTripTitle;
+
+  /// No description provided for @tripTemplateRoadTripTagline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu changes d\'étape au fil du voyage, seul ou à plusieurs : road trip, tour en train, voyage sac au dos, trek de refuge en refuge.'**
+  String get tripTemplateRoadTripTagline;
+
+  /// No description provided for @tripTemplateRoadTripPoint1.
+  ///
+  /// In fr, this message translates to:
+  /// **'Indique où tu dors chaque soir : les étapes s\'enchaînent sur la carte du voyage.'**
+  String get tripTemplateRoadTripPoint1;
+
+  /// No description provided for @tripTemplateRoadTripPoint2.
+  ///
+  /// In fr, this message translates to:
+  /// **'Planifie activités et restaurants jour par jour, et repère les trajets à prévoir entre deux lieux.'**
+  String get tripTemplateRoadTripPoint2;
+
+  /// No description provided for @tripTemplateRoadTripPoint3.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tes photos prennent place sur la carte, étape après étape.'**
+  String get tripTemplateRoadTripPoint3;
+
+  /// No description provided for @tripTemplateRoadTripPoint4.
+  ///
+  /// In fr, this message translates to:
+  /// **'Partage les dépenses et échange avec tes compagnons de route.'**
+  String get tripTemplateRoadTripPoint4;
+
+  /// No description provided for @tripTemplateGuidedTripTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voyage organisé'**
+  String get tripTemplateGuidedTripTitle;
+
+  /// No description provided for @tripTemplateGuidedTripTagline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un organisateur (agence, guide, association ou ami qui prend tout en main) prépare le voyage pour le groupe.'**
+  String get tripTemplateGuidedTripTagline;
+
+  /// No description provided for @tripTemplateGuidedTripPoint1.
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'organisateur fixe les dates, les étapes, les hébergements, les chambres et le programme heure par heure.'**
+  String get tripTemplateGuidedTripPoint1;
+
+  /// No description provided for @tripTemplateGuidedTripPoint2.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les voyageurs consultent le programme et la carte, sans pouvoir les modifier.'**
+  String get tripTemplateGuidedTripPoint2;
+
+  /// No description provided for @tripTemplateGuidedTripPoint3.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chacun ajoute ses photos aux activités.'**
+  String get tripTemplateGuidedTripPoint3;
+
+  /// No description provided for @tripTemplateGuidedTripPoint4.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les voyageurs partagent leurs dépenses entre eux et discutent dans la messagerie.'**
+  String get tripTemplateGuidedTripPoint4;
+
+  /// No description provided for @tripTemplateGuidedTripPoint5.
+  ///
+  /// In fr, this message translates to:
+  /// **'Seul l\'organisateur invite de nouveaux voyageurs.'**
+  String get tripTemplateGuidedTripPoint5;
+
+  /// No description provided for @tripTemplateDayOutingTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sortie à la journée'**
+  String get tripTemplateDayOutingTitle;
+
+  /// No description provided for @tripTemplateDayOutingTagline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une journée ensemble, sans nuit sur place : anniversaire, pique-nique, randonnée, journée à la plage.'**
+  String get tripTemplateDayOutingTagline;
+
+  /// No description provided for @tripTemplateDayOutingPoint1.
+  ///
+  /// In fr, this message translates to:
+  /// **'Partage les voitures pour y aller.'**
+  String get tripTemplateDayOutingPoint1;
+
+  /// No description provided for @tripTemplateDayOutingPoint2.
+  ///
+  /// In fr, this message translates to:
+  /// **'Organise le pique-nique : qui ramène quoi, avec une liste de courses commune.'**
+  String get tripTemplateDayOutingPoint2;
+
+  /// No description provided for @tripTemplateDayOutingPoint3.
+  ///
+  /// In fr, this message translates to:
+  /// **'Propose des activités, le groupe vote pour ses préférées.'**
+  String get tripTemplateDayOutingPoint3;
+
+  /// No description provided for @tripTemplateDayOutingPoint4.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fais les comptes en fin de journée.'**
+  String get tripTemplateDayOutingPoint4;
+
+  /// No description provided for @roomsCustomizeNight.
+  ///
+  /// In fr, this message translates to:
+  /// **'Personnaliser une nuit'**
+  String get roomsCustomizeNight;
+
   /// No description provided for @tripsTitleLabel.
   ///
   /// In fr, this message translates to:

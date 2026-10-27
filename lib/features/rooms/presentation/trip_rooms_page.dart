@@ -45,6 +45,9 @@ class _TripRoomsPageState extends ConsumerState<TripRoomsPage>
 
   /// The night chosen, by lodging (`''` for none); absent for every night.
   final Map<String, String> _nightByLodging = {};
+
+  /// Lodgings whose nights were asked for, before any is set apart.
+  final Set<String> _nightsShownByLodging = {};
   bool _busy = false;
 
   @override
@@ -235,7 +238,11 @@ class _TripRoomsPageState extends ConsumerState<TripRoomsPage>
                   Tab(text: l.lodging?.displayTitle ?? l10n.tripLodgingTitle),
               ],
             ),
-          if (nightKeys.length > 1)
+          // Nights stay out of the way until one is set apart, or asked for.
+          if (nightKeys.length > 1 &&
+              (nightsApart.isNotEmpty ||
+                  _nightByLodging.containsKey(lodgingKey) ||
+                  _nightsShownByLodging.contains(lodgingKey)))
             _RoomNightChips(
               nights: lodging.nights,
               selectedKey: nightKey,
@@ -247,6 +254,19 @@ class _TripRoomsPageState extends ConsumerState<TripRoomsPage>
                   _nightByLodging[lodgingKey] = key;
                 }
               }),
+            )
+          else if (nightKeys.length > 1 && canManageRooms)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 16, 0),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  onPressed: () =>
+                      setState(() => _nightsShownByLodging.add(lodgingKey)),
+                  icon: const Icon(PhosphorIconsRegular.calendarDots, size: 18),
+                  label: Text(l10n.roomsCustomizeNight),
+                ),
+              ),
             ),
           Expanded(
             child: _TripRoomsBody(

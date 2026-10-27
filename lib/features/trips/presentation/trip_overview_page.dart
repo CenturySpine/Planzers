@@ -85,8 +85,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     });
   }
 
-  void _scheduleInviteCodeLoadIfMember(bool isTripMember) {
-    if (!isTripMember || _inviteCodeLoadStarted || _inviteCode != null) return;
+  void _scheduleInviteCodeLoadIfShown(bool shown) {
+    if (!shown || _inviteCodeLoadStarted || _inviteCode != null) return;
     _inviteCodeLoadStarted = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_loadInviteCode());
@@ -738,6 +738,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       currentRole: currentRole,
       minRole: _trip.generalPermissions.manageTripSettingsMinRole,
     );
+    final canShareAccess = isTripRoleAllowed(
+      currentRole: currentRole,
+      minRole: _trip.generalPermissions.shareAccessMinRole,
+    );
     final canDeleteTrip = canEdit;
     final tripDocStream = FirebaseFirestore.instance
         .collection('trips')
@@ -769,7 +773,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
               : formatTripDateRange(context, _trip.startDate, _trip.endDate);
           final isTripMember = myUid != null &&
               participants.any((m) => m.userId?.trim() == myUid);
-          _scheduleInviteCodeLoadIfMember(isTripMember);
+          // The invite code is only for those who may share the trip: the
+          // others are refused it, and would ask for it again and again.
+          final showsInviteCode = isTripMember && canShareAccess;
+          _scheduleInviteCodeLoadIfShown(showsInviteCode);
           final participantsCount = participants.length;
           final today = _dateOnly(DateTime.now());
           final participantUserIds = participants
@@ -1011,15 +1018,15 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                         participants: participantsPreview,
                         onCardTap: _openParticipantsPage,
                         onManageTap: _openParticipantsPage,
-                        inviteCodeLabel: isTripMember
+                        inviteCodeLabel: showsInviteCode
                             ? l10n.tripOverviewInviteCodeLabel
                             : null,
                         inviteCode: _inviteCode,
-                        shareCodeLabel: isTripMember
+                        shareCodeLabel: showsInviteCode
                             ? l10n.tripOverviewShareCode
                             : null,
                         onShareCodeTap:
-                            isTripMember ? _shareInviteCode : null,
+                            showsInviteCode ? _shareInviteCode : null,
                         shareCodeBusy: _inviteCodeBusy,
                       ),
                     ),
