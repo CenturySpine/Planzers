@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/features/administration/data/administration_repository.dart';
+import 'package:planerz/features/administration/presentation/admin_ai_settings_page.dart';
 import 'package:planerz/features/administration/presentation/admin_announcements_manage_page.dart';
 import 'package:planerz/features/administration/presentation/admin_maintenance_page.dart';
 import 'package:planerz/features/administration/presentation/admin_oauth_clients_page.dart';
@@ -135,6 +136,18 @@ class _StatsBody extends StatelessWidget {
             ),
             trailing: const Icon(PhosphorIconsRegular.caretRight),
             onTap: () => context.push(AdminMaintenancePage.routePath),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: ListTile(
+            leading: const Icon(PhosphorIconsRegular.sparkle),
+            title: const Text('Intelligence artificielle'),
+            subtitle: const Text(
+              'Choisir le fournisseur, le modèle et le niveau de réflexion.',
+            ),
+            trailing: const Icon(PhosphorIconsRegular.caretRight),
+            onTap: () => context.push(AdminAiSettingsPage.routePath),
           ),
         ),
         const SizedBox(height: 12),

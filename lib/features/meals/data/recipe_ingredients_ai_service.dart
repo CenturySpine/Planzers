@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:planerz/core/intl/app_language.dart';
+import 'package:planerz/features/ai_settings/data/ai_settings.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
@@ -59,6 +60,8 @@ Future<RecipeAiResult> generateRecipeIngredients({
   required int servings,
   required List<IngredientCatalogItem> catalogItems,
   required RecipeAiMode mode,
+  required String model,
+  required AiThinkingLevel thinkingLevel,
   AppLanguage language = AppLanguage.frFr,
 }) async {
   final trimmedName = recipeName.trim();
@@ -73,6 +76,8 @@ Future<RecipeAiResult> generateRecipeIngredients({
     recipeName: trimmedName,
     servings: servings,
     mode: mode,
+    model: model,
+    thinkingLevel: thinkingLevel,
     language: language,
   );
   if (freeFormText.trim().isEmpty) {
@@ -82,6 +87,8 @@ Future<RecipeAiResult> generateRecipeIngredients({
   final structured = await _callStructuredConversion(
     sourceText: freeFormText,
     mode: mode,
+    model: model,
+    thinkingLevel: thinkingLevel,
     language: language,
   );
 
@@ -140,12 +147,16 @@ Future<String> _callGroundedRecipe({
   required String recipeName,
   required int servings,
   required RecipeAiMode mode,
+  required String model,
+  required AiThinkingLevel thinkingLevel,
   required AppLanguage language,
 }) async {
-  final model = FirebaseAI.googleAI().generativeModel(
-    model: 'gemini-2.5-flash',
+  final generativeModel = FirebaseAI.googleAI().generativeModel(
+    model: model,
     generationConfig: GenerationConfig(
-      thinkingConfig: ThinkingConfig.withThinkingBudget(0),
+      thinkingConfig: ThinkingConfig.withThinkingLevel(
+        thinkingLevel.geminiThinkingLevel,
+      ),
     ),
     tools: [Tool.googleSearch()],
   );
@@ -241,7 +252,7 @@ Future<String> _callGroundedRecipe({
       );
   }
 
-  final response = await model.generateContent([
+  final response = await generativeModel.generateContent([
     Content.text(prompt.toString()),
   ]);
   return response.text ?? '';
@@ -253,6 +264,8 @@ Future<String> _callGroundedRecipe({
 Future<Map<String, dynamic>> _callStructuredConversion({
   required String sourceText,
   required RecipeAiMode mode,
+  required String model,
+  required AiThinkingLevel thinkingLevel,
   required AppLanguage language,
 }) async {
   final asksForInstructions = mode == RecipeAiMode.ingredientsAndInstructions;
@@ -279,12 +292,14 @@ Future<Map<String, dynamic>> _callStructuredConversion({
     properties['instructions'] = Schema.string();
   }
 
-  final model = FirebaseAI.googleAI().generativeModel(
-    model: 'gemini-2.5-flash',
+  final generativeModel = FirebaseAI.googleAI().generativeModel(
+    model: model,
     generationConfig: GenerationConfig(
       responseMimeType: 'application/json',
       responseSchema: Schema.object(properties: properties),
-      thinkingConfig: ThinkingConfig.withThinkingBudget(0),
+      thinkingConfig: ThinkingConfig.withThinkingLevel(
+        thinkingLevel.geminiThinkingLevel,
+      ),
     ),
   );
 
@@ -340,7 +355,7 @@ Future<Map<String, dynamic>> _callStructuredConversion({
     ..writeln(sourceText)
     ..writeln('"""');
 
-  final response = await model.generateContent([
+  final response = await generativeModel.generateContent([
     Content.text(prompt.toString()),
   ]);
   final rawText = response.text;

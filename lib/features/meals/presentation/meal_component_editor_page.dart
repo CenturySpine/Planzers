@@ -13,6 +13,7 @@ import 'package:planerz/features/ai_quotas/data/ai_quota_models.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quotas_repository.dart';
 import 'package:planerz/features/ai_quotas/domain/ai_quota_gate.dart';
 import 'package:planerz/features/ai_quotas/presentation/ai_error_message.dart';
+import 'package:planerz/features/ai_settings/data/ai_settings_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
@@ -247,13 +248,19 @@ class _MealComponentEditorPageState
         uid: uid,
         tripId: widget.tripId,
         isApplicationOwner: widget.isApplicationOwner,
-        aiCall: () => generateRecipeIngredients(
-          recipeName: request.recipeName,
-          servings: request.servings,
-          catalogItems: widget.catalogItems,
-          mode: request.mode,
-          language: widget.language,
-        ),
+        aiCall: () async {
+          final aiSettings =
+              await ref.read(aiSettingsRepositoryProvider).fetch();
+          return generateRecipeIngredients(
+            recipeName: request.recipeName,
+            servings: request.servings,
+            catalogItems: widget.catalogItems,
+            mode: request.mode,
+            model: aiSettings.googleModel,
+            thinkingLevel: aiSettings.thinkingLevel,
+            language: widget.language,
+          );
+        },
       );
       if (!mounted) return;
       if (result.ingredients.isEmpty) {

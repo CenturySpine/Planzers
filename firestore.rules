@@ -1405,6 +1405,20 @@ service cloud.firestore {
         && isApplicationOwner()
         && request.resource.data.keys().hasOnly(['isMaintenanceOngoing'])
         && request.resource.data.isMaintenanceOngoing is bool;
+      // AI provider settings (administration). Model ids are free strings so
+      // that new models need no rules change.
+      allow create, update: if docId == 'aiSettings'
+        && isApplicationOwner()
+        && request.resource.data.keys().hasOnly(
+          ['provider', 'googleModel', 'anthropicModel', 'thinkingLevel'])
+        && request.resource.data.provider in ['google', 'anthropic']
+        && request.resource.data.googleModel is string
+        && request.resource.data.googleModel.size() > 0
+        && request.resource.data.googleModel.size() <= 100
+        && request.resource.data.anthropicModel is string
+        && request.resource.data.anthropicModel.size() > 0
+        && request.resource.data.anthropicModel.size() <= 100
+        && request.resource.data.thinkingLevel in ['minimal', 'low', 'medium', 'high'];
       // increments and auto-trip: CF only (Admin SDK)
     }
 

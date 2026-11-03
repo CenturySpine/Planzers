@@ -26,6 +26,13 @@ const {
 } = require('./activity_place_preview');
 const { runTripLifecycle } = require('./trip_lifecycle');
 const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate');
+const Anthropic = require('@anthropic-ai/sdk');
+const {
+  readAiSettings,
+  selectedModel,
+  providerThinkingLevel,
+  closeJsonSchemaObjects,
+} = require('./ai_settings');
 const {
   buildNotificationQueueDocId,
   enqueueTripNotification,
@@ -4324,9 +4331,11 @@ exports.getAppUsageStats = onCall(
 // ============================================================
 // Source of truth: scripts/ia/antropic_shopping_consolidate.ps1
 // - Same system/user prompts.
-// - Same JSON tool schema (summary + consolidatedItems[ + sourceItems ]).
-// - Same per-provider request shapes (Anthropic v1/messages,
-//   Gemini generateContent with thinkingBudget = 0).
+// - Same JSON schema (summary + consolidatedItems[ + sourceItems ]).
+// - Same per-provider request shapes (Anthropic Messages API with
+//   structured outputs, Gemini generateContent with function calling).
+// Provider, model and thinking level come from the administration
+// (Firestore `system/aiSettings`, see ai_settings.js).
 // ============================================================
 
 const AI_CONSOLIDATION_TOOL_NAME = 'consolidate_shopping_list';
@@ -4555,63 +4564,62 @@ function buildAiConsolidationUserPrompt(manualShoppingItems, recipeIngredients, 
   ].join('\n');
 }
 
-function detectAiProvider(model) {
-  return normalizeString(model).toLowerCase().startsWith('gemini') ? 'gemini' : 'anthropic';
-}
+/**
+ * Claude call. Uses structured outputs rather than a forced tool call: recent
+ * Claude models reject forced `tool_choice` and non-default sampling
+ * parameters, and structured outputs work with thinking on.
+ */
+async function callAnthropicConsolidation({ apiKey, model, effort, systemPrompt, userPrompt, outputSchema }) {
+  // Below the 120 s timeout of the calling function.
+  const client = new Anthropic({ apiKey, timeout: 100 * 1000 });
 
-async function callAnthropicConsolidation({ apiKey, model, systemPrompt, userPrompt, toolSchema, toolDescription }) {
-  const body = {
-    model,
-    max_tokens: 5000,
-    temperature: 0.1,
-    system: systemPrompt,
-    tools: [
-      {
-        name: AI_CONSOLIDATION_TOOL_NAME,
-        description: toolDescription,
-        input_schema: toolSchema,
-      },
-    ],
-    tool_choice: { type: 'tool', name: AI_CONSOLIDATION_TOOL_NAME },
-    messages: [{ role: 'user', content: userPrompt }],
-  };
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify(body),
-  });
-
-  const text = await response.text();
-  if (!response.ok) {
-    throw new HttpsError(
-      'unavailable',
-      `Service IA indisponible (Anthropic ${response.status})`,
-      { upstream: text.slice(0, 500) }
-    );
-  }
-
-  let parsed;
+  let message;
   try {
-    parsed = JSON.parse(text);
+    message = await client.messages.create({
+      model,
+      max_tokens: 16000,
+      system: systemPrompt,
+      thinking: { type: 'adaptive' },
+      output_config: {
+        effort,
+        format: { type: 'json_schema', schema: closeJsonSchemaObjects(outputSchema) },
+      },
+      messages: [{ role: 'user', content: userPrompt }],
+    });
   } catch (err) {
-    throw new HttpsError('internal', 'Réponse IA non JSON', { upstream: text.slice(0, 500) });
+    if (err instanceof Anthropic.APIError) {
+      throw new HttpsError(
+        'unavailable',
+        `Service IA indisponible (Anthropic ${err.status ?? 'connexion'})`,
+        { upstream: String(err.message || '').slice(0, 500) }
+      );
+    }
+    throw err;
   }
 
-  const toolBlock = Array.isArray(parsed.content)
-    ? parsed.content.find((block) => block && block.type === 'tool_use')
-    : null;
-  if (!toolBlock || !toolBlock.input || typeof toolBlock.input !== 'object') {
-    throw new HttpsError('internal', 'Réponse IA invalide (tool_use absent)');
+  if (message.stop_reason === 'max_tokens') {
+    console.error('callAnthropicConsolidation: max_tokens reached');
+    throw new HttpsError('internal', 'Réponse IA tronquée (liste trop longue)');
   }
-  return toolBlock.input;
+  if (message.stop_reason === 'refusal') {
+    console.error('callAnthropicConsolidation: refusal', { stopDetails: message.stop_details });
+    throw new HttpsError('internal', 'Réponse IA refusée');
+  }
+
+  const textBlock = message.content.find((block) => block.type === 'text');
+  const text = textBlock ? textBlock.text : '';
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed && typeof parsed === 'object') {
+      return parsed;
+    }
+  } catch (err) {
+    // Reported below.
+  }
+  throw new HttpsError('internal', 'Réponse IA non JSON', { upstream: text.slice(0, 500) });
 }
 
-async function callGeminiConsolidation({ apiKey, model, systemPrompt, userPrompt, toolSchema, toolDescription }) {
+async function callGeminiConsolidation({ apiKey, model, thinkingLevel, systemPrompt, userPrompt, toolSchema, toolDescription }) {
   const endpoint =
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const body = {
@@ -4629,10 +4637,10 @@ async function callGeminiConsolidation({ apiKey, model, systemPrompt, userPrompt
       },
     ],
     tool_config: { function_calling_config: { mode: 'ANY' } },
+    // No sampling parameters: Gemini 3.x models expect their defaults.
     generation_config: {
-      temperature: 0.1,
       maxOutputTokens: 32000,
-      thinkingConfig: { thinkingBudget: 0 },
+      thinkingConfig: { thinkingLevel },
     },
   };
 
@@ -4680,29 +4688,28 @@ async function callGeminiConsolidation({ apiKey, model, systemPrompt, userPrompt
  * Core helper: consolidates a manual shopping list with recipe ingredients
  * using either an Anthropic Claude model or a Google Gemini model.
  *
- * Mirrors `scripts/ia/antropic_shopping_consolidate.ps1` exactly:
+ * Mirrors `scripts/ia/antropic_shopping_consolidate.ps1`:
  *   - Same system prompt, user prompt and JSON Schema.
- *   - Same per-provider request body (tools / tool_choice / generation_config).
+ *   - Same per-provider request body (output_config / tools / generation_config).
  *
  * @param {Object} params
- * @param {string} params.model - e.g. 'gemini-2.5-flash' or 'claude-haiku-4-5-20251001'.
+ * @param {{provider:string, googleModel:string, anthropicModel:string, thinkingLevel:string}} params.settings
+ *   - AI settings from the administration (see ai_settings.js).
  * @param {Array<{label:string,quantityValue:number,quantityUnit:string}>} params.manualShoppingItems
  * @param {Array<{label:string,quantityValue:number,quantityUnit:string}>} params.recipeIngredients
  * @param {'fr'|'en'} [params.lang='fr'] - Language for prompts and item labels in the output.
  * @returns {Promise<{summary:object, consolidatedItems:Array<object>}>}
  */
 async function consolidateShoppingListWithAi({
-  model,
+  settings,
   manualShoppingItems,
   recipeIngredients,
   lang = 'fr',
   manualOnly = false,
 }) {
-  const cleanModel = normalizeString(model);
-  if (!cleanModel) {
-    throw new HttpsError('invalid-argument', 'Modèle IA requis');
-  }
-  const provider = detectAiProvider(cleanModel);
+  const { provider } = settings;
+  const model = selectedModel(settings);
+  const thinkingLevel = providerThinkingLevel(provider, settings.thinkingLevel);
   const apiKey =
     provider === 'anthropic'
       ? normalizeString(process.env.ANTHROPIC_API_KEY)
@@ -4729,15 +4736,16 @@ async function consolidateShoppingListWithAi({
     provider === 'anthropic'
       ? await callAnthropicConsolidation({
           apiKey,
-          model: cleanModel,
+          model,
+          effort: thinkingLevel,
           systemPrompt,
           userPrompt,
-          toolSchema,
-          toolDescription,
+          outputSchema: toolSchema,
         })
       : await callGeminiConsolidation({
           apiKey,
-          model: cleanModel,
+          model,
+          thinkingLevel,
           systemPrompt,
           userPrompt,
           toolSchema,
@@ -4774,7 +4782,8 @@ function buildAiInputRow(rawLabel, rawQuantityValue, rawQuantityUnit) {
  *   - Recipe items: `trips/{tripId}/meals` where `mealMode == 'cooked'`,
  *     flattened from each component's `ingredients` array.
  *
- * The chosen model is hard-coded to `gemini-2.5-flash` for this POC.
+ * Provider, model and thinking level come from the administration
+ * (`system/aiSettings`).
  */
 exports.consolidateTripShoppingWithAi = onCall(
   {
@@ -4858,7 +4867,7 @@ exports.consolidateTripShoppingWithAi = onCall(
       { featureKey: 'shoppingConsolidation', tripId, uid, isApplicationOwner },
       async () => {
         const { summary, consolidatedItems } = await consolidateShoppingListWithAi({
-          model: 'gemini-2.5-flash',
+          settings: await readAiSettings(db),
           manualShoppingItems,
           recipeIngredients,
           lang,
