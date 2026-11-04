@@ -425,38 +425,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.9.3+5"
-  firebase_ai:
-    dependency: "direct main"
-    description:
-      name: firebase_ai
-      sha256: "0469000e0a364750dc7007834ceb426a7e1868f9df2431e6f71fc9b9f0c011eb"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.11.0"
-  firebase_app_check:
-    dependency: transitive
-    description:
-      name: firebase_app_check
-      sha256: "893cf0f921f76a3eeb288a6fb4ba821d1fdb08f8967d71a429648aea0c172570"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.4.3"
-  firebase_app_check_platform_interface:
-    dependency: transitive
-    description:
-      name: firebase_app_check_platform_interface
-      sha256: d46dc041aca21e7659e928a03900e0e60f168349523a00d9773618a27d562bc4
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.0"
-  firebase_app_check_web:
-    dependency: transitive
-    description:
-      name: firebase_app_check_web
-      sha256: "2b5904c7dc72366306f69c0b31a7ebed4eb56b7c7170220cd18ba06628abad39"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.4"
   firebase_auth:
     dependency: "direct main"
     description:

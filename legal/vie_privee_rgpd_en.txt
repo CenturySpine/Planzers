@@ -1,5 +1,5 @@
 PRIVACY / GDPR
-Last update: 26/10/2026
+Last update: 03/11/2026
 
 1) Data controller
 - Bruno Chappe
@@ -43,23 +43,30 @@ Technical subprocessors:
 - Vercel (web hosting)
 - Google Firebase: Authentication, Firestore, Storage, Functions, FCM
 - Google (Gemini API): artificial intelligence features (see section 5)
+- Anthropic (Claude API): AI-driven shopping list consolidation (see
+  section 5)
 - komoot (Photon service): place search (see section 6)
 - OpenStreetMap Foundation: map backgrounds (see section 6)
 
 5) Artificial intelligence features
-Some optional features rely on Google's Gemini API. Data is sent to it only
-when the user triggers one of these features:
+Some optional features rely on an artificial intelligence provider. Data is
+sent to it only when the user triggers one of these features:
 - Shopping list consolidation: the labels and quantities of the items and of
-  the meal ingredients
-- Recipe generation: the recipe name and the number of servings
+  the meal ingredients, sent to Google's Gemini API or to Anthropic's Claude
+  API, depending on the provider selected by Planerz
+- Recipe generation: the recipe name and the number of servings, sent to
+  Google's Gemini API
 
 Legal basis: service execution, at the user's request.
 AI responses are suggestions: nothing is saved to the trip without the user's
 confirmation.
 Under Google's terms for the paid services of the Gemini API, this data is not
 used to improve Google's products; Google may retain it for a limited period
-to detect abuse and meet its legal obligations. This processing may take place
-outside the European Union.
+to detect abuse and meet its legal obligations.
+Under Anthropic's commercial terms for its API, this data is not used to train
+its models; Anthropic may retain it for a limited period to detect abuse and
+meet its legal obligations.
+This processing may take place outside the European Union.
 
 6) Maps and place search
 Maps and place search rely on public services built on OpenStreetMap:
