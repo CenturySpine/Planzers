@@ -13,6 +13,7 @@ import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
+import 'package:planerz/features/carpool/presentation/trip_carpool_direction_labels.dart';
 import 'package:planerz/features/carpool/presentation/trip_carpool_form_page.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
@@ -245,28 +246,73 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
           }
           return carpoolsAsync.when(
             data: (carpools) {
-              final carpoolsForList = [...carpools];
-              if (myParticipantId != null && carpoolsForList.length > 1) {
-                carpoolsForList.sort((a, b) {
-                  final aMine = a.assignedParticipantIds.contains(myParticipantId);
-                  final bMine = b.assignedParticipantIds.contains(myParticipantId);
-                  if (aMine == bMine) return 0;
-                  return aMine ? -1 : 1;
+              // Cars of each direction, the viewer's own car first.
+              List<TripCarpool> carpoolsGoing(TripCarpoolDirection direction) {
+                final list = carpools
+                    .where((carpool) => carpool.direction == direction)
+                    .toList();
+                list.sort((a, b) {
+                  if (myParticipantId != null) {
+                    final aMine =
+                        a.assignedParticipantIds.contains(myParticipantId);
+                    final bMine =
+                        b.assignedParticipantIds.contains(myParticipantId);
+                    if (aMine != bMine) return aMine ? -1 : 1;
+                  }
+                  return a.departureAt.compareTo(b.departureAt);
                 });
+                return list;
               }
-              final assignedParticipantIdSet = <String>{
-                for (final carpool in carpools)
-                  ...carpool.assignedParticipantIds,
+
+              final carpoolsByDirection = {
+                for (final direction in TripCarpoolDirection.values)
+                  direction: carpoolsGoing(direction),
               };
-              final unassignedMembers = participants
-                  .where((m) => !assignedParticipantIdSet.contains(m.id))
-                  .length;
-              final showSelfUnassignedCard = myParticipantId != null &&
-                  !carpools.any(
-                    (carpool) => carpool.assignedParticipantIds.any(
-                      (id) => id.trim() == myParticipantId,
+              // Return rides only matter once someone has offered one.
+              final trackedDirections = [
+                TripCarpoolDirection.outbound,
+                if (carpoolsByDirection[TripCarpoolDirection.returnTrip]!
+                    .isNotEmpty)
+                  TripCarpoolDirection.returnTrip,
+              ];
+              int unassignedCount(TripCarpoolDirection direction) =>
+                  participants
+                      .where(
+                        (m) => !carpoolsByDirection[direction]!.any(
+                          (carpool) =>
+                              carpool.assignedParticipantIds.contains(m.id),
+                        ),
+                      )
+                      .length;
+              final unassignedLines = <String>[
+                for (final direction in trackedDirections)
+                  if (unassignedCount(direction) > 0)
+                    l10n.tripCarpoolUnassignedInDirectionBody(
+                      tripCarpoolDirectionLabel(l10n, direction),
+                      unassignedCount(direction),
                     ),
-                  );
+              ];
+              final myMissingDirections = myParticipantId == null
+                  ? const <TripCarpoolDirection>[]
+                  : [
+                      for (final direction in trackedDirections)
+                        if (!carpoolsByDirection[direction]!.any(
+                          (carpool) => carpool.assignedParticipantIds.any(
+                            (id) => id.trim() == myParticipantId,
+                          ),
+                        ))
+                          direction,
+                    ];
+              final showSelfUnassignedCard = myMissingDirections.isNotEmpty;
+              final selfUnassignedTitle =
+                  myMissingDirections.length == 1 && trackedDirections.length > 1
+                      ? switch (myMissingDirections.single) {
+                          TripCarpoolDirection.outbound =>
+                            l10n.tripCarpoolSelfUnassignedOutboundTitle,
+                          TripCarpoolDirection.returnTrip =>
+                            l10n.tripCarpoolSelfUnassignedReturnTitle,
+                        }
+                      : l10n.tripCarpoolSelfUnassignedTitle;
               final showGlobalShoppingMeetupSection = trip.shoppingModuleEnabled &&
                   myParticipantId != null &&
                   carpools.any(
@@ -286,13 +332,107 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
 
               return usersAsync.when(
                 data: (userDocs) {
-                  final viewerIsDriverOnTrip = myParticipantId != null &&
-                      carpools.any(
-                        (c) => c.driverParticipantId.trim() == myParticipantId,
-                      );
                   final canUsePassengerSelfAssignment = myParticipantId != null;
                   final passengerSelfAssignmentInteractionLocked =
                       _selfAssignmentBusyCarpoolId != null;
+
+                  Widget buildCarpoolEntry(TripCarpool carpool) {
+                    // A driver keeps their car for that direction, but may
+                    // ride as a passenger the other way.
+                    final viewerDrivesThisWay = myParticipantId != null &&
+                        carpools.any(
+                          (c) =>
+                              c.direction == carpool.direction &&
+                              c.driverParticipantId.trim() == myParticipantId,
+                        );
+                    final isUidInThisCarpool = myParticipantId != null &&
+                        carpool.assignedParticipantIds.any(
+                          (id) => id.trim() == myParticipantId,
+                        );
+                    final remainingPassengerSeats = carpool.availableSeats -
+                        carpool.assignedParticipantIds.length;
+                    final showJoinPassengerAction =
+                        canUsePassengerSelfAssignment &&
+                            !viewerDrivesThisWay &&
+                            !isUidInThisCarpool &&
+                            remainingPassengerSeats > 0;
+                    final showLeavePassengerAction =
+                        canUsePassengerSelfAssignment &&
+                            !viewerDrivesThisWay &&
+                            isUidInThisCarpool &&
+                            carpool.driverParticipantId.trim() !=
+                                myParticipantId;
+                    final joinPassengerSpinner = _selfAssignmentBusyKind ==
+                            _TripCarpoolSelfAssignmentBusyKind.join &&
+                        _selfAssignmentBusyCarpoolId == carpool.id;
+                    final leavePassengerSpinner = _selfAssignmentBusyKind ==
+                            _TripCarpoolSelfAssignmentBusyKind.leave &&
+                        _selfAssignmentBusyCarpoolId == carpool.id;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _TripCarpoolCard(
+                          carpool: carpool,
+                          isCurrentUserInCarpool: isUidInThisCarpool,
+                          driverLabel:
+                              memberLabels[carpool.driverParticipantId] ??
+                                  l10n.tripParticipantsTraveler,
+                          driverUserData: userDocs[
+                              participantIdToUserId[carpool.driverParticipantId]],
+                          driverIsChild: participants
+                                  .where(
+                                    (m) =>
+                                        m.id ==
+                                        carpool.driverParticipantId.trim(),
+                                  )
+                                  .map((m) => m.isChild)
+                                  .firstOrNull ??
+                              false,
+                          passengerLabels: carpool.assignedParticipantIds
+                              .where((id) => id != carpool.driverParticipantId)
+                              .map(
+                                (id) =>
+                                    memberLabels[id] ??
+                                    l10n.tripParticipantsTraveler,
+                              )
+                              .toList(growable: false),
+                          showJoinPassengerAction: showJoinPassengerAction,
+                          showLeavePassengerAction: showLeavePassengerAction,
+                          joinPassengerActionSpinner: joinPassengerSpinner,
+                          leavePassengerActionSpinner: leavePassengerSpinner,
+                          onJoinPassengerPressed: showJoinPassengerAction &&
+                                  !passengerSelfAssignmentInteractionLocked
+                              ? () {
+                                  _joinTripCarpoolAsPassenger(
+                                    tripId: trip.id,
+                                    carpoolId: carpool.id,
+                                  );
+                                }
+                              : null,
+                          onLeavePassengerPressed: showLeavePassengerAction &&
+                                  !passengerSelfAssignmentInteractionLocked
+                              ? () {
+                                  _leaveTripCarpoolAsPassenger(
+                                    tripId: trip.id,
+                                    carpoolId: carpool.id,
+                                  );
+                                }
+                              : null,
+                          onTap: () => _openCarpoolForm(carpool: carpool),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    );
+                  }
+
+                  Widget emptyStateCard() => Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(l10n.tripCarpoolEmptyState),
+                        ),
+                      );
+
                   return ListView(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
                     children: [
@@ -301,12 +441,11 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                         count: carpools.length,
                       ),
                       if (showUnassignedMembersWarning &&
-                          unassignedMembers > 0) ...[
+                          unassignedLines.isNotEmpty) ...[
                         PzCallout(
                           tone: PzCalloutTone.error,
                           title: l10n.tripCarpoolUnassignedWarningTitle,
-                          message: l10n.tripCarpoolUnassignedWarningBody(
-                              unassignedMembers),
+                          message: unassignedLines.join('\n'),
                         ),
                         const SizedBox(height: 10),
                       ],
@@ -314,7 +453,7 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                         PzCallout(
                           tone: PzCalloutTone.warning,
                           icon: PhosphorIconsRegular.car,
-                          title: l10n.tripCarpoolSelfUnassignedTitle,
+                          title: selfUnassignedTitle,
                           message: l10n.tripCarpoolSelfUnassignedBody,
                         ),
                         const SizedBox(height: 10),
@@ -415,112 +554,20 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                         ),
                         const SizedBox(height: 12),
                       ],
-                      PzSectionHeader(title: l10n.tripCarpoolCarsTitle),
-                      if (carpools.isEmpty)
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Text(l10n.tripCarpoolEmptyState),
+                      if (carpools.isEmpty) ...[
+                        const SizedBox(height: 8),
+                        emptyStateCard(),
+                      ] else
+                        for (final direction in TripCarpoolDirection.values) ...[
+                          PzSectionHeader(
+                            title: tripCarpoolDirectionLabel(l10n, direction),
+                            count: carpoolsByDirection[direction]!.length,
                           ),
-                        ),
-                      for (final carpool in carpoolsForList)
-                        Builder(
-                          builder: (context) {
-                            final isUidInThisCarpool = myParticipantId != null &&
-                                carpool.assignedParticipantIds.any(
-                              (id) => id.trim() == myParticipantId,
-                            );
-                            final remainingPassengerSeats =
-                                carpool.availableSeats -
-                                    carpool.assignedParticipantIds.length;
-                            final showJoinPassengerAction =
-                                canUsePassengerSelfAssignment &&
-                                    !viewerIsDriverOnTrip &&
-                                    !isUidInThisCarpool &&
-                                    remainingPassengerSeats > 0;
-                            final showLeavePassengerAction =
-                                canUsePassengerSelfAssignment &&
-                                    !viewerIsDriverOnTrip &&
-                                    isUidInThisCarpool &&
-                                    carpool.driverParticipantId.trim() !=
-                                        myParticipantId;
-                            final joinPassengerSpinner =
-                                _selfAssignmentBusyKind ==
-                                        _TripCarpoolSelfAssignmentBusyKind
-                                            .join &&
-                                    _selfAssignmentBusyCarpoolId == carpool.id;
-                            final leavePassengerSpinner =
-                                _selfAssignmentBusyKind ==
-                                        _TripCarpoolSelfAssignmentBusyKind
-                                            .leave &&
-                                    _selfAssignmentBusyCarpoolId == carpool.id;
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _TripCarpoolCard(
-                                  carpool: carpool,
-                                  isCurrentUserInCarpool: isUidInThisCarpool,
-                                  driverLabel:
-                                      memberLabels[carpool.driverParticipantId] ??
-                                          l10n.tripParticipantsTraveler,
-                                  driverUserData: userDocs[participantIdToUserId[
-                                      carpool.driverParticipantId]],
-                                  driverIsChild: participants
-                                      .where(
-                                        (m) =>
-                                            m.id ==
-                                            carpool.driverParticipantId.trim(),
-                                      )
-                                      .map((m) => m.isChild)
-                                      .firstOrNull ??
-                                      false,
-                                  passengerLabels: carpool
-                                      .assignedParticipantIds
-                                      .where(
-                                        (id) => id != carpool.driverParticipantId,
-                                      )
-                                      .map(
-                                        (id) =>
-                                            memberLabels[id] ??
-                                            l10n.tripParticipantsTraveler,
-                                      )
-                                      .toList(growable: false),
-                                  showJoinPassengerAction:
-                                      showJoinPassengerAction,
-                                  showLeavePassengerAction:
-                                      showLeavePassengerAction,
-                                  joinPassengerActionSpinner:
-                                      joinPassengerSpinner,
-                                  leavePassengerActionSpinner:
-                                      leavePassengerSpinner,
-                                  onJoinPassengerPressed: showJoinPassengerAction &&
-                                          !passengerSelfAssignmentInteractionLocked
-                                      ? () {
-                                          _joinTripCarpoolAsPassenger(
-                                            tripId: trip.id,
-                                            carpoolId: carpool.id,
-                                          );
-                                        }
-                                      : null,
-                                  onLeavePassengerPressed:
-                                      showLeavePassengerAction &&
-                                              !passengerSelfAssignmentInteractionLocked
-                                          ? () {
-                                              _leaveTripCarpoolAsPassenger(
-                                                tripId: trip.id,
-                                                carpoolId: carpool.id,
-                                              );
-                                            }
-                                          : null,
-                                  onTap: () =>
-                                      _openCarpoolForm(carpool: carpool),
-                                ),
-                                const SizedBox(height: 10),
-                              ],
-                            );
-                          },
-                        ),
+                          if (carpoolsByDirection[direction]!.isEmpty)
+                            emptyStateCard(),
+                          for (final carpool in carpoolsByDirection[direction]!)
+                            buildCarpoolEntry(carpool),
+                        ],
                     ],
                   );
                 },

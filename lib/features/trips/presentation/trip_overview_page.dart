@@ -21,6 +21,7 @@ import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
+import 'package:planerz/features/carpool/presentation/trip_carpool_direction_labels.dart';
 import 'package:planerz/features/games/data/trip_games_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/features/rooms/data/trip_room_lodgings.dart';
@@ -829,72 +830,71 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     },
                   )
                   .toList();
-              final TripCarpool? myCarpool = myParticipantId == null
-                  ? null
-                  : carpools.cast<TripCarpool?>().firstWhere(
+              // The viewer's cars, at most one per direction, in departure order.
+              final myCarpools = myParticipantId == null ||
+                      myUid == null ||
+                      myUid.trim().isEmpty
+                  ? const <TripCarpool>[]
+                  : carpools
+                      .where(
                         (entry) =>
-                            entry?.assignedParticipantIds
-                                .contains(myParticipantId) ==
-                            true,
-                        orElse: () => null,
-                      );
-              final myCarpoolDetailLines = <String>[
-                if (myCarpool != null &&
-                    myUid != null &&
-                    myUid.trim().isNotEmpty)
-                  ...() {
-                    final departureTime =
-                        MaterialLocalizations.of(context).formatTimeOfDay(
-                      TimeOfDay.fromDateTime(myCarpool.departureAt),
-                      alwaysUse24HourFormat: true,
-                    );
-                    final meetingPointLabel =
-                        myCarpool.meetingPointAddress.trim();
-                    final driverLabel = (memberLabels[
-                                myCarpool.driverParticipantId] ??
-                            l10n.tripParticipantsTraveler)
-                        .trim();
-                    final passengerIds = myCarpool.assignedParticipantIds
-                        .map((id) => id.trim())
-                        .where((id) => id.isNotEmpty)
-                        .where((id) => id != myCarpool.driverParticipantId.trim())
-                        .toList(growable: false);
-                    final passengerLabels = passengerIds
-                        .map(
-                          (id) => (memberLabels[id]?.trim().isNotEmpty == true)
-                              ? memberLabels[id]!.trim()
-                              : l10n.tripParticipantsTraveler,
-                        )
-                        .toList(growable: false);
-                    final passengersLabel = passengerLabels.isEmpty
-                        ? l10n.tripOverviewCarpoolNoPassengersPlaceholder
-                        : passengerLabels.join(', ');
-                    final isDriver = myParticipantId != null &&
-                        myParticipantId ==
-                            myCarpool.driverParticipantId.trim();
+                            entry.assignedParticipantIds.contains(myParticipantId),
+                      )
+                      .toList(growable: false);
+              String myCarpoolSummary(TripCarpool myCarpool) {
+                final departureTime =
+                    MaterialLocalizations.of(context).formatTimeOfDay(
+                  TimeOfDay.fromDateTime(myCarpool.departureAt),
+                  alwaysUse24HourFormat: true,
+                );
+                final meetingPointLabel = myCarpool.meetingPointAddress.trim();
+                final driverLabel = (memberLabels[myCarpool.driverParticipantId] ??
+                        l10n.tripParticipantsTraveler)
+                    .trim();
+                final passengerLabels = myCarpool.assignedParticipantIds
+                    .map((id) => id.trim())
+                    .where((id) => id.isNotEmpty)
+                    .where((id) => id != myCarpool.driverParticipantId.trim())
+                    .map(
+                      (id) => (memberLabels[id]?.trim().isNotEmpty == true)
+                          ? memberLabels[id]!.trim()
+                          : l10n.tripParticipantsTraveler,
+                    )
+                    .toList(growable: false);
+                final passengersLabel = passengerLabels.isEmpty
+                    ? l10n.tripOverviewCarpoolNoPassengersPlaceholder
+                    : passengerLabels.join(', ');
+                final isDriver =
+                    myParticipantId == myCarpool.driverParticipantId.trim();
+                final summary = isDriver
+                    ? l10n.tripOverviewCarpoolDriverSummary(
+                        passengersLabel,
+                        departureTime,
+                      )
+                    : meetingPointLabel.isEmpty
+                        ? l10n.tripOverviewCarpoolPassengerSummaryNoMeetingPoint(
+                            driverLabel,
+                            departureTime,
+                          )
+                        : l10n.tripOverviewCarpoolPassengerSummary(
+                            driverLabel,
+                            departureTime,
+                            meetingPointLabel,
+                          );
+                // Name the direction once the viewer also has a ride back.
+                return myCarpools.length > 1
+                    ? l10n.tripOverviewCarpoolDirectionLine(
+                        tripCarpoolDirectionLabel(l10n, myCarpool.direction),
+                        summary,
+                      )
+                    : summary;
+              }
 
-                    return <String>[
-                      isDriver
-                          ? l10n.tripOverviewCarpoolDriverSummary(
-                              passengersLabel,
-                              departureTime,
-                            )
-                          : meetingPointLabel.isEmpty
-                              ? l10n
-                                  .tripOverviewCarpoolPassengerSummaryNoMeetingPoint(
-                                  driverLabel,
-                                  departureTime,
-                                )
-                              : l10n.tripOverviewCarpoolPassengerSummary(
-                                  driverLabel,
-                                  departureTime,
-                                  meetingPointLabel,
-                                ),
-                      if (myCarpool.goesShopping &&
-                          _trip.shoppingModuleEnabled)
-                        l10n.tripOverviewCarpoolShoppingTeamLine,
-                    ];
-                  }(),
+              final myCarpoolDetailLines = <String>[
+                for (final myCarpool in myCarpools) myCarpoolSummary(myCarpool),
+                if (_trip.shoppingModuleEnabled &&
+                    myCarpools.any((myCarpool) => myCarpool.goesShopping))
+                  l10n.tripOverviewCarpoolShoppingTeamLine,
               ];
               final activitiesToday = (activitiesAsync.asData?.value ??
                       const <TripActivity>[])

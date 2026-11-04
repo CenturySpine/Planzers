@@ -2,8 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
+import 'package:planerz/features/carpool/presentation/trip_carpool_direction_labels.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
@@ -14,10 +16,14 @@ class TripCarpoolFormPage extends ConsumerStatefulWidget {
     super.key,
     this.initialCarpool,
     this.startReadOnly = false,
+    this.returnOf,
   });
 
   final TripCarpool? initialCarpool;
   final bool startReadOnly;
+
+  /// Outbound car whose driver, seats and passengers prefill a new return car.
+  final TripCarpool? returnOf;
 
   @override
   ConsumerState<TripCarpoolFormPage> createState() => _TripCarpoolFormPageState();
@@ -29,12 +35,15 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
   late final TextEditingController _transitController;
   late final TextEditingController _seatsController;
   DateTime? _departureAt;
+  bool _departureTouched = false;
   String? _driverParticipantId;
   final Set<String> _selectedParticipantIds = <String>{};
   bool _goesShopping = false;
+  TripCarpoolDirection _direction = TripCarpoolDirection.outbound;
   bool _saving = false;
   String? _defaultDriverParticipantId;
   bool _didInitDepartureFromTrip = false;
+  bool _didPruneReturnPrefill = false;
   bool _isReadOnly = false;
 
   bool get _isEdit => widget.initialCarpool != null;
@@ -43,6 +52,7 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
   void initState() {
     super.initState();
     final initial = widget.initialCarpool;
+    final returnOf = initial == null ? widget.returnOf : null;
     _meetingController = TextEditingController(
       text: initial?.meetingPointAddress ?? '',
     );
@@ -50,21 +60,26 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
       text: initial?.nearestTransitStop ?? '',
     );
     _seatsController = TextEditingController(
-      text: (initial?.availableSeats ?? 4).toString(),
+      text: (initial?.availableSeats ?? returnOf?.availableSeats ?? 4).toString(),
     );
     _departureAt = initial?.departureAt;
-    _driverParticipantId =
-        (initial?.driverParticipantId.trim().isNotEmpty == true)
-            ? initial!.driverParticipantId.trim()
-            : null;
+    final prefillDriverId =
+        (initial?.driverParticipantId ?? returnOf?.driverParticipantId ?? '').trim();
+    _driverParticipantId = prefillDriverId.isNotEmpty ? prefillDriverId : null;
     _defaultDriverParticipantId = _driverParticipantId;
     _selectedParticipantIds.addAll(
-      initial?.assignedParticipantIds ?? const <String>[],
+      initial?.assignedParticipantIds ??
+          returnOf?.assignedParticipantIds ??
+          const <String>[],
     );
     if (_driverParticipantId != null && _driverParticipantId!.isNotEmpty) {
       _selectedParticipantIds.add(_driverParticipantId!);
     }
     _goesShopping = initial?.goesShopping ?? false;
+    _direction = initial?.direction ??
+        (returnOf != null
+            ? TripCarpoolDirection.returnTrip
+            : TripCarpoolDirection.outbound);
     _isReadOnly = _isEdit && widget.startReadOnly;
   }
 
@@ -72,14 +87,29 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_didInitDepartureFromTrip || _isEdit) return;
-    final tripStart = TripScope.of(context).startDate;
-    if (tripStart != null) {
-      _departureAt = DateTime(tripStart.year, tripStart.month, tripStart.day, 18, 30);
-    } else if (_departureAt == null) {
-      final now = DateTime.now();
-      _departureAt = DateTime(now.year, now.month, now.day, 18, 30);
-    }
+    _departureAt = _defaultDepartureFor(_direction);
     _didInitDepartureFromTrip = true;
+  }
+
+  /// 18:30 on the first day of the trip for an outbound car, on its last day
+  /// for a return car.
+  DateTime _defaultDepartureFor(TripCarpoolDirection direction) {
+    final trip = TripScope.of(context);
+    final day = direction == TripCarpoolDirection.returnTrip
+        ? (trip.endDate ?? trip.startDate)
+        : trip.startDate;
+    final base = day ?? DateTime.now();
+    return DateTime(base.year, base.month, base.day, 18, 30);
+  }
+
+  void _onDirectionChanged(TripCarpoolDirection direction) {
+    if (direction == _direction) return;
+    setState(() {
+      _direction = direction;
+      if (!_isEdit && !_departureTouched) {
+        _departureAt = _defaultDepartureFor(direction);
+      }
+    });
   }
 
   @override
@@ -92,10 +122,11 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
 
   Future<void> _pickDepartureDateTime(BuildContext context) async {
     final base = _departureAt ?? DateTime.now();
+    final earliest = DateTime.now().subtract(const Duration(days: 1));
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: base,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
+      firstDate: base.isBefore(earliest) ? base : earliest,
       lastDate: DateTime.now().add(const Duration(days: 3650)),
       helpText: AppLocalizations.of(context)!.commonDate,
     );
@@ -107,6 +138,7 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
     );
     if (pickedTime == null || !context.mounted) return;
     setState(() {
+      _departureTouched = true;
       _departureAt = DateTime(
         pickedDate.year,
         pickedDate.month,
@@ -115,6 +147,21 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
         pickedTime.minute,
       );
     });
+  }
+
+  /// Participants already seated in another car going the same way.
+  Map<String, TripCarpool> _otherCarsByParticipantInDirection(
+    List<TripCarpool> carpools,
+  ) {
+    final byParticipant = <String, TripCarpool>{};
+    for (final carpool in carpools) {
+      if (_isEdit && carpool.id == widget.initialCarpool?.id) continue;
+      if (carpool.direction != _direction) continue;
+      for (final participantId in carpool.assignedParticipantIds) {
+        byParticipant[participantId] = carpool;
+      }
+    }
+    return byParticipant;
   }
 
   Future<void> _save({
@@ -152,13 +199,27 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
       );
       return;
     }
+    // People who left the trip may still sit in cars saved before they were
+    // freed automatically: drop them so the car can be saved again.
+    final participantIds = participants.map((member) => member.id).toSet();
     final assignedIds = <String>{
-      ..._selectedParticipantIds.map((id) => id.trim()).where((id) => id.isNotEmpty),
+      ..._selectedParticipantIds
+          .map((id) => id.trim())
+          .where((id) => id.isNotEmpty && participantIds.contains(id)),
       driverParticipantId,
     }.toList(growable: false);
     if (assignedIds.length > seats) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.tripCarpoolSeatsExceeded)),
+      );
+      return;
+    }
+    final carpools =
+        ref.read(tripCarpoolsStreamProvider(tripId)).asData?.value ?? const [];
+    final otherCarsByParticipant = _otherCarsByParticipantInDirection(carpools);
+    if (assignedIds.any(otherCarsByParticipant.containsKey)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripCarpoolAlreadyAssignedInDirection)),
       );
       return;
     }
@@ -175,6 +236,7 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
             availableSeats: seats,
             assignedParticipantIds: assignedIds,
             goesShopping: _goesShopping,
+            direction: _direction,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -187,8 +249,15 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
       Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;
+      final details = error.toString();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.commonErrorWithDetails(error.toString()))),
+        SnackBar(
+          content: Text(
+            details.contains('already assigned to another carpool')
+                ? l10n.tripCarpoolAlreadyAssignedInDirection
+                : l10n.commonErrorWithDetails(details),
+          ),
+        ),
       );
     } finally {
       if (mounted) {
@@ -242,19 +311,28 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
     }
   }
 
+  void _openReturnForm(TripCarpool outboundCarpool) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => TripCarpoolFormPage(returnOf: outboundCarpool),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
     final myUid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
     final carpoolsAsync = ref.watch(tripCarpoolsStreamProvider(trip.id));
+    final canPropose = canProposeCarpoolForTrip(trip: trip, userId: myUid);
     final canManageCarpoolData = _isEdit
         ? canManageCarpool(
             trip: trip,
             userId: myUid,
             carpoolCreatedByUserId: widget.initialCarpool?.createdByUserId,
           )
-        : canProposeCarpoolForTrip(trip: trip, userId: myUid);
+        : canPropose;
     final canAssign = _isEdit
         ? canAssignPassengersForCarpool(
             trip: trip,
@@ -287,23 +365,6 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
               growable: false,
             );
 
-    // Auto-select driver: prefer the current user's participant slot.
-    final driverValue = _driverParticipantId?.trim();
-    if (driverValue == null || !driverEligibleIds.contains(driverValue)) {
-      if (driverEligibleIds.isNotEmpty) {
-        final myParticipantId = myUid.isNotEmpty
-            ? driverEligibleParticipants
-                .where((member) => member.userId?.trim() == myUid)
-                .map((member) => member.id)
-                .firstOrNull
-            : null;
-        _driverParticipantId = myParticipantId ?? driverEligibleIds.first;
-        _selectedParticipantIds.add(_driverParticipantId!);
-      } else {
-        _driverParticipantId = null;
-      }
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -332,13 +393,46 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
       ),
       body: carpoolsAsync.when(
             data: (carpools) {
-              final assignmentByParticipant = <String, TripCarpool>{};
-              for (final carpool in carpools) {
-                if (_isEdit && carpool.id == widget.initialCarpool?.id) continue;
-                for (final participantId in carpool.assignedParticipantIds) {
-                  assignmentByParticipant[participantId] = carpool;
+              final assignmentByParticipant =
+                  _otherCarsByParticipantInDirection(carpools);
+
+              // A return car prefilled from the outbound one leaves out the
+              // passengers who already found a car back.
+              if (widget.returnOf != null && !_didPruneReturnPrefill) {
+                _didPruneReturnPrefill = true;
+                _selectedParticipantIds.removeWhere(
+                  (id) =>
+                      id != _driverParticipantId &&
+                      assignmentByParticipant.containsKey(id),
+                );
+              }
+
+              // Auto-select driver: prefer the current user's participant slot,
+              // among people not already in another car going the same way.
+              final driverValue = _driverParticipantId?.trim();
+              if (driverEligibleIds.isNotEmpty &&
+                  (driverValue == null ||
+                      !driverEligibleIds.contains(driverValue))) {
+                final freeDriverIds = driverEligibleIds
+                    .where((id) => !assignmentByParticipant.containsKey(id))
+                    .toList(growable: false);
+                final myParticipantId = myUid.isNotEmpty
+                    ? driverEligibleParticipants
+                        .where(
+                          (member) =>
+                              member.userId?.trim() == myUid &&
+                              freeDriverIds.contains(member.id),
+                        )
+                        .map((member) => member.id)
+                        .firstOrNull
+                    : null;
+                _driverParticipantId =
+                    myParticipantId ?? freeDriverIds.firstOrNull;
+                if (_driverParticipantId != null) {
+                  _selectedParticipantIds.add(_driverParticipantId!);
                 }
               }
+
               final sortedParticipantIds = [...memberIds]
                 ..sort((left, right) {
                   final leftAssigned = assignmentByParticipant.containsKey(left);
@@ -358,6 +452,15 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                   color: colorScheme.onSurfaceVariant,
                 );
                 final valueStyle = textTheme.bodyLarge;
+                final initial = widget.initialCarpool!;
+                final canCreateReturn = canPropose &&
+                    initial.direction == TripCarpoolDirection.outbound &&
+                    !carpools.any(
+                      (carpool) =>
+                          carpool.direction == TripCarpoolDirection.returnTrip &&
+                          carpool.driverParticipantId.trim() ==
+                              initial.driverParticipantId.trim(),
+                    );
 
                 Widget readOnlyField(String label, String value) => Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,6 +478,11 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   children: [
+                    readOnlyField(
+                      l10n.tripCarpoolDirectionLabel,
+                      tripCarpoolDirectionLabel(l10n, _direction),
+                    ),
+                    const Divider(height: 32),
                     readOnlyField(
                       l10n.tripCarpoolMeetingPointLabel,
                       _meetingController.text,
@@ -451,6 +559,17 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                         ],
                       ),
                     ),
+                    if (canCreateReturn) ...[
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: FilledButton.tonalIcon(
+                          onPressed: () => _openReturnForm(initial),
+                          icon: const Icon(PhosphorIconsRegular.arrowLeft),
+                          label: Text(l10n.tripCarpoolCreateReturnAction),
+                        ),
+                      ),
+                    ],
                   ],
                 );
               }
@@ -460,6 +579,22 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   children: [
+                    IgnorePointer(
+                      ignoring: !canUseEditControls,
+                      child: PzSegmentedControl<TripCarpoolDirection>(
+                        segments: [
+                          for (final direction in TripCarpoolDirection.values)
+                            PzSegment(
+                              value: direction,
+                              label: tripCarpoolDirectionLabel(l10n, direction),
+                              icon: tripCarpoolDirectionIcon(direction),
+                            ),
+                        ],
+                        selected: _direction,
+                        onChanged: _onDirectionChanged,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _meetingController,
                       readOnly: !canUseEditControls,
@@ -506,6 +641,8 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                             (id) => DropdownMenuEntry<String>(
                               value: id,
                               label: memberLabels[id] ?? l10n.tripParticipantsTraveler,
+                              enabled: id == _driverParticipantId ||
+                                  !assignmentByParticipant.containsKey(id),
                             ),
                           )
                           .toList(growable: false),
@@ -566,7 +703,14 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                           for (final memberId in sortedParticipantIds)
                             CheckboxListTile(
                               value: _selectedParticipantIds.contains(memberId),
-                              onChanged: canAssign && canUseEditControls
+                              // Someone already in another car going the same
+                              // way cannot be added; they can still be removed.
+                              onChanged: canAssign &&
+                                      canUseEditControls &&
+                                      (!assignmentByParticipant
+                                              .containsKey(memberId) ||
+                                          _selectedParticipantIds
+                                              .contains(memberId))
                                   ? (checked) {
                                       final seats = int.tryParse(
                                             _seatsController.text.trim(),

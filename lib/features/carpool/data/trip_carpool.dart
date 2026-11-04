@@ -1,5 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Which way a carpool goes. A participant may be in one car per direction.
+enum TripCarpoolDirection {
+  outbound('outbound'),
+  returnTrip('return');
+
+  const TripCarpoolDirection(this.firestoreValue);
+
+  final String firestoreValue;
+
+  /// Cars saved before directions existed have no value and are outbound.
+  static TripCarpoolDirection fromFirestore(Object? raw) {
+    final value = raw is String ? raw.trim() : '';
+    return value == TripCarpoolDirection.returnTrip.firestoreValue
+        ? TripCarpoolDirection.returnTrip
+        : TripCarpoolDirection.outbound;
+  }
+}
+
 class TripCarpool {
   TripCarpool({
     required this.id,
@@ -12,6 +30,7 @@ class TripCarpool {
     required this.availableSeats,
     required List<String> assignedParticipantIds,
     required this.goesShopping,
+    this.direction = TripCarpoolDirection.outbound,
     required this.createdAt,
     required this.updatedAt,
   }) : assignedParticipantIds = _normalizeAssignedParticipants(
@@ -42,6 +61,7 @@ class TripCarpool {
   final int availableSeats;
   final List<String> assignedParticipantIds;
   final bool goesShopping;
+  final TripCarpoolDirection direction;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -90,6 +110,7 @@ class TripCarpool {
       availableSeats: (data['availableSeats'] as num?)?.toInt() ?? 1,
       assignedParticipantIds: assigned,
       goesShopping: data['goesShopping'] == true,
+      direction: TripCarpoolDirection.fromFirestore(data['direction']),
       createdAt: _readDate(data['createdAt'], now),
       updatedAt: _readDate(data['updatedAt'], now),
     );
@@ -105,6 +126,7 @@ class TripCarpool {
       'availableSeats': availableSeats,
       'assignedParticipantIds': assignedParticipantIds,
       'goesShopping': goesShopping,
+      'direction': direction.firestoreValue,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };

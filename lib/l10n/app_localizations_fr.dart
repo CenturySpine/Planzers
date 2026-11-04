@@ -3708,6 +3708,11 @@ class AppLocalizationsFr extends AppLocalizations {
       'Vous faites partie de l\'équipe qui fait les courses !';
 
   @override
+  String tripOverviewCarpoolDirectionLine(Object direction, Object summary) {
+    return '$direction : $summary';
+  }
+
+  @override
   String get tripCarpoolTileNoAssignment => 'Aucune affectation';
 
   @override
@@ -3743,12 +3748,33 @@ class AppLocalizationsFr extends AppLocalizations {
       'Seuls les participants au voyage peuvent modifier leur affectation.';
 
   @override
-  String tripCarpoolUnassignedWarningBody(int count) {
-    return '$count participant(s) n\'est/ne sont assigné(s) à aucune voiture.';
+  String tripCarpoolUnassignedInDirectionBody(String direction, int count) {
+    return '$direction : $count participant(s) sans voiture.';
   }
 
   @override
-  String get tripCarpoolCarsTitle => 'Voitures';
+  String get tripCarpoolSelfUnassignedOutboundTitle =>
+      'Pas de covoiturage pour l\'aller';
+
+  @override
+  String get tripCarpoolSelfUnassignedReturnTitle =>
+      'Pas de covoiturage pour le retour';
+
+  @override
+  String get tripCarpoolDirectionLabel => 'Trajet';
+
+  @override
+  String get tripCarpoolDirectionOutbound => 'Aller';
+
+  @override
+  String get tripCarpoolDirectionReturn => 'Retour';
+
+  @override
+  String get tripCarpoolAlreadyAssignedInDirection =>
+      'Une des personnes choisies est déjà dans une autre voiture pour ce trajet.';
+
+  @override
+  String get tripCarpoolCreateReturnAction => 'Créer le retour';
 
   @override
   String get tripCarpoolGlobalMeetupTitle => 'Rendez-vous courses';
@@ -8009,6 +8035,11 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Vous faites partie de l\'équipe qui fait les courses !';
 
   @override
+  String tripOverviewCarpoolDirectionLine(Object direction, Object summary) {
+    return '$direction : $summary';
+  }
+
+  @override
   String get tripCarpoolTileNoAssignment => 'Aucune affectation';
 
   @override
@@ -8044,12 +8075,33 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Seuls les participants au voyage peuvent modifier leur affectation.';
 
   @override
-  String tripCarpoolUnassignedWarningBody(int count) {
-    return '$count participant(s) n\'est/ne sont assigné(s) à aucune voiture.';
+  String tripCarpoolUnassignedInDirectionBody(String direction, int count) {
+    return '$direction : $count participant(s) sans voiture.';
   }
 
   @override
-  String get tripCarpoolCarsTitle => 'Voitures';
+  String get tripCarpoolSelfUnassignedOutboundTitle =>
+      'Pas de covoiturage pour l\'aller';
+
+  @override
+  String get tripCarpoolSelfUnassignedReturnTitle =>
+      'Pas de covoiturage pour le retour';
+
+  @override
+  String get tripCarpoolDirectionLabel => 'Trajet';
+
+  @override
+  String get tripCarpoolDirectionOutbound => 'Aller';
+
+  @override
+  String get tripCarpoolDirectionReturn => 'Retour';
+
+  @override
+  String get tripCarpoolAlreadyAssignedInDirection =>
+      'Une des personnes choisies est déjà dans une autre voiture pour ce trajet.';
+
+  @override
+  String get tripCarpoolCreateReturnAction => 'Créer le retour';
 
   @override
   String get tripCarpoolGlobalMeetupTitle => 'Rendez-vous courses';

@@ -160,6 +160,7 @@ class TripCarpoolsRepository {
     required int availableSeats,
     required List<String> assignedParticipantIds,
     required bool goesShopping,
+    required TripCarpoolDirection direction,
   }) async {
     final cleanTripId = tripId.trim();
     final cleanCarpoolId = carpoolId?.trim() ?? '';
@@ -195,11 +196,12 @@ class TripCarpoolsRepository {
       'availableSeats': availableSeats,
       'assignedParticipantIds': normalizedAssignedIds,
       'goesShopping': goesShopping,
+      'direction': direction.firestoreValue,
     });
   }
 
   /// Moves the signed-in trip member into [targetCarpoolId], removing them from
-  /// any other car first (Cloud Function + Admin SDK).
+  /// their other car of the same direction first (Cloud Function + Admin SDK).
   Future<void> joinTripCarpoolAsSelfAssignedPassenger({
     required String tripId,
     required String targetCarpoolId,

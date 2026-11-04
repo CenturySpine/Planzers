@@ -1418,6 +1418,13 @@
   },
   "tripOverviewCarpoolNoPassengersPlaceholder": "[nobody]",
   "tripOverviewCarpoolShoppingTeamLine": "You're part of the shopping team!",
+  "tripOverviewCarpoolDirectionLine": "{direction}: {summary}",
+  "@tripOverviewCarpoolDirectionLine": {
+    "placeholders": {
+      "direction": {},
+      "summary": {}
+    }
+  },
   "tripCarpoolTileNoAssignment": "No assignment",
   "tripCarpoolUnassignedWarningTitle": "Incomplete assignment",
   "tripCarpoolSelfUnassignedTitle": "No carpool",
@@ -1428,15 +1435,24 @@
   "tripCarpoolLeftSelfSnack": "You left this carpool.",
   "tripCarpoolSelfAssignmentDriverBlocked": "Drivers cannot join or leave a carpool from this list.",
   "tripCarpoolSelfAssignmentNotMember": "Only trip participants can change their assignment.",
-  "tripCarpoolUnassignedWarningBody": "{count} participant(s) are not assigned to any carpool.",
-  "@tripCarpoolUnassignedWarningBody": {
+  "tripCarpoolUnassignedInDirectionBody": "{direction}: {count} participant(s) without a car.",
+  "@tripCarpoolUnassignedInDirectionBody": {
     "placeholders": {
+      "direction": {
+        "type": "String"
+      },
       "count": {
         "type": "int"
       }
     }
   },
-  "tripCarpoolCarsTitle": "Cars",
+  "tripCarpoolSelfUnassignedOutboundTitle": "No carpool for the outbound trip",
+  "tripCarpoolSelfUnassignedReturnTitle": "No carpool for the return trip",
+  "tripCarpoolDirectionLabel": "Direction",
+  "tripCarpoolDirectionOutbound": "Outbound",
+  "tripCarpoolDirectionReturn": "Return",
+  "tripCarpoolAlreadyAssignedInDirection": "One of the selected people is already in another car going the same way.",
+  "tripCarpoolCreateReturnAction": "Create the return trip",
   "tripCarpoolGlobalMeetupTitle": "Shopping meetup",
   "tripCarpoolGlobalMeetupLabel": "Google Maps link",
   "tripCarpoolOpenMapsLink": "Open Google Maps link",

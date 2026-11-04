@@ -1418,6 +1418,13 @@
   },
   "tripOverviewCarpoolNoPassengersPlaceholder": "[personne]",
   "tripOverviewCarpoolShoppingTeamLine": "Vous faites partie de l'équipe qui fait les courses !",
+  "tripOverviewCarpoolDirectionLine": "{direction} : {summary}",
+  "@tripOverviewCarpoolDirectionLine": {
+    "placeholders": {
+      "direction": {},
+      "summary": {}
+    }
+  },
   "tripCarpoolTileNoAssignment": "Aucune affectation",
   "tripCarpoolUnassignedWarningTitle": "Affectation incomplète",
   "tripCarpoolSelfUnassignedTitle": "Pas de covoiturage",
@@ -1428,15 +1435,24 @@
   "tripCarpoolLeftSelfSnack": "Vous n'êtes plus dans ce covoiturage.",
   "tripCarpoolSelfAssignmentDriverBlocked": "Les conducteurs ne peuvent pas rejoindre ou quitter un covoiturage depuis cette liste.",
   "tripCarpoolSelfAssignmentNotMember": "Seuls les participants au voyage peuvent modifier leur affectation.",
-  "tripCarpoolUnassignedWarningBody": "{count} participant(s) n'est/ne sont assigné(s) à aucune voiture.",
-  "@tripCarpoolUnassignedWarningBody": {
+  "tripCarpoolUnassignedInDirectionBody": "{direction} : {count} participant(s) sans voiture.",
+  "@tripCarpoolUnassignedInDirectionBody": {
     "placeholders": {
+      "direction": {
+        "type": "String"
+      },
       "count": {
         "type": "int"
       }
     }
   },
-  "tripCarpoolCarsTitle": "Voitures",
+  "tripCarpoolSelfUnassignedOutboundTitle": "Pas de covoiturage pour l'aller",
+  "tripCarpoolSelfUnassignedReturnTitle": "Pas de covoiturage pour le retour",
+  "tripCarpoolDirectionLabel": "Trajet",
+  "tripCarpoolDirectionOutbound": "Aller",
+  "tripCarpoolDirectionReturn": "Retour",
+  "tripCarpoolAlreadyAssignedInDirection": "Une des personnes choisies est déjà dans une autre voiture pour ce trajet.",
+  "tripCarpoolCreateReturnAction": "Créer le retour",
   "tripCarpoolGlobalMeetupTitle": "Rendez-vous courses",
   "tripCarpoolGlobalMeetupLabel": "Lien Google Maps",
   "tripCarpoolOpenMapsLink": "Ouvrir le lien Google Maps",

@@ -3675,6 +3675,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'You\'re part of the shopping team!';
 
   @override
+  String tripOverviewCarpoolDirectionLine(Object direction, Object summary) {
+    return '$direction: $summary';
+  }
+
+  @override
   String get tripCarpoolTileNoAssignment => 'No assignment';
 
   @override
@@ -3708,12 +3713,33 @@ class AppLocalizationsEn extends AppLocalizations {
       'Only trip participants can change their assignment.';
 
   @override
-  String tripCarpoolUnassignedWarningBody(int count) {
-    return '$count participant(s) are not assigned to any carpool.';
+  String tripCarpoolUnassignedInDirectionBody(String direction, int count) {
+    return '$direction: $count participant(s) without a car.';
   }
 
   @override
-  String get tripCarpoolCarsTitle => 'Cars';
+  String get tripCarpoolSelfUnassignedOutboundTitle =>
+      'No carpool for the outbound trip';
+
+  @override
+  String get tripCarpoolSelfUnassignedReturnTitle =>
+      'No carpool for the return trip';
+
+  @override
+  String get tripCarpoolDirectionLabel => 'Direction';
+
+  @override
+  String get tripCarpoolDirectionOutbound => 'Outbound';
+
+  @override
+  String get tripCarpoolDirectionReturn => 'Return';
+
+  @override
+  String get tripCarpoolAlreadyAssignedInDirection =>
+      'One of the selected people is already in another car going the same way.';
+
+  @override
+  String get tripCarpoolCreateReturnAction => 'Create the return trip';
 
   @override
   String get tripCarpoolGlobalMeetupTitle => 'Shopping meetup';
@@ -7937,6 +7963,11 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'You\'re part of the shopping team!';
 
   @override
+  String tripOverviewCarpoolDirectionLine(Object direction, Object summary) {
+    return '$direction: $summary';
+  }
+
+  @override
   String get tripCarpoolTileNoAssignment => 'No assignment';
 
   @override
@@ -7970,12 +8001,33 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Only trip participants can change their assignment.';
 
   @override
-  String tripCarpoolUnassignedWarningBody(int count) {
-    return '$count participant(s) are not assigned to any carpool.';
+  String tripCarpoolUnassignedInDirectionBody(String direction, int count) {
+    return '$direction: $count participant(s) without a car.';
   }
 
   @override
-  String get tripCarpoolCarsTitle => 'Cars';
+  String get tripCarpoolSelfUnassignedOutboundTitle =>
+      'No carpool for the outbound trip';
+
+  @override
+  String get tripCarpoolSelfUnassignedReturnTitle =>
+      'No carpool for the return trip';
+
+  @override
+  String get tripCarpoolDirectionLabel => 'Direction';
+
+  @override
+  String get tripCarpoolDirectionOutbound => 'Outbound';
+
+  @override
+  String get tripCarpoolDirectionReturn => 'Return';
+
+  @override
+  String get tripCarpoolAlreadyAssignedInDirection =>
+      'One of the selected people is already in another car going the same way.';
+
+  @override
+  String get tripCarpoolCreateReturnAction => 'Create the return trip';
 
   @override
   String get tripCarpoolGlobalMeetupTitle => 'Shopping meetup';

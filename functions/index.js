@@ -28,6 +28,15 @@ const { runTripLifecycle } = require('./trip_lifecycle');
 const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate');
 const { assertTripMemberOrApplicationOwner } = require('./trip_membership');
 const { shoppingHolderIds, isShoppingItemHeldBy } = require('./shopping_claims');
+const {
+  normalizeCarpoolDirection,
+  carDirection,
+  participantIdsSeatedInDirection,
+  isDriverInDirection,
+  isDriverOfAnyCar,
+  removePassengerFromDirection,
+  removePassengerFromAllCars,
+} = require('./carpool_legs');
 const Anthropic = require('@anthropic-ai/sdk');
 const {
   readAiSettings,
@@ -584,6 +593,20 @@ function assertMemberNotUsedInMeals(mealDocs, memberId) {
 }
 
 /**
+ * @param {FirebaseFirestore.DocumentSnapshot} carpoolSnap trips/{tripId}/sections/carpool
+ * @param {string} memberId
+ */
+function assertMemberNotCarpoolDriver(carpoolSnap, memberId) {
+  const cars = carpoolSnap.exists ? cloneFirestoreCarsArray(carpoolSnap.data()?.cars) : [];
+  if (isDriverOfAnyCar(cars, memberId)) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Ce membre conduit un covoiturage. Change de conducteur ou supprime ce covoiturage avant de le supprimer.'
+    );
+  }
+}
+
+/**
  * @param {FirebaseFirestore.QueryDocumentSnapshot[]} expenseGroupDocs
  * @param {string} memberId
  */
@@ -642,17 +665,26 @@ async function assertMemberRemovalBlockingDependencies({
   memberId,
   tripData,
 }) {
-  const [expensesSnap, roomsSnap, mealsSnap, groupsSnap, participantGroupsSnap] = await Promise.all([
+  const [
+    expensesSnap,
+    roomsSnap,
+    mealsSnap,
+    groupsSnap,
+    participantGroupsSnap,
+    carpoolSnap,
+  ] = await Promise.all([
     tripRef.collection('expenses').get(),
     tripRef.collection('rooms').get(),
     tripRef.collection('meals').get(),
     tripRef.collection('expenseGroups').get(),
     tripRef.collection('participantGroups').get(),
+    tripRef.collection('sections').doc('carpool').get(),
   ]);
   assertMemberNotInParticipantGroup(participantGroupsSnap.docs, memberId);
   assertMemberNotUsedInExpenses(expensesSnap.docs, memberId);
   assertMemberNotAssignedInRooms(roomsSnap.docs, memberId);
   assertMemberNotUsedInMeals(mealsSnap.docs, memberId);
+  assertMemberNotCarpoolDriver(carpoolSnap, memberId);
   assertMemberIsNotTripAdmin(tripData, memberId);
   assertMemberNotCreatorOfNonDefaultExpensePost(groupsSnap.docs, memberId);
 }
@@ -723,6 +755,20 @@ async function cleanupNonBlockingMemberReferences(tripRef, memberId, userId = ''
   if (n > 0) {
     await batch.commit();
   }
+
+  // Seats they held as a passenger, outbound and return. Drivers cannot be
+  // removed (see assertMemberNotCarpoolDriver).
+  const carpoolRef = tripRef.collection('sections').doc('carpool');
+  await db.runTransaction(async (tx) => {
+    const carpoolSnap = await tx.get(carpoolRef);
+    if (!carpoolSnap.exists) return;
+    const { cars, changed } = removePassengerFromAllCars(
+      cloneFirestoreCarsArray(carpoolSnap.data()?.cars),
+      memberId
+    );
+    if (!changed) return;
+    tx.update(carpoolRef, { cars, updatedAt: Timestamp.now() });
+  });
 }
 
 /**
@@ -2964,25 +3010,6 @@ function cloneFirestoreCarsArray(rawCars) {
   );
 }
 
-function participantIdIsDriverOfAnySerializedCar(cars, participantId) {
-  return cars.some(
-    (car) => normalizeString(car.driverParticipantId) === participantId
-  );
-}
-
-function stripParticipantIdFromEveryCarAssignments(cars, participantId) {
-  return cars.map((car) => {
-    const copy = { ...car };
-    const raw = Array.isArray(car.assignedParticipantIds)
-      ? car.assignedParticipantIds
-      : [];
-    copy.assignedParticipantIds = raw
-      .map((x) => String(x).trim())
-      .filter((id) => id.length > 0 && id !== participantId);
-    return copy;
-  });
-}
-
 function validateSerializedTripCarOrThrow(car) {
   const driverUserId = normalizeString(car.driverParticipantId);
   const seatsRaw = car.availableSeats;
@@ -3083,6 +3110,7 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
     ? request.data.assignedParticipantIds
     : [];
   const goesShopping = request.data?.goesShopping === true;
+  const direction = normalizeCarpoolDirection(request.data?.direction);
 
   if (!tripId || !driverParticipantId || !Number.isFinite(availableSeats)) {
     throw new HttpsError('invalid-argument', 'Parametres invalides');
@@ -3189,22 +3217,15 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
       }
     }
 
-    const assignedInOtherCars = new Set();
-    for (const car of cars) {
-      const currentCarId = normalizeString(car.id);
-      if (currentCarId === targetCarpoolId) continue;
-      const rawAssigned = Array.isArray(car.assignedParticipantIds)
-        ? car.assignedParticipantIds
-        : [];
-      for (const participantId of rawAssigned) {
-        const normalizedId = normalizeString(participantId);
-        if (normalizedId) {
-          assignedInOtherCars.add(normalizedId);
-        }
-      }
-    }
+    // One car per participant and per direction: the same person may ride
+    // or drive both the outbound and the return trip.
+    const seatedInOtherCars = participantIdsSeatedInDirection(
+      cars,
+      direction,
+      targetCarpoolId
+    );
     for (const participantId of normalizedAssignedParticipantIds) {
-      if (assignedInOtherCars.has(participantId)) {
+      if (seatedInOtherCars.has(participantId)) {
         throw new HttpsError(
           'failed-precondition',
           'Participant already assigned to another carpool.'
@@ -3227,6 +3248,7 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
       availableSeats,
       assignedParticipantIds: normalizedAssignedParticipantIds,
       goesShopping,
+      direction,
       createdAt,
       updatedAt: Timestamp.now(),
     };
@@ -3365,22 +3387,25 @@ exports.joinTripCarpoolAsPassenger = onCall({}, async (request) => {
     const sectionData = sectionSnap.exists ? sectionSnap.data() || {} : {};
     let cars = cloneFirestoreCarsArray(sectionData.cars);
 
-    // Block drivers (handles both new driverParticipantId and legacy driverUserId).
-    if (participantIdIsDriverOfAnySerializedCar(cars, myParticipantId)) {
-      throw new HttpsError(
-        'permission-denied',
-        'Drivers cannot join another carpool via self-assignment.'
-      );
-    }
-
-    cars = stripParticipantIdFromEveryCarAssignments(cars, myParticipantId);
-
     const targetIndex = cars.findIndex(
       (c) => normalizeString(c.id) === targetCarpoolId
     );
     if (targetIndex < 0) {
       throw new HttpsError('not-found', 'Carpool not found.');
     }
+    const direction = carDirection(cars[targetIndex]);
+
+    // A driver keeps their car for that direction; they may still ride as a
+    // passenger in the other direction.
+    if (isDriverInDirection(cars, myParticipantId, direction)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Drivers cannot join another carpool via self-assignment.'
+      );
+    }
+
+    // Joining moves the caller out of their other car of the same direction.
+    cars = removePassengerFromDirection(cars, myParticipantId, direction);
 
     const targetCar = { ...cars[targetIndex] };
     const seatsRaw = targetCar.availableSeats;
@@ -3459,14 +3484,6 @@ exports.leaveTripCarpoolAsPassenger = onCall({}, async (request) => {
 
     const sectionData = sectionSnap.exists ? sectionSnap.data() || {} : {};
     const cars = cloneFirestoreCarsArray(sectionData.cars);
-
-    // Block drivers (handles both new driverParticipantId and legacy driverUserId).
-    if (participantIdIsDriverOfAnySerializedCar(cars, myParticipantId)) {
-      throw new HttpsError(
-        'permission-denied',
-        'Drivers cannot leave their carpool via self-assignment.'
-      );
-    }
 
     const targetIndex = cars.findIndex(
       (c) => normalizeString(c.id) === carpoolId

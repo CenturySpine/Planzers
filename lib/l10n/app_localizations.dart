@@ -6592,6 +6592,12 @@ abstract class AppLocalizations {
   /// **'Vous faites partie de l\'équipe qui fait les courses !'**
   String get tripOverviewCarpoolShoppingTeamLine;
 
+  /// No description provided for @tripOverviewCarpoolDirectionLine.
+  ///
+  /// In fr, this message translates to:
+  /// **'{direction} : {summary}'**
+  String tripOverviewCarpoolDirectionLine(Object direction, Object summary);
+
   /// No description provided for @tripCarpoolTileNoAssignment.
   ///
   /// In fr, this message translates to:
@@ -6652,17 +6658,53 @@ abstract class AppLocalizations {
   /// **'Seuls les participants au voyage peuvent modifier leur affectation.'**
   String get tripCarpoolSelfAssignmentNotMember;
 
-  /// No description provided for @tripCarpoolUnassignedWarningBody.
+  /// No description provided for @tripCarpoolUnassignedInDirectionBody.
   ///
   /// In fr, this message translates to:
-  /// **'{count} participant(s) n\'est/ne sont assigné(s) à aucune voiture.'**
-  String tripCarpoolUnassignedWarningBody(int count);
+  /// **'{direction} : {count} participant(s) sans voiture.'**
+  String tripCarpoolUnassignedInDirectionBody(String direction, int count);
 
-  /// No description provided for @tripCarpoolCarsTitle.
+  /// No description provided for @tripCarpoolSelfUnassignedOutboundTitle.
   ///
   /// In fr, this message translates to:
-  /// **'Voitures'**
-  String get tripCarpoolCarsTitle;
+  /// **'Pas de covoiturage pour l\'aller'**
+  String get tripCarpoolSelfUnassignedOutboundTitle;
+
+  /// No description provided for @tripCarpoolSelfUnassignedReturnTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas de covoiturage pour le retour'**
+  String get tripCarpoolSelfUnassignedReturnTitle;
+
+  /// No description provided for @tripCarpoolDirectionLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Trajet'**
+  String get tripCarpoolDirectionLabel;
+
+  /// No description provided for @tripCarpoolDirectionOutbound.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aller'**
+  String get tripCarpoolDirectionOutbound;
+
+  /// No description provided for @tripCarpoolDirectionReturn.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retour'**
+  String get tripCarpoolDirectionReturn;
+
+  /// No description provided for @tripCarpoolAlreadyAssignedInDirection.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une des personnes choisies est déjà dans une autre voiture pour ce trajet.'**
+  String get tripCarpoolAlreadyAssignedInDirection;
+
+  /// No description provided for @tripCarpoolCreateReturnAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer le retour'**
+  String get tripCarpoolCreateReturnAction;
 
   /// No description provided for @tripCarpoolGlobalMeetupTitle.
   ///
