@@ -27,6 +27,7 @@ const {
 const { runTripLifecycle } = require('./trip_lifecycle');
 const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate');
 const { assertTripMemberOrApplicationOwner } = require('./trip_membership');
+const { shoppingHolderIds, isShoppingItemHeldBy } = require('./shopping_claims');
 const Anthropic = require('@anthropic-ai/sdk');
 const {
   readAiSettings,
@@ -658,14 +659,16 @@ async function assertMemberRemovalBlockingDependencies({
 
 /**
  * @param {FirebaseFirestore.DocumentReference} tripRef
- * @param {string} memberId
+ * @param {string} memberId - Participant document id.
+ * @param {string} [userId] - Account of that participant, if any.
  */
-async function cleanupNonBlockingMemberReferences(tripRef, memberId) {
+async function cleanupNonBlockingMemberReferences(tripRef, memberId, userId = '') {
   const db = admin.firestore();
-  const [activitiesSnap, mealsSnap, shoppingSnap] = await Promise.all([
+  const [activitiesSnap, mealsSnap, shoppingSnap, consolidatedShoppingSnap] = await Promise.all([
     tripRef.collection('activities').get(),
     tripRef.collection('meals').get(),
     tripRef.collection('shoppingItems').get(),
+    tripRef.collection('consolidatedShoppingItems').get(),
   ]);
 
   /** @type {{ ref: FirebaseFirestore.DocumentReference, data: Record<string, unknown> }[]} */
@@ -695,9 +698,11 @@ async function cleanupNonBlockingMemberReferences(tripRef, memberId) {
     });
   }
 
-  for (const doc of shoppingSnap.docs) {
-    const claimedBy = normalizeString(doc.data().claimedBy);
-    if (claimedBy !== memberId) continue;
+  // Shopping items they held, in the manual and the consolidated lists,
+  // under their participant id or their account (see shopping_claims.js).
+  const shoppingHolders = shoppingHolderIds({ participantId: memberId, userId });
+  for (const doc of [...shoppingSnap.docs, ...consolidatedShoppingSnap.docs]) {
+    if (!isShoppingItemHeldBy(doc.data(), shoppingHolders)) continue;
     updates.push({
       ref: doc.ref,
       data: { claimedBy: FieldValue.delete() },
@@ -2789,7 +2794,7 @@ exports.removeTripParticipant = onCall(
       memberId: participantId,
       tripData: data,
     });
-    await cleanupNonBlockingMemberReferences(tripRef, participantId);
+    await cleanupNonBlockingMemberReferences(tripRef, participantId, claimedUserId);
 
     const groupsSnap = await tripRef.collection('expenseGroups').get();
 
@@ -2925,7 +2930,7 @@ exports.leaveTrip = onCall(
         memberId: participantDoc.id,
         tripData: data,
       });
-      await cleanupNonBlockingMemberReferences(tripRef, participantDoc.id);
+      await cleanupNonBlockingMemberReferences(tripRef, participantDoc.id, uid);
     }
 
     const batch = db.batch();
@@ -3575,7 +3580,7 @@ exports.removeTripRegisteredMember = onCall(
         memberId: participantDoc.id,
         tripData: data,
       });
-      await cleanupNonBlockingMemberReferences(tripRef, participantDoc.id);
+      await cleanupNonBlockingMemberReferences(tripRef, participantDoc.id, memberId);
     }
 
     const batch = db.batch();
