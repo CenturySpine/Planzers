@@ -514,27 +514,26 @@ class ShoppingRepository {
   }
 
   /// Sets [claimedBy] on several saved consolidated rows at once (an admin
-  /// assigning a whole category to a participant).
+  /// assigning a whole category to a participant); null or empty frees them.
   ///
   /// Fails with [ConsolidatedShoppingRowNotPersistedException] when one of the
   /// ids is a local-only placeholder (consolidation not saved yet).
   Future<void> setConsolidatedItemsClaimedBy({
     required String tripId,
     required List<String> itemIds,
-    required String claimedBy,
+    required String? claimedBy,
   }) async {
     final user = auth.currentUser;
     if (user == null) throw StateError('Utilisateur non connecte');
 
     final cleanTripId = tripId.trim();
-    final cleanClaimedBy = claimedBy.trim();
+    final cleanClaimedBy = claimedBy?.trim() ?? '';
     final cleanItemIds = itemIds
         .map((id) => id.trim())
         .where((id) => id.isNotEmpty)
         .toSet()
         .toList(growable: false);
     if (cleanTripId.isEmpty ||
-        cleanClaimedBy.isEmpty ||
         cleanItemIds.isEmpty ||
         cleanItemIds.contains(kConsolidatedShoppingMetaDocId)) {
       throw StateError('Parametres invalides');
@@ -548,7 +547,8 @@ class ShoppingRepository {
       final batch = firestore.batch();
       for (final id in cleanItemIds.skip(start).take(450)) {
         batch.update(col.doc(id), {
-          'claimedBy': cleanClaimedBy,
+          'claimedBy':
+              cleanClaimedBy.isEmpty ? FieldValue.delete() : cleanClaimedBy,
           'updatedAt': FieldValue.serverTimestamp(),
           'updatedBy': user.uid,
         });

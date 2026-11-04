@@ -116,6 +116,22 @@ void main() {
       );
       expect(result, isNull);
     });
+
+    testWidgets('preselects nothing for a whole category', (tester) async {
+      final result = await pickWith(
+        tester,
+        allowNobody: true,
+        interact: () async {
+          // Disabled until a choice is made: the dialog stays open.
+          await tester.tap(find.text('Valider'));
+          await tester.pump();
+          await tester.tap(find.text('Personne'));
+          await tester.pump();
+          await tester.tap(find.text('Valider'));
+        },
+      );
+      expect(result, '');
+    });
   });
 
   group('shoppingItemMatchesShoppingListFilters', () {

@@ -57,6 +57,9 @@ List<ShoppingAssignee> shoppingAssigneesFor({
 /// Asks who takes care of shopping items. Returns the chosen
 /// [ShoppingAssignee.claimId], an empty string for "nobody" (offered when
 /// [allowNobody]), or null when cancelled.
+///
+/// [initialClaimId] is the current holder ('' for nobody); when null, no
+/// option is preselected and a choice must be made.
 Future<String?> showShoppingAssigneeDialog(
   BuildContext context, {
   required List<ShoppingAssignee> assignees,
@@ -67,7 +70,7 @@ Future<String?> showShoppingAssigneeDialog(
     context: context,
     builder: (_) => _ShoppingAssigneeDialog(
       assignees: assignees,
-      initialClaimId: initialClaimId?.trim() ?? '',
+      initialClaimId: initialClaimId?.trim(),
       allowNobody: allowNobody,
     ),
   );
@@ -81,7 +84,7 @@ class _ShoppingAssigneeDialog extends StatefulWidget {
   });
 
   final List<ShoppingAssignee> assignees;
-  final String initialClaimId;
+  final String? initialClaimId;
   final bool allowNobody;
 
   @override
@@ -90,22 +93,26 @@ class _ShoppingAssigneeDialog extends StatefulWidget {
 }
 
 class _ShoppingAssigneeDialogState extends State<_ShoppingAssigneeDialog> {
-  /// Selected claim id; empty means "nobody" (or no choice yet).
-  late String _selectedId;
+  /// Selected claim id: empty means "nobody", null means no choice yet.
+  String? _selectedId;
 
   @override
   void initState() {
     super.initState();
     final initial = widget.initialClaimId;
-    final isKnown = widget.assignees.any((a) => a.claimId == initial);
-    _selectedId = isKnown ? initial : '';
+    if (initial == null) return;
+    if (widget.assignees.any((a) => a.claimId == initial)) {
+      _selectedId = initial;
+    } else if (widget.allowNobody) {
+      _selectedId = '';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final canConfirm = _selectedId.isNotEmpty || widget.allowNobody;
+    final canConfirm = _selectedId != null;
 
     return AlertDialog(
       title: Text(l10n.shoppingAssignDialogTitle),

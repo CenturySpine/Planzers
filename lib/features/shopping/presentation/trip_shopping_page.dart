@@ -991,7 +991,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     final chosen = await showShoppingAssigneeDialog(
       context,
       assignees: assignees,
-      initialClaimId: item.claimedBy,
+      initialClaimId: item.claimedBy?.trim() ?? '',
       allowNobody: true,
     );
     if (chosen == null || !mounted) return;
@@ -1020,7 +1020,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     final chosen = await showShoppingAssigneeDialog(
       context,
       assignees: assignees,
-      initialClaimId: item.claimedBy,
+      initialClaimId: item.claimedBy?.trim() ?? '',
       allowNobody: true,
     );
     if (chosen == null || !context.mounted) return;
@@ -1032,11 +1032,12 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     );
   }
 
-  /// Admin action: puts every free item of a consolidated category (not
-  /// bought, not taken by anyone) in the hands of one participant.
+  /// Admin action on a consolidated category, among its items still to buy
+  /// ([openItems]): a participant takes the free ones; "nobody" frees them
+  /// all.
   Future<void> _assignConsolidatedCategory(
     BuildContext context,
-    List<ShoppingItem> freeItems,
+    List<ShoppingItem> openItems,
     List<ShoppingAssignee> assignees,
   ) async {
     final l10n = AppLocalizations.of(context)!;
@@ -1044,14 +1045,20 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     final chosen = await showShoppingAssigneeDialog(
       context,
       assignees: assignees,
+      allowNobody: true,
     );
-    if (chosen == null || chosen.isEmpty || !mounted) return;
-    final itemIds = {for (final item in freeItems) item.id};
+    if (chosen == null || !mounted) return;
+    final nextHolder = chosen.isEmpty ? null : chosen;
+    final itemIds = {
+      for (final item in openItems)
+        if ((item.claimedBy?.trim() ?? '').isEmpty != chosen.isEmpty) item.id,
+    };
+    if (itemIds.isEmpty) return;
     try {
       await ref.read(shoppingRepositoryProvider).setConsolidatedItemsClaimedBy(
             tripId: widget.tripId,
             itemIds: itemIds.toList(growable: false),
-            claimedBy: chosen,
+            claimedBy: nextHolder,
           );
       if (!mounted) return;
       setState(() {
@@ -1060,7 +1067,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
               (entry) => itemIds.contains(entry.item.id)
                   ? _ConsolidatedEditableItem(
                       categoryId: entry.categoryId,
-                      item: _shoppingItemClaimedBy(entry.item, chosen),
+                      item: _shoppingItemClaimedBy(entry.item, nextHolder),
                     )
                   : entry,
             )
@@ -1290,15 +1297,11 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                   itemCount: visibleGroups.length,
                   itemBuilder: (context, index) {
                     final entry = visibleGroups[index];
-                    // Whole category, whatever the filters: items nobody has
-                    // bought or taken yet.
-                    final freeItems = (allItemsByCategory[entry.key] ??
+                    // Whole category, whatever the filters: items still to
+                    // buy (bought ones keep their holder).
+                    final openItems = (allItemsByCategory[entry.key] ??
                             const <ShoppingItem>[])
-                        .where(
-                          (item) =>
-                              !item.checked &&
-                              (item.claimedBy?.trim() ?? '').isEmpty,
-                        )
+                        .where((item) => !item.checked)
                         .toList(growable: false);
                     return _ConsolidatedCategorySection(
                       l10n: l10n,
@@ -1339,11 +1342,11 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                                 rowItem,
                                 assignees,
                               ),
-                      onAssignCategory: assignees.isEmpty || freeItems.isEmpty
+                      onAssignCategory: assignees.isEmpty || openItems.isEmpty
                           ? null
                           : () => _assignConsolidatedCategory(
                                 context,
-                                freeItems,
+                                openItems,
                                 assignees,
                               ),
                     );
@@ -1656,8 +1659,8 @@ class _ConsolidatedCategorySection extends StatelessWidget {
   final Future<void> Function(BuildContext context, ShoppingItem item)?
       onRequestAssign;
 
-  /// Assigns the free items of the category; null hides the action
-  /// (non-admins, or no free item left).
+  /// Assigns (or frees) the items of the category; null hides the action
+  /// (non-admins, or nothing left to buy).
   final Future<void> Function()? onAssignCategory;
 
   @override
