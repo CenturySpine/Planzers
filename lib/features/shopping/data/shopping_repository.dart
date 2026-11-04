@@ -513,6 +513,50 @@ class ShoppingRepository {
     });
   }
 
+  /// Sets [claimedBy] on several saved consolidated rows at once (an admin
+  /// assigning a whole category to a participant).
+  ///
+  /// Fails with [ConsolidatedShoppingRowNotPersistedException] when one of the
+  /// ids is a local-only placeholder (consolidation not saved yet).
+  Future<void> setConsolidatedItemsClaimedBy({
+    required String tripId,
+    required List<String> itemIds,
+    required String claimedBy,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw StateError('Utilisateur non connecte');
+
+    final cleanTripId = tripId.trim();
+    final cleanClaimedBy = claimedBy.trim();
+    final cleanItemIds = itemIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+    if (cleanTripId.isEmpty ||
+        cleanClaimedBy.isEmpty ||
+        cleanItemIds.isEmpty ||
+        cleanItemIds.contains(kConsolidatedShoppingMetaDocId)) {
+      throw StateError('Parametres invalides');
+    }
+    if (cleanItemIds.any(_isEphemeralConsolidatedShoppingItemId)) {
+      throw const ConsolidatedShoppingRowNotPersistedException();
+    }
+
+    final col = _consolidatedCol(cleanTripId);
+    for (var start = 0; start < cleanItemIds.length; start += 450) {
+      final batch = firestore.batch();
+      for (final id in cleanItemIds.skip(start).take(450)) {
+        batch.update(col.doc(id), {
+          'claimedBy': cleanClaimedBy,
+          'updatedAt': FieldValue.serverTimestamp(),
+          'updatedBy': user.uid,
+        });
+      }
+      await batch.commit();
+    }
+  }
+
   Future<void> deleteItem({
     required String tripId,
     required String itemId,

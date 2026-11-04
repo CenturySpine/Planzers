@@ -4183,6 +4183,30 @@ abstract class AppLocalizations {
   /// **'Choisir une catégorie'**
   String get shoppingChangeCategoryDialogTitle;
 
+  /// No description provided for @shoppingAssignMenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Assigner à…'**
+  String get shoppingAssignMenu;
+
+  /// No description provided for @shoppingAssignCategoryMenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Assigner la catégorie…'**
+  String get shoppingAssignCategoryMenu;
+
+  /// No description provided for @shoppingAssignDialogTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Qui s\'en occupe ?'**
+  String get shoppingAssignDialogTitle;
+
+  /// No description provided for @shoppingAssignNobody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Personne'**
+  String get shoppingAssignNobody;
+
   /// No description provided for @shoppingCategoryDivers.
   ///
   /// In fr, this message translates to:

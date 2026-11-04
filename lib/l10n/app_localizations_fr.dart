@@ -2333,6 +2333,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get shoppingChangeCategoryDialogTitle => 'Choisir une catégorie';
 
   @override
+  String get shoppingAssignMenu => 'Assigner à…';
+
+  @override
+  String get shoppingAssignCategoryMenu => 'Assigner la catégorie…';
+
+  @override
+  String get shoppingAssignDialogTitle => 'Qui s\'en occupe ?';
+
+  @override
+  String get shoppingAssignNobody => 'Personne';
+
+  @override
   String get shoppingCategoryDivers => 'Divers';
 
   @override
@@ -6620,6 +6632,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get shoppingChangeCategoryDialogTitle => 'Choisir une catégorie';
+
+  @override
+  String get shoppingAssignMenu => 'Assigner à…';
+
+  @override
+  String get shoppingAssignCategoryMenu => 'Assigner la catégorie…';
+
+  @override
+  String get shoppingAssignDialogTitle => 'Qui s\'en occupe ?';
+
+  @override
+  String get shoppingAssignNobody => 'Personne';
 
   @override
   String get shoppingCategoryDivers => 'Divers';
