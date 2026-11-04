@@ -11,11 +11,16 @@ enum ShoppingListStatusFilter {
 }
 
 /// Whether the list is further restricted to items claimed by the current user.
+///
+/// An item can be held by the user's account ([currentUid]) or, when an admin
+/// assigned it before the user had an account, by their trip participant id
+/// ([currentParticipantId]).
 bool shoppingItemMatchesShoppingListFilters(
   ShoppingItem item, {
   required ShoppingListStatusFilter statusFilter,
   required bool onlyClaimedByMe,
   required String currentUid,
+  String currentParticipantId = '',
 }) {
   final statusOk = switch (statusFilter) {
     ShoppingListStatusFilter.all => true,
@@ -25,7 +30,10 @@ bool shoppingItemMatchesShoppingListFilters(
   if (!statusOk) return false;
   if (!onlyClaimedByMe) return true;
   final claimedBy = item.claimedBy?.trim() ?? '';
-  return claimedBy.isNotEmpty && claimedBy == currentUid;
+  return claimedBy.isNotEmpty &&
+      (claimedBy == currentUid ||
+          (currentParticipantId.isNotEmpty &&
+              claimedBy == currentParticipantId));
 }
 
 /// Status chips (exclusive) + optional « claimed by me » chip, in a

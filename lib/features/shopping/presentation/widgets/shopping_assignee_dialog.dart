@@ -4,23 +4,27 @@ import 'package:planerz/features/auth/data/user_display_label.dart'
 import 'package:planerz/features/trips/data/trip_member.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// Trip participant who can be put in charge of shopping items: only
-/// participants with an account, since taking care of an item is tied to a
-/// user (`claimedBy`).
+/// Trip participant who can be put in charge of shopping items.
+///
+/// [claimId] is the value stored in `claimedBy`: the user id for a
+/// participant with an account (as when they take an item themselves), the
+/// participant id otherwise. A participant who later joins with an account
+/// keeps the items held under their participant id.
 class ShoppingAssignee {
   const ShoppingAssignee({
-    required this.userId,
+    required this.claimId,
     required this.label,
     this.photoUrl = '',
   });
 
-  final String userId;
+  final String claimId;
   final String label;
   final String photoUrl;
 }
 
-/// Assignable participants of a trip, sorted by name: current members
-/// ([memberUserIds]) whose participant slot is linked to an account.
+/// Assignable participants of a trip, sorted by name: every participant but
+/// children, with or without an account. Participants with an account must
+/// still be members of the trip ([memberUserIds]).
 List<ShoppingAssignee> shoppingAssigneesFor({
   required List<TripMember> participants,
   required List<String> memberUserIds,
@@ -31,14 +35,15 @@ List<ShoppingAssignee> shoppingAssigneesFor({
   final seen = <String>{};
   final assignees = <ShoppingAssignee>[];
   for (final participant in participants) {
+    if (participant.isChild) continue;
     final userId = participant.userId?.trim() ?? '';
-    if (userId.isEmpty || !members.contains(userId) || !seen.add(userId)) {
-      continue;
-    }
+    if (userId.isNotEmpty && !members.contains(userId)) continue;
+    final claimId = userId.isNotEmpty ? userId : participant.id.trim();
+    if (claimId.isEmpty || !seen.add(claimId)) continue;
     assignees.add(
       ShoppingAssignee(
-        userId: userId,
-        label: labelsById[userId] ?? participant.participantName,
+        claimId: claimId,
+        label: labelsById[claimId] ?? participant.participantName,
         photoUrl: photoUrlsByUserId[userId] ?? '',
       ),
     );
@@ -49,20 +54,20 @@ List<ShoppingAssignee> shoppingAssigneesFor({
   return assignees;
 }
 
-/// Asks who takes care of shopping items. Returns the chosen user id, an
-/// empty string for "nobody" (offered when [allowNobody]), or null when
-/// cancelled.
+/// Asks who takes care of shopping items. Returns the chosen
+/// [ShoppingAssignee.claimId], an empty string for "nobody" (offered when
+/// [allowNobody]), or null when cancelled.
 Future<String?> showShoppingAssigneeDialog(
   BuildContext context, {
   required List<ShoppingAssignee> assignees,
-  String? initialUserId,
+  String? initialClaimId,
   bool allowNobody = false,
 }) {
   return showDialog<String>(
     context: context,
     builder: (_) => _ShoppingAssigneeDialog(
       assignees: assignees,
-      initialUserId: initialUserId?.trim() ?? '',
+      initialClaimId: initialClaimId?.trim() ?? '',
       allowNobody: allowNobody,
     ),
   );
@@ -71,12 +76,12 @@ Future<String?> showShoppingAssigneeDialog(
 class _ShoppingAssigneeDialog extends StatefulWidget {
   const _ShoppingAssigneeDialog({
     required this.assignees,
-    required this.initialUserId,
+    required this.initialClaimId,
     required this.allowNobody,
   });
 
   final List<ShoppingAssignee> assignees;
-  final String initialUserId;
+  final String initialClaimId;
   final bool allowNobody;
 
   @override
@@ -85,14 +90,14 @@ class _ShoppingAssigneeDialog extends StatefulWidget {
 }
 
 class _ShoppingAssigneeDialogState extends State<_ShoppingAssigneeDialog> {
-  /// Selected user id; empty means "nobody" (or no choice yet).
+  /// Selected claim id; empty means "nobody" (or no choice yet).
   late String _selectedId;
 
   @override
   void initState() {
     super.initState();
-    final initial = widget.initialUserId;
-    final isKnown = widget.assignees.any((a) => a.userId == initial);
+    final initial = widget.initialClaimId;
+    final isKnown = widget.assignees.any((a) => a.claimId == initial);
     _selectedId = isKnown ? initial : '';
   }
 
@@ -119,7 +124,7 @@ class _ShoppingAssigneeDialogState extends State<_ShoppingAssigneeDialog> {
                 for (final assignee in widget.assignees)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Radio<String>(value: assignee.userId),
+                    leading: Radio<String>(value: assignee.claimId),
                     title: Row(
                       children: [
                         CircleAvatar(
@@ -141,7 +146,7 @@ class _ShoppingAssigneeDialogState extends State<_ShoppingAssigneeDialog> {
                         Expanded(child: Text(assignee.label)),
                       ],
                     ),
-                    onTap: () => setState(() => _selectedId = assignee.userId),
+                    onTap: () => setState(() => _selectedId = assignee.claimId),
                   ),
                 if (widget.allowNobody)
                   ListTile(

@@ -1,41 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/features/shopping/presentation/widgets/shopping_assignee_dialog.dart';
+import 'package:planerz/features/shopping/presentation/widgets/shopping_list_status_filter.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 void main() {
   group('shoppingAssigneesFor', () {
-    test('keeps current members with an account, sorted by name', () {
+    test('offers every participant but children, sorted by name', () {
       final assignees = shoppingAssigneesFor(
         participants: const [
           TripMember(id: 'm1', participantName: 'Zoé', userId: 'u1'),
-          TripMember(id: 'm2', participantName: 'Placeholder'),
+          TripMember(id: 'm2', participantName: 'Mamie'),
           TripMember(id: 'm3', participantName: 'Anna', userId: 'u3'),
           TripMember(id: 'm4', participantName: 'Gone', userId: 'u4'),
+          TripMember(id: 'm5', participantName: 'Léo', isChild: true),
+          TripMember(
+            id: 'm6',
+            participantName: 'Tom',
+            userId: 'u6',
+            isChild: true,
+          ),
         ],
-        memberUserIds: const ['u1', 'u3'],
-        labelsById: const {'u3': 'Anna B.'},
+        memberUserIds: const ['u1', 'u3', 'u6'],
+        labelsById: const {'u3': 'Anna B.', 'm2': 'Mamie Jo'},
         photoUrlsByUserId: const {'u1': 'https://example.com/z.png'},
       );
 
-      expect(assignees.map((a) => a.userId), ['u3', 'u1']);
-      expect(assignees.first.label, 'Anna B.');
-      expect(assignees.last.label, 'Zoé');
+      // With an account: user id; without: participant id. Children and
+      // former members are left out.
+      expect(assignees.map((a) => a.claimId), ['u3', 'm2', 'u1']);
+      expect(assignees.map((a) => a.label), ['Anna B.', 'Mamie Jo', 'Zoé']);
       expect(assignees.last.photoUrl, 'https://example.com/z.png');
+      expect(assignees[1].photoUrl, isEmpty);
     });
   });
 
   group('showShoppingAssigneeDialog', () {
     const assignees = [
-      ShoppingAssignee(userId: 'u1', label: 'Anna'),
-      ShoppingAssignee(userId: 'u2', label: 'Bruno'),
+      ShoppingAssignee(claimId: 'u1', label: 'Anna'),
+      ShoppingAssignee(claimId: 'm2', label: 'Bruno'),
     ];
 
     Future<String?> pickWith(
       WidgetTester tester, {
       required Future<void> Function() interact,
-      String? initialUserId,
+      String? initialClaimId,
       bool allowNobody = false,
     }) async {
       String? result = 'not closed';
@@ -50,7 +61,7 @@ void main() {
                 result = await showShoppingAssigneeDialog(
                   context,
                   assignees: assignees,
-                  initialUserId: initialUserId,
+                  initialClaimId: initialClaimId,
                   allowNobody: allowNobody,
                 );
               },
@@ -75,13 +86,13 @@ void main() {
           await tester.tap(find.text('Valider'));
         },
       );
-      expect(result, 'u2');
+      expect(result, 'm2');
     });
 
     testWidgets('returns an empty id for nobody', (tester) async {
       final result = await pickWith(
         tester,
-        initialUserId: 'u1',
+        initialClaimId: 'u1',
         allowNobody: true,
         interact: () async {
           await tester.tap(find.text('Personne'));
@@ -104,6 +115,34 @@ void main() {
         },
       );
       expect(result, isNull);
+    });
+  });
+
+  group('shoppingItemMatchesShoppingListFilters', () {
+    ShoppingItem itemHeldBy(String? claimedBy) => ShoppingItem(
+          id: 'i1',
+          label: 'Pain',
+          checked: false,
+          quantityValue: 1,
+          quantityUnit: ShoppingUnit.unit,
+          createdAt: DateTime(2026),
+          claimedBy: claimedBy,
+        );
+
+    bool claimedByMe(String? claimedBy) =>
+        shoppingItemMatchesShoppingListFilters(
+          itemHeldBy(claimedBy),
+          statusFilter: ShoppingListStatusFilter.all,
+          onlyClaimedByMe: true,
+          currentUid: 'u1',
+          currentParticipantId: 'm1',
+        );
+
+    test('recognizes items held by the account or the participant id', () {
+      expect(claimedByMe('u1'), isTrue);
+      expect(claimedByMe('m1'), isTrue);
+      expect(claimedByMe('m2'), isFalse);
+      expect(claimedByMe(null), isFalse);
     });
   });
 }

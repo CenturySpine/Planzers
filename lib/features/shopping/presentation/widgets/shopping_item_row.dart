@@ -25,6 +25,9 @@ class ShoppingItemRow extends ConsumerStatefulWidget {
     this.structureLocked = false,
     this.customMenuItems,
     this.onCustomMenuAction,
+    this.currentParticipantId = '',
+    this.checkableOnBehalfIds = const <String>{},
+    this.claimLabelsById = const <String, String>{},
   });
 
   final String tripId;
@@ -43,6 +46,18 @@ class ShoppingItemRow extends ConsumerStatefulWidget {
 
   final List<IngredientLineCustomMenuItem>? customMenuItems;
   final void Function(String actionId)? onCustomMenuAction;
+
+  /// The current user's trip participant id: an item an admin assigned to
+  /// them before they had an account is held under this id.
+  final String currentParticipantId;
+
+  /// Holders (participants without an account) whose items the current user
+  /// may tick on their behalf (trip admins).
+  final Set<String> checkableOnBehalfIds;
+
+  /// Display names by participant id and user id, for holders without a
+  /// loaded profile (participants without an account).
+  final Map<String, String> claimLabelsById;
 
   @override
   ConsumerState<ShoppingItemRow> createState() => _ShoppingItemRowState();
@@ -65,10 +80,22 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
     return (totalCount - ownMatches) > 0;
   }
 
-  Future<void> _toggleChecked(bool? value) async {
+  /// Whether [claimedBy] designates the current user (account or
+  /// participant id).
+  bool _isMine(String claimedBy) {
+    if (claimedBy.isEmpty) return false;
     final uid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
+    final participantId = widget.currentParticipantId.trim();
+    return claimedBy == uid ||
+        (participantId.isNotEmpty && claimedBy == participantId);
+  }
+
+  bool _canToggleChecked(String claimedBy) =>
+      _isMine(claimedBy) || widget.checkableOnBehalfIds.contains(claimedBy);
+
+  Future<void> _toggleChecked(bool? value) async {
     final claimedBy = widget.item.claimedBy?.trim() ?? '';
-    if (claimedBy.isEmpty || claimedBy != uid) return;
+    if (!_canToggleChecked(claimedBy)) return;
     if (widget.onToggleCheckedOverride != null) {
       await widget.onToggleCheckedOverride!(value ?? false);
       return;
@@ -121,9 +148,10 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
     final uid = user?.uid.trim() ?? '';
     if (uid.isEmpty) return;
     final claimedBy = widget.item.claimedBy?.trim() ?? '';
-    if (claimedBy.isNotEmpty && claimedBy != uid) return;
+    final isMine = _isMine(claimedBy);
+    if (claimedBy.isNotEmpty && !isMine) return;
 
-    final nextClaimedBy = claimedBy == uid ? null : uid;
+    final nextClaimedBy = isMine ? null : uid;
     if (widget.onSetClaimedByOverride != null) {
       await widget.onSetClaimedByOverride!(nextClaimedBy);
       return;
@@ -139,12 +167,10 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isChecked = widget.item.checked;
-    final currentUser = FirebaseAuth.instance.currentUser;
-    final currentUid = currentUser?.uid.trim() ?? '';
     final claimedBy = widget.item.claimedBy?.trim() ?? '';
-    final isClaimedByMe = claimedBy.isNotEmpty && claimedBy == currentUid;
-    final isClaimedByOther = claimedBy.isNotEmpty && claimedBy != currentUid;
-    final canToggleChecked = isClaimedByMe;
+    final isClaimedByMe = _isMine(claimedBy);
+    final isClaimedByOther = claimedBy.isNotEmpty && !isClaimedByMe;
+    final canToggleChecked = _canToggleChecked(claimedBy);
     final claimedByUserData = claimedBy.isEmpty ? null : widget.usersDataById[claimedBy];
     final claimedByLabel = () {
       if (claimedByUserData != null) {
@@ -153,6 +179,8 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
         final name = (account['name'] as String?)?.trim() ?? '';
         if (name.isNotEmpty) return name;
       }
+      final participantLabel = widget.claimLabelsById[claimedBy]?.trim() ?? '';
+      if (participantLabel.isNotEmpty) return participantLabel;
       return AppLocalizations.of(context)!.shoppingTravelerFallback;
     }();
     final claimedByPhotoUrl = _photoUrlFromUserData(claimedByUserData);

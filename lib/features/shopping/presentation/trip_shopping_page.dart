@@ -22,6 +22,7 @@ import 'package:planerz/features/shopping/presentation/widgets/shopping_assignee
 import 'package:planerz/features/shopping/presentation/widgets/shopping_item_row.dart';
 import 'package:planerz/features/shopping/presentation/widgets/shopping_list_status_filter.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_member.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
@@ -350,21 +351,33 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
       currentRole: currentRole,
       minRole: TripPermissionRole.admin,
     );
-    // Admins prepare who buys what: assign items or whole categories.
+    // Items are held by a user id, or by a participant id for participants
+    // without an account (assigned by an admin).
+    final participants =
+        ref.watch(tripParticipantsStreamProvider(widget.tripId)).asData?.value ??
+            const <TripMember>[];
+    final participantLabels =
+        ref.watch(tripMemberResolvedLabelsProvider(widget.tripId));
+    final currentParticipantId =
+        ref.watch(myTripMemberStreamProvider(widget.tripId)).asData?.value?.id ??
+            '';
+    // Admins prepare who buys what: assign items or whole categories, and tick
+    // items for participants who cannot sign in.
     final assignees = isAdminOrAbove
         ? shoppingAssigneesFor(
-            participants: ref
-                    .watch(tripParticipantsStreamProvider(widget.tripId))
-                    .asData
-                    ?.value ??
-                const [],
+            participants: participants,
             memberUserIds: widget.trip.memberUserIds,
-            labelsById:
-                ref.watch(tripMemberResolvedLabelsProvider(widget.tripId)),
+            labelsById: participantLabels,
             photoUrlsByUserId:
                 ref.watch(tripMemberPhotoUrlsProvider(widget.tripId)),
           )
         : const <ShoppingAssignee>[];
+    final checkableOnBehalfIds = isAdminOrAbove
+        ? {
+            for (final participant in participants)
+              if ((participant.userId?.trim() ?? '').isEmpty) participant.id,
+          }
+        : const <String>{};
     final locks = ref
             .watch(tripShoppingListLocksStreamProvider(widget.tripId))
             .asData
@@ -409,6 +422,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
             statusFilter: _manualListStatusFilter,
             onlyClaimedByMe: _manualOnlyClaimedByMe,
             currentUid: currentUid,
+            currentParticipantId: currentParticipantId,
           ),
         )
         .toList(growable: false);
@@ -715,6 +729,11 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                                             usersDataById: usersDataById,
                                             normalizedLabelCounts: normalizedLabelCounts,
                                             structureLocked: manualLockRestrictsEditing,
+                                            currentParticipantId:
+                                                currentParticipantId,
+                                            checkableOnBehalfIds:
+                                                checkableOnBehalfIds,
+                                            claimLabelsById: participantLabels,
                                             customMenuItems:
                                                 assignees.isNotEmpty && !item.checked
                                                     ? [
@@ -763,6 +782,9 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                         activeStatusFilter: _consolidatedListStatusFilter,
                         onlyClaimedByMe: _consolidatedOnlyClaimedByMe,
                         currentUid: currentUid,
+                        currentParticipantId: currentParticipantId,
+                        checkableOnBehalfIds: checkableOnBehalfIds,
+                        claimLabelsById: participantLabels,
                         onStatusFilterChanged: (f) =>
                             setState(() => _consolidatedListStatusFilter = f),
                         onOnlyClaimedByMeChanged: (v) =>
@@ -969,7 +991,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     final chosen = await showShoppingAssigneeDialog(
       context,
       assignees: assignees,
-      initialUserId: item.claimedBy,
+      initialClaimId: item.claimedBy,
       allowNobody: true,
     );
     if (chosen == null || !mounted) return;
@@ -998,7 +1020,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     final chosen = await showShoppingAssigneeDialog(
       context,
       assignees: assignees,
-      initialUserId: item.claimedBy,
+      initialClaimId: item.claimedBy,
       allowNobody: true,
     );
     if (chosen == null || !context.mounted) return;
@@ -1143,6 +1165,9 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     required ShoppingListStatusFilter activeStatusFilter,
     required bool onlyClaimedByMe,
     required String currentUid,
+    required String currentParticipantId,
+    required Set<String> checkableOnBehalfIds,
+    required Map<String, String> claimLabelsById,
     required ValueChanged<ShoppingListStatusFilter> onStatusFilterChanged,
     required ValueChanged<bool> onOnlyClaimedByMeChanged,
     required String? pendingAutofocusItemId,
@@ -1204,6 +1229,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
               statusFilter: activeStatusFilter,
               onlyClaimedByMe: onlyClaimedByMe,
               currentUid: currentUid,
+              currentParticipantId: currentParticipantId,
             ),
           )
           .toList(growable: false);
@@ -1287,6 +1313,9 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                       listContext: context,
                       usersDataById: usersDataById,
                       normalizedLabelCounts: normalizedLabelCounts,
+                      currentParticipantId: currentParticipantId,
+                      checkableOnBehalfIds: checkableOnBehalfIds,
+                      claimLabelsById: claimLabelsById,
                       pendingAutofocusItemId: pendingAutofocusItemId,
                       onAutofocusItemHandled: onAutofocusItemHandled,
                       structureLocked: consolidatedStructureLocked,
@@ -1577,6 +1606,9 @@ class _ConsolidatedCategorySection extends StatelessWidget {
     required this.listContext,
     required this.usersDataById,
     required this.normalizedLabelCounts,
+    required this.currentParticipantId,
+    required this.checkableOnBehalfIds,
+    required this.claimLabelsById,
     required this.pendingAutofocusItemId,
     required this.onAutofocusItemHandled,
     required this.structureLocked,
@@ -1599,6 +1631,9 @@ class _ConsolidatedCategorySection extends StatelessWidget {
   final BuildContext listContext;
   final Map<String, Map<String, dynamic>> usersDataById;
   final Map<String, int> normalizedLabelCounts;
+  final String currentParticipantId;
+  final Set<String> checkableOnBehalfIds;
+  final Map<String, String> claimLabelsById;
   final String? pendingAutofocusItemId;
   final void Function(String itemId) onAutofocusItemHandled;
   final bool structureLocked;
@@ -1683,6 +1718,9 @@ class _ConsolidatedCategorySection extends StatelessWidget {
             usersDataById: usersDataById,
             normalizedLabelCounts: normalizedLabelCounts,
             structureLocked: structureLocked,
+            currentParticipantId: currentParticipantId,
+            checkableOnBehalfIds: checkableOnBehalfIds,
+            claimLabelsById: claimLabelsById,
             autoFocusLabel: items[i].id == pendingAutofocusItemId,
             onAutoFocusHandled: () => onAutofocusItemHandled(items[i].id),
             customMenuItems: structureLocked
