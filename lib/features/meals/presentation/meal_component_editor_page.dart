@@ -11,7 +11,6 @@ import 'package:planerz/core/presentation/ai_billed_support_banner.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quota_config.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quota_models.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quotas_repository.dart';
-import 'package:planerz/features/ai_quotas/domain/ai_quota_gate.dart';
 import 'package:planerz/features/ai_quotas/presentation/ai_error_message.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
@@ -242,18 +241,14 @@ class _MealComponentEditorPageState
     _lastAiCallAt = DateTime.now();
 
     try {
-      final result = await ref.read(aiQuotaGateProvider).call(
-        feature: AiFeature.recipeIngredients,
-        uid: uid,
+      // Quotas are enforced by the Cloud Function (owners exempted).
+      final result = await generateRecipeIngredients(
         tripId: widget.tripId,
-        isApplicationOwner: widget.isApplicationOwner,
-        aiCall: () => generateRecipeIngredients(
-          recipeName: request.recipeName,
-          servings: request.servings,
-          catalogItems: widget.catalogItems,
-          mode: request.mode,
-          language: widget.language,
-        ),
+        recipeName: request.recipeName,
+        servings: request.servings,
+        catalogItems: widget.catalogItems,
+        mode: request.mode,
+        language: widget.language,
       );
       if (!mounted) return;
       if (result.ingredients.isEmpty) {
@@ -277,20 +272,6 @@ class _MealComponentEditorPageState
           ingredientsGeneratedByAi: true,
         );
       });
-    } on AiQuotaExceededException catch (e) {
-      if (!mounted) return;
-      final config = aiQuotaConfigs[AiFeature.recipeIngredients]!;
-      final message = switch (e.reason) {
-        AiQuotaExceededReason.userDaily =>
-          l10n.aiQuotaUserExceeded(config.perUserPerDay),
-        AiQuotaExceededReason.tripDaily =>
-          l10n.aiQuotaTripExceeded(config.perTripPerDay),
-        AiQuotaExceededReason.tripLifetime =>
-          l10n.aiQuotaTripLifetimeExceeded(config.perTripLifetime),
-        AiQuotaExceededReason.circuitBreaker =>
-          l10n.aiQuotaCircuitBreakerTripped,
-      };
-      messenger.showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
@@ -336,146 +317,156 @@ class _MealComponentEditorPageState
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Stack(
         children: [
-          DropdownButtonFormField<MealComponentKind>(
-            initialValue: _component.kind,
-            decoration: InputDecoration(
-              labelText: l10n.mealComponentTypeLabel,
-              border: const OutlineInputBorder(),
-            ),
-            items: [
-              for (final kind in MealComponentKind.values)
-                DropdownMenuItem(
-                  value: kind,
-                  child: Text(kind.labelFr),
-                ),
-            ],
-            onChanged: (kind) {
-              if (kind == null) return;
-              setState(() {
-                _component = _component.copyWith(kind: kind);
-              });
-            },
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _titleController,
-            decoration: InputDecoration(
-              labelText: l10n.mealComponentNameOptionalLabel,
-              border: const OutlineInputBorder(),
-            ),
-            onChanged: (_) => _syncTitle(),
-            onEditingComplete: _syncTitle,
-          ),
-          if (_component.ingredientsGeneratedByAi) ...[
-            const SizedBox(height: 8),
-            _AiQuantityWarningBanner(),
-          ],
-          const SizedBox(height: 16),
-          if (_risk.containsAllergenIds.isNotEmpty ||
-              _risk.mayContainAllergenIds.isNotEmpty) ...[
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final id in _risk.containsAllergenIds)
-                  Chip(
-                    label: Text(l10n.mealContainsAllergen(allergenLabelById[id] ?? id)),
-                    avatar: const Icon(PhosphorIconsRegular.warning, size: 16),
-                  ),
-                for (final id in _risk.mayContainAllergenIds)
-                  Chip(
-                    label: Text(
-                      l10n.mealMayContainAllergen(allergenLabelById[id] ?? id),
-                    ),
-                    avatar: const Icon(PhosphorIconsRegular.info, size: 16),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-          ],
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          ListView(
+            padding: const EdgeInsets.all(16),
             children: [
-              Expanded(
-                child: Text(
-                  l10n.mealIngredientsTitle,
-                  style: Theme.of(context).textTheme.titleMedium,
+              DropdownButtonFormField<MealComponentKind>(
+                initialValue: _component.kind,
+                decoration: InputDecoration(
+                  labelText: l10n.mealComponentTypeLabel,
+                  border: const OutlineInputBorder(),
                 ),
+                items: [
+                  for (final kind in MealComponentKind.values)
+                    DropdownMenuItem(
+                      value: kind,
+                      child: Text(kind.labelFr),
+                    ),
+                ],
+                onChanged: (kind) {
+                  if (kind == null) return;
+                  setState(() {
+                    _component = _component.copyWith(kind: kind);
+                  });
+                },
               ),
-              if (_component.ingredients.isNotEmpty)
-                IconButton(
-                  tooltip: l10n.mealIngredientsRemoveAllTooltip,
-                  icon: const Icon(PhosphorIconsRegular.trash),
-                  onPressed: _confirmAndClearAllIngredients,
+              const SizedBox(height: 12),
+              TextField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  labelText: l10n.mealComponentNameOptionalLabel,
+                  border: const OutlineInputBorder(),
                 ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          for (var i = 0; i < _component.ingredients.length; i++)
-            IngredientLineEditor(
-              key: ValueKey('${_component.id}-$i'),
-              catalogItemId: _component.ingredients[i].catalogItemId,
-              label: _component.ingredients[i].label,
-              quantityValue: _component.ingredients[i].quantityValue,
-              quantityUnit:
-                  _unitFromRaw(_component.ingredients[i].quantityUnit),
-              hintText: l10n.mealIngredientHint,
-              onSave: (value) async => _updateIngredient(i, value),
-              onDelete: () async => _deleteIngredient(i),
-            ),
-          TextButton.icon(
-            onPressed: _addIngredient,
-            icon: const Icon(PhosphorIconsRegular.plus),
-            label: Text(l10n.mealAddIngredient),
-          ),
-          if (_component.recipeInstructions.trim().isNotEmpty) ...[
-            const SizedBox(height: 24),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    l10n.mealRecipePreparationTitle,
-                    style: Theme.of(context).textTheme.titleMedium,
+                onChanged: (_) => _syncTitle(),
+                onEditingComplete: _syncTitle,
+              ),
+              if (_component.ingredientsGeneratedByAi) ...[
+                const SizedBox(height: 8),
+                _AiQuantityWarningBanner(),
+              ],
+              const SizedBox(height: 16),
+              if (_risk.containsAllergenIds.isNotEmpty ||
+                  _risk.mayContainAllergenIds.isNotEmpty) ...[
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final id in _risk.containsAllergenIds)
+                      Chip(
+                        label: Text(l10n.mealContainsAllergen(allergenLabelById[id] ?? id)),
+                        avatar: const Icon(PhosphorIconsRegular.warning, size: 16),
+                      ),
+                    for (final id in _risk.mayContainAllergenIds)
+                      Chip(
+                        label: Text(
+                          l10n.mealMayContainAllergen(allergenLabelById[id] ?? id),
+                        ),
+                        avatar: const Icon(PhosphorIconsRegular.info, size: 16),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.mealIngredientsTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  if (_component.ingredients.isNotEmpty)
+                    IconButton(
+                      tooltip: l10n.mealIngredientsRemoveAllTooltip,
+                      icon: const Icon(PhosphorIconsRegular.trash),
+                      onPressed: _confirmAndClearAllIngredients,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              for (var i = 0; i < _component.ingredients.length; i++)
+                IngredientLineEditor(
+                  key: ValueKey('${_component.id}-$i'),
+                  catalogItemId: _component.ingredients[i].catalogItemId,
+                  label: _component.ingredients[i].label,
+                  quantityValue: _component.ingredients[i].quantityValue,
+                  quantityUnit:
+                      _unitFromRaw(_component.ingredients[i].quantityUnit),
+                  hintText: l10n.mealIngredientHint,
+                  onSave: (value) async => _updateIngredient(i, value),
+                  onDelete: () async => _deleteIngredient(i),
+                ),
+              TextButton.icon(
+                onPressed: _addIngredient,
+                icon: const Icon(PhosphorIconsRegular.plus),
+                label: Text(l10n.mealAddIngredient),
+              ),
+              if (_component.recipeInstructions.trim().isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.mealRecipePreparationTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: l10n.mealRecipeStepsRemoveTooltip,
+                      icon: const Icon(PhosphorIconsRegular.trash),
+                      onPressed: _clearRecipeInstructions,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Card(
+                  margin: EdgeInsets.zero,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: SelectableText(
+                      _component.recipeInstructions.trim(),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                   ),
                 ),
-                IconButton(
-                  tooltip: l10n.mealRecipeStepsRemoveTooltip,
-                  icon: const Icon(PhosphorIconsRegular.trash),
-                  onPressed: _clearRecipeInstructions,
-                ),
               ],
-            ),
-            const SizedBox(height: 8),
-            Card(
-              margin: EdgeInsets.zero,
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: SelectableText(
-                  _component.recipeInstructions.trim(),
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+              if (showAiFab) const SizedBox(height: 88),
+            ],
+          ),
+          if (_isGenerating)
+            Positioned.fill(
+              child: ColoredBox(
+                color: Theme.of(context)
+                    .colorScheme
+                    .scrim
+                    .withValues(alpha: 0.45),
+                child: const Center(child: CircularProgressIndicator()),
               ),
             ),
-          ],
-          if (showAiFab) const SizedBox(height: 88),
         ],
       ),
       floatingActionButton: showAiFab
           ? FloatingActionButton(
               heroTag: 'generate_recipe_ingredients_with_ai',
               tooltip: l10n.mealRecipeAiGenerateLabel,
+              // Progress is shown by the overlay over the page.
               onPressed: _isGenerating ? null : _onRecipeAiFabPressed,
-              child: _isGenerating
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(PhosphorIconsFill.sparkle),
+              child: const Icon(PhosphorIconsFill.sparkle),
             )
           : null,
     );

@@ -10,23 +10,6 @@ enum AiFeature {
   final String firestoreKey;
 }
 
-/// Why a quota reservation was rejected.
-enum AiQuotaExceededReason {
-  userDaily,
-  tripDaily,
-  tripLifetime,
-  circuitBreaker,
-}
-
-/// Thrown by [AiQuotaGate] when the AI call cannot proceed due to quota.
-class AiQuotaExceededException implements Exception {
-  const AiQuotaExceededException(this.reason);
-  final AiQuotaExceededReason reason;
-
-  @override
-  String toString() => 'AiQuotaExceededException($reason)';
-}
-
 /// Point-in-time snapshot of quota counters for a (user, trip, feature) tuple.
 class AiQuotaSnapshot {
   const AiQuotaSnapshot({

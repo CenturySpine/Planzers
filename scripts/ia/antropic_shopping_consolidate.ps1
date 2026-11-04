@@ -4,7 +4,8 @@
 # - Demande le modele (determine le provider)
 # - Demande la cle API correspondante
 # - Trace toutes les etapes
-# - Affiche le resultat brut + extrait le tool_use
+# - Demande le niveau de reflexion generique (minimal, low, medium, high)
+# - Affiche le resultat brut + extrait le resultat structure
 # ============================================================
 
 $ErrorActionPreference = "Stop"
@@ -14,19 +15,21 @@ $ErrorActionPreference = "Stop"
 # ============================================================
 Write-Host "=== ETAPE 1/7 : Choix du modele ===" -ForegroundColor Cyan
 Write-Host "Modeles disponibles :"
-Write-Host "  1) claude-haiku-4-5-20251001  [Anthropic]"
-Write-Host "  2) claude-sonnet-4-6           [Anthropic]"
-Write-Host "  3) claude-opus-4-7             [Anthropic]"
-Write-Host "  4) gemini-2.0-flash            [Google]"
-Write-Host "  5) gemini-2.5-flash            [Google]"
+Write-Host "  1) claude-haiku-5-5       [Anthropic]"
+Write-Host "  2) claude-sonnet-5-5      [Anthropic]"
+Write-Host "  3) claude-opus-5-5        [Anthropic]"
+Write-Host "  4) gemini-3.5-flash-lite  [Google]"
+Write-Host "  5) gemini-3.5-flash       [Google]"
+Write-Host "  6) gemini-3.6-flash       [Google]"
 
-$modelChoice = Read-Host "Choisis le modele (1-5) ou colle un ID custom (prefixe 'gemini-' => Google)"
+$modelChoice = Read-Host "Choisis le modele (1-6) ou colle un ID custom (prefixe 'gemini-' => Google)"
 switch ($modelChoice.Trim()) {
-  "1" { $model = "claude-haiku-4-5-20251001"; $provider = "anthropic" }
-  "2" { $model = "claude-sonnet-4-6";          $provider = "anthropic" }
-  "3" { $model = "claude-opus-4-7";            $provider = "anthropic" }
-  "4" { $model = "gemini-2.0-flash";           $provider = "gemini"    }
-  "5" { $model = "gemini-2.5-flash";           $provider = "gemini"    }
+  "1" { $model = "claude-haiku-5-5";      $provider = "anthropic" }
+  "2" { $model = "claude-sonnet-5-5";     $provider = "anthropic" }
+  "3" { $model = "claude-opus-5-5";       $provider = "anthropic" }
+  "4" { $model = "gemini-3.5-flash-lite"; $provider = "gemini"    }
+  "5" { $model = "gemini-3.5-flash";      $provider = "gemini"    }
+  "6" { $model = "gemini-3.6-flash";      $provider = "gemini"    }
   default {
     if ([string]::IsNullOrWhiteSpace($modelChoice)) { throw "Modele vide." }
     $model    = $modelChoice.Trim()
@@ -34,6 +37,17 @@ switch ($modelChoice.Trim()) {
   }
 }
 Write-Host "Modele : $model  |  Provider : $provider"
+
+# Niveau de reflexion generique, traduit comme dans functions/ai_settings.js
+$thinkingChoice = Read-Host "Niveau de reflexion (minimal, low, medium, high) [minimal]"
+$thinkingLevel  = if ([string]::IsNullOrWhiteSpace($thinkingChoice)) { "minimal" } else { $thinkingChoice.Trim().ToLower() }
+$providerThinkingLevels = @{
+  anthropic = @{ minimal = "low";     low = "low"; medium = "medium"; high = "high" }
+  gemini    = @{ minimal = "MINIMAL"; low = "LOW"; medium = "MEDIUM"; high = "HIGH" }
+}
+if (-not $providerThinkingLevels[$provider].ContainsKey($thinkingLevel)) { throw "Niveau de reflexion inconnu : $thinkingLevel" }
+$providerThinkingLevel = $providerThinkingLevels[$provider][$thinkingLevel]
+Write-Host "Reflexion : $thinkingLevel => $providerThinkingLevel"
 
 # ============================================================
 # ETAPE 2 : Saisie de la cle API (selon provider)
@@ -169,6 +183,20 @@ $toolParameters  = @{
   }
 }
 
+# Anthropic (sortie structuree) exige additionalProperties = false sur chaque objet
+function Close-JsonSchemaObjects($node) {
+  if ($node -is [System.Collections.IDictionary]) {
+    $copy = @{}
+    foreach ($key in $node.Keys) { $copy[$key] = Close-JsonSchemaObjects $node[$key] }
+    if ($copy["type"] -eq "object") { $copy["additionalProperties"] = $false }
+    return $copy
+  }
+  if ($node -is [System.Array]) {
+    return ,@($node | ForEach-Object { Close-JsonSchemaObjects $_ })
+  }
+  return $node
+}
+
 Write-Host "Prompts et schema construits."
 
 # ============================================================
@@ -183,18 +211,18 @@ if ($provider -eq "anthropic") {
     "x-api-key"         = $apiKey
     "anthropic-version" = "2023-06-01"
   }
+  # Sortie structuree : les modeles Claude recents refusent l'appel d'outil
+  # force et les parametres d'echantillonnage (temperature...).
   $bodyObject = @{
-    model       = $model
-    max_tokens  = 5000
-    temperature = 0.1
-    system      = $systemPrompt
-    tools       = @(@{
-      name         = $toolName
-      description  = $toolDescription
-      input_schema = $toolParameters
-    })
-    tool_choice = @{ type = "tool"; name = $toolName }
-    messages    = @(@{ role = "user"; content = $userPrompt })
+    model         = $model
+    max_tokens    = 16000
+    system        = $systemPrompt
+    thinking      = @{ type = "adaptive" }
+    output_config = @{
+      effort = $providerThinkingLevel
+      format = @{ type = "json_schema"; schema = (Close-JsonSchemaObjects $toolParameters) }
+    }
+    messages      = @(@{ role = "user"; content = $userPrompt })
   }
 
 } else {
@@ -213,7 +241,7 @@ if ($provider -eq "anthropic") {
       })
     })
     tool_config       = @{ function_calling_config = @{ mode = "ANY" } }
-    generation_config = @{ temperature = 0.1; maxOutputTokens = 5000; thinkingConfig = @{ thinkingBudget = 0 } }
+    generation_config = @{ maxOutputTokens = 32000; thinkingConfig = @{ thinkingLevel = $providerThinkingLevel } }
   }
 
 }
@@ -252,12 +280,12 @@ $parsed = $responseText | ConvertFrom-Json
 
 $aiResult = $null
 if ($provider -eq "anthropic") {
-  $toolBlock = $parsed.content | Where-Object { $_.type -eq "tool_use" } | Select-Object -First 1
-  if ($toolBlock) {
-    $toolBlock.input | ConvertTo-Json -Depth 10
-    $aiResult = $toolBlock.input
+  $textBlock = $parsed.content | Where-Object { $_.type -eq "text" } | Select-Object -First 1
+  if ($textBlock) {
+    $aiResult = $textBlock.text | ConvertFrom-Json
+    $aiResult | ConvertTo-Json -Depth 10
   } else {
-    Write-Warning "Aucun bloc tool_use trouve dans la reponse."
+    Write-Warning "Aucun bloc text trouve dans la reponse."
   }
 } else {
   $funcBlock = $parsed.candidates[0].content.parts | Where-Object { $_.functionCall } | Select-Object -First 1

@@ -2307,6 +2307,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shoppingChangeCategoryDialogTitle => 'Choose a category';
 
   @override
+  String get shoppingAssignMenu => 'Assign to…';
+
+  @override
+  String get shoppingAssignCategoryMenu => 'Assign the category…';
+
+  @override
+  String get shoppingAssignDialogTitle => 'Who takes care of it?';
+
+  @override
+  String get shoppingAssignNobody => 'Nobody';
+
+  @override
   String get shoppingCategoryDivers => 'Miscellaneous';
 
   @override
@@ -6555,6 +6567,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get shoppingChangeCategoryDialogTitle => 'Choose a category';
+
+  @override
+  String get shoppingAssignMenu => 'Assign to…';
+
+  @override
+  String get shoppingAssignCategoryMenu => 'Assign the category…';
+
+  @override
+  String get shoppingAssignDialogTitle => 'Who takes care of it?';
+
+  @override
+  String get shoppingAssignNobody => 'Nobody';
 
   @override
   String get shoppingCategoryDivers => 'Miscellaneous';

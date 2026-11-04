@@ -1,13 +1,13 @@
-import 'dart:convert';
-
-import 'package:firebase_ai/firebase_ai.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/core/intl/app_language.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 
-/// What the user wants the AI to produce.
+/// What the user wants the AI to produce. Sent by name to the Cloud Function
+/// (mirrors RECIPE_AI_MODES in functions/recipe_ai.js).
 enum RecipeAiMode {
   /// Only the ingredient list (faster, useful when re-scaling an existing
   /// recipe whose instructions are still relevant).
@@ -31,30 +31,15 @@ class RecipeAiResult {
   final String instructions;
 }
 
-/// POC: generates a recipe's ingredient list (and optionally cooking
-/// instructions) from a name and a number of servings, using the Firebase
-/// AI Logic SDK.
+/// Generates a recipe's ingredient list (and optionally cooking
+/// instructions) from a name and a number of servings.
 ///
-/// Implementation note — chained approach:
-///   1. First call uses [Tool.googleSearch] grounding with a free-form
-///      prompt, so the model can ground its answer on real recipes from
-///      the web. No structured output is requested at this stage because
-///      Gemini 2.5 cannot combine grounding with `responseSchema`.
-///   2. Second call takes the free-form text from step 1 and converts it
-///      into the strict JSON shape we need, using `responseSchema`. No
-///      grounding here.
-///
-/// The two-step cost is justified by:
-///   - Reliable structured output (no JSON parsing surprises).
-///   - Optional freshness via web grounding for less common recipes.
-///
-/// Prerequisite (must be configured in the Firebase console):
-///   - Firebase AI Logic API enabled on the target project.
-///
-/// Grounding with Google Search ([Tool.googleSearch]) is supported natively
-/// by the Firebase AI Logic Flutter SDK (>= 2.3.0) and does not require any
-/// extra activation in the Firebase console.
+/// The AI calls run in the `generateRecipeWithAi` Cloud Function, which also
+/// applies the AI settings of the administration and the quotas of
+/// [tripId] (see functions/recipe_ai.js). This function maps the returned
+/// ingredients onto the app's units and ingredient catalog.
 Future<RecipeAiResult> generateRecipeIngredients({
+  required String tripId,
   required String recipeName,
   required int servings,
   required List<IngredientCatalogItem> catalogItems,
@@ -69,21 +54,21 @@ Future<RecipeAiResult> generateRecipeIngredients({
     throw ArgumentError('servings must be strictly positive');
   }
 
-  final freeFormText = await _callGroundedRecipe(
-    recipeName: trimmedName,
-    servings: servings,
-    mode: mode,
-    language: language,
+  final callable = FirebaseFunctions.instanceFor(
+    region: kFirebaseFunctionsRegion,
+  ).httpsCallable(
+    'generateRecipeWithAi',
+    // Two AI calls, one with a web search: may take longer than the default.
+    options: HttpsCallableOptions(timeout: const Duration(seconds: 120)),
   );
-  if (freeFormText.trim().isEmpty) {
-    throw StateError('Réponse IA vide.');
-  }
-
-  final structured = await _callStructuredConversion(
-    sourceText: freeFormText,
-    mode: mode,
-    language: language,
-  );
+  final response = await callable.call<Map<String, dynamic>>(<String, dynamic>{
+    'tripId': tripId,
+    'recipeName': trimmedName,
+    'servings': servings,
+    'mode': mode.name,
+    'lang': language == AppLanguage.frFr ? 'fr' : 'en',
+  });
+  final structured = Map<String, dynamic>.from(response.data);
 
   final rawIngredients = structured['ingredients'];
   final rawInstructions =
@@ -132,226 +117,6 @@ Future<RecipeAiResult> generateRecipeIngredients({
     ingredients: ingredients,
     instructions: rawInstructions,
   );
-}
-
-/// First call — free-form, grounded with Google Search. Returns the raw
-/// recipe text produced by the model (ingredients + optional instructions).
-Future<String> _callGroundedRecipe({
-  required String recipeName,
-  required int servings,
-  required RecipeAiMode mode,
-  required AppLanguage language,
-}) async {
-  final model = FirebaseAI.googleAI().generativeModel(
-    model: 'gemini-2.5-flash',
-    generationConfig: GenerationConfig(
-      thinkingConfig: ThinkingConfig.withThinkingBudget(0),
-    ),
-    tools: [Tool.googleSearch()],
-  );
-
-  final asksForInstructions = mode == RecipeAiMode.ingredientsAndInstructions;
-  final isFr = language == AppLanguage.frFr;
-
-  final prompt = StringBuffer();
-  if (isFr) {
-    prompt
-      ..writeln(
-        asksForInstructions
-            ? 'Donne-moi la liste complète des ingrédients ainsi que les instructions '
-                'de préparation pour réaliser "$recipeName" pour $servings personnes.'
-            : 'Donne-moi la liste complète des ingrédients pour réaliser '
-                '"$recipeName" pour $servings personnes.',
-      )
-      ..writeln()
-      ..writeln('Pour les ingrédients :')
-      ..writeln(
-        '- Les quantités doivent respecter les proportions culinaires réalistes, '
-        'pas une simple multiplication par le nombre de personnes.',
-      )
-      ..writeln(
-        '- Par exemple, les aromates et épices ne se multiplient pas linéairement.',
-      )
-      ..writeln(
-        '- Utilise des unités usuelles parmi : "g", "kg", "ml", "l", '
-        '"pièce(s)", "boîte(s)", "c. à soupe", "c. à café".',
-      )
-      ..writeln(
-        '- Choisis l\'unité la plus naturelle pour chaque ingrédient (par '
-        'exemple "c. à café" pour les épices en petite quantité, "boîte(s)" '
-        'pour les conserves).',
-      );
-    if (asksForInstructions) {
-      prompt
-        ..writeln()
-        ..writeln('Pour les instructions :')
-        ..writeln(
-          '- Présente les étapes de préparation numérotées (1., 2., 3., ...), '
-          'une étape par ligne.',
-        )
-        ..writeln('- Sois clair et concis, en français.');
-    }
-    prompt
-      ..writeln()
-      ..writeln(
-        'Tu peux t\'appuyer sur des recettes du web pour t\'assurer des bonnes '
-        'proportions${asksForInstructions ? ' et des bonnes étapes' : ''}.',
-      );
-  } else {
-    prompt
-      ..writeln(
-        asksForInstructions
-            ? 'Give me the complete ingredient list and the preparation instructions '
-                'to make "$recipeName" for $servings servings.'
-            : 'Give me the complete ingredient list to make '
-                '"$recipeName" for $servings servings.',
-      )
-      ..writeln()
-      ..writeln('For the ingredients:')
-      ..writeln(
-        '- Quantities must follow realistic culinary proportions, '
-        'not a simple multiplication by the number of servings.',
-      )
-      ..writeln(
-        '- For example, aromatics and spices do not scale linearly.',
-      )
-      ..writeln(
-        '- Use common units among: "g", "kg", "ml", "l", '
-        '"piece(s)", "can(s)", "tablespoon", "teaspoon".',
-      )
-      ..writeln(
-        '- Choose the most natural unit for each ingredient (e.g. "teaspoon" '
-        'for small amounts of spices, "can(s)" for canned goods).',
-      );
-    if (asksForInstructions) {
-      prompt
-        ..writeln()
-        ..writeln('For the instructions:')
-        ..writeln(
-          '- Present the preparation steps numbered (1., 2., 3., ...), '
-          'one step per line.',
-        )
-        ..writeln('- Be clear and concise, in English.');
-    }
-    prompt
-      ..writeln()
-      ..writeln(
-        'You may use web recipes to ensure accurate proportions'
-        '${asksForInstructions ? ' and steps' : ''}.',
-      );
-  }
-
-  final response = await model.generateContent([
-    Content.text(prompt.toString()),
-  ]);
-  return response.text ?? '';
-}
-
-/// Second call — strict JSON conversion of [sourceText] into the schema we
-/// expect. No grounding here (incompatible with `responseSchema` on Gemini
-/// 2.5).
-Future<Map<String, dynamic>> _callStructuredConversion({
-  required String sourceText,
-  required RecipeAiMode mode,
-  required AppLanguage language,
-}) async {
-  final asksForInstructions = mode == RecipeAiMode.ingredientsAndInstructions;
-  final isFr = language == AppLanguage.frFr;
-
-  final unitEnumValues = isFr
-      ? const ['g', 'kg', 'ml', 'l', 'pièce(s)', 'boîte(s)', 'c. à soupe', 'c. à café']
-      : const ['g', 'kg', 'ml', 'l', 'piece(s)', 'can(s)', 'tablespoon', 'teaspoon'];
-
-  final properties = <String, Schema>{
-    'recipeName': Schema.string(),
-    'servings': Schema.integer(),
-    'ingredients': Schema.array(
-      items: Schema.object(
-        properties: {
-          'name': Schema.string(),
-          'quantity': Schema.number(),
-          'unit': Schema.enumString(enumValues: unitEnumValues),
-        },
-      ),
-    ),
-  };
-  if (asksForInstructions) {
-    properties['instructions'] = Schema.string();
-  }
-
-  final model = FirebaseAI.googleAI().generativeModel(
-    model: 'gemini-2.5-flash',
-    generationConfig: GenerationConfig(
-      responseMimeType: 'application/json',
-      responseSchema: Schema.object(properties: properties),
-      thinkingConfig: ThinkingConfig.withThinkingBudget(0),
-    ),
-  );
-
-  final prompt = StringBuffer();
-  if (isFr) {
-    prompt
-      ..writeln(
-        'Voici une recette rédigée en texte libre. Convertis-la fidèlement '
-        'en JSON structuré selon le schéma fourni.',
-      )
-      ..writeln()
-      ..writeln('Contraintes :')
-      ..writeln(
-        '- N\'invente pas et ne modifie pas les quantités : transcris '
-        'fidèlement le texte source.',
-      )
-      ..writeln(
-        '- Pour chaque ingrédient, l\'unité doit être STRICTEMENT une de : '
-        '"g", "kg", "ml", "l", "pièce(s)", "boîte(s)", "c. à soupe", "c. à café".',
-      );
-    if (asksForInstructions) {
-      prompt.writeln(
-        '- Pour les instructions, conserve les étapes numérotées telles quelles, '
-        'une étape par ligne.',
-      );
-    }
-  } else {
-    prompt
-      ..writeln(
-        'Here is a recipe written as free text. Convert it faithfully '
-        'into structured JSON according to the provided schema.',
-      )
-      ..writeln()
-      ..writeln('Constraints:')
-      ..writeln(
-        '- Do not invent or modify quantities: transcribe the source text faithfully.',
-      )
-      ..writeln(
-        '- For each ingredient, the unit must be STRICTLY one of: '
-        '"g", "kg", "ml", "l", "piece(s)", "can(s)", "tablespoon", "teaspoon".',
-      );
-    if (asksForInstructions) {
-      prompt.writeln(
-        '- For the instructions, keep the numbered steps as-is, '
-        'one step per line.',
-      );
-    }
-  }
-  prompt
-    ..writeln()
-    ..writeln(isFr ? 'Texte source :' : 'Source text:')
-    ..writeln('"""')
-    ..writeln(sourceText)
-    ..writeln('"""');
-
-  final response = await model.generateContent([
-    Content.text(prompt.toString()),
-  ]);
-  final rawText = response.text;
-  if (rawText == null || rawText.trim().isEmpty) {
-    throw StateError('Réponse IA invalide (conversion JSON vide).');
-  }
-  final decoded = jsonDecode(rawText);
-  if (decoded is! Map) {
-    throw StateError('Réponse IA invalide (format inattendu).');
-  }
-  return Map<String, dynamic>.from(decoded);
 }
 
 /// Result of mapping an AI-returned `(quantity, unit)` pair into our

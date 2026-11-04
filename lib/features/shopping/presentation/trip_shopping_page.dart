@@ -18,9 +18,11 @@ import 'package:planerz/features/ingredients/presentation/ingredient_line_editor
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/features/shopping/data/shopping_list_locks.dart';
 import 'package:planerz/features/shopping/data/shopping_repository.dart';
+import 'package:planerz/features/shopping/presentation/widgets/shopping_assignee_dialog.dart';
 import 'package:planerz/features/shopping/presentation/widgets/shopping_item_row.dart';
 import 'package:planerz/features/shopping/presentation/widgets/shopping_list_status_filter.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
@@ -348,6 +350,21 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
       currentRole: currentRole,
       minRole: TripPermissionRole.admin,
     );
+    // Admins prepare who buys what: assign items or whole categories.
+    final assignees = isAdminOrAbove
+        ? shoppingAssigneesFor(
+            participants: ref
+                    .watch(tripParticipantsStreamProvider(widget.tripId))
+                    .asData
+                    ?.value ??
+                const [],
+            memberUserIds: widget.trip.memberUserIds,
+            labelsById:
+                ref.watch(tripMemberResolvedLabelsProvider(widget.tripId)),
+            photoUrlsByUserId:
+                ref.watch(tripMemberPhotoUrlsProvider(widget.tripId)),
+          )
+        : const <ShoppingAssignee>[];
     final locks = ref
             .watch(tripShoppingListLocksStreamProvider(widget.tripId))
             .asData
@@ -698,6 +715,30 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                                             usersDataById: usersDataById,
                                             normalizedLabelCounts: normalizedLabelCounts,
                                             structureLocked: manualLockRestrictsEditing,
+                                            customMenuItems:
+                                                assignees.isNotEmpty && !item.checked
+                                                    ? [
+                                                        IngredientLineCustomMenuItem(
+                                                          actionId:
+                                                              _assignItemActionId,
+                                                          label: l10n
+                                                              .shoppingAssignMenu,
+                                                          icon: PhosphorIconsRegular
+                                                              .userPlus,
+                                                        ),
+                                                      ]
+                                                    : null,
+                                            onCustomMenuAction: (actionId) {
+                                              if (actionId == _assignItemActionId) {
+                                                unawaited(
+                                                  _assignManualItem(
+                                                    context,
+                                                    item,
+                                                    assignees,
+                                                  ),
+                                                );
+                                              }
+                                            },
                                             autoFocusLabel:
                                                 item.id == _pendingAutofocusItemId,
                                             onAutoFocusHandled: () {
@@ -737,6 +778,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                         showConsolidatedSaveButton: isAdminOrAbove &&
                             _consolidatedItems.isNotEmpty,
                         isSavingConsolidated: _isSavingConsolidated,
+                        assignees: assignees,
                         consolidatedRemoteAsync: consolidatedRemoteAsync,
                         suppressRemoteConsolidatedSync:
                             _suppressRemoteConsolidatedSync,
@@ -913,6 +955,108 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     }
   }
 
+  static const String _assignItemActionId = 'assign_shopping_item';
+
+  /// Admin action: puts [item] of the manual list in the hands of a
+  /// participant (or nobody).
+  Future<void> _assignManualItem(
+    BuildContext context,
+    ShoppingItem item,
+    List<ShoppingAssignee> assignees,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final chosen = await showShoppingAssigneeDialog(
+      context,
+      assignees: assignees,
+      initialUserId: item.claimedBy,
+      allowNobody: true,
+    );
+    if (chosen == null || !mounted) return;
+    if (chosen == (item.claimedBy?.trim() ?? '')) return;
+    try {
+      await ref.read(shoppingRepositoryProvider).setClaimedBy(
+            tripId: widget.tripId,
+            itemId: item.id,
+            claimedBy: chosen.isEmpty ? null : chosen,
+          );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
+
+  /// Admin action: puts a consolidated [item] in the hands of a participant
+  /// (or nobody).
+  Future<void> _assignConsolidatedItem(
+    BuildContext context,
+    ShoppingItem item,
+    List<ShoppingAssignee> assignees,
+  ) async {
+    final chosen = await showShoppingAssigneeDialog(
+      context,
+      assignees: assignees,
+      initialUserId: item.claimedBy,
+      allowNobody: true,
+    );
+    if (chosen == null || !context.mounted) return;
+    if (chosen == (item.claimedBy?.trim() ?? '')) return;
+    await _persistConsolidatedSetClaimedBy(
+      context,
+      item,
+      chosen.isEmpty ? null : chosen,
+    );
+  }
+
+  /// Admin action: puts every free item of a consolidated category (not
+  /// bought, not taken by anyone) in the hands of one participant.
+  Future<void> _assignConsolidatedCategory(
+    BuildContext context,
+    List<ShoppingItem> freeItems,
+    List<ShoppingAssignee> assignees,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final chosen = await showShoppingAssigneeDialog(
+      context,
+      assignees: assignees,
+    );
+    if (chosen == null || chosen.isEmpty || !mounted) return;
+    final itemIds = {for (final item in freeItems) item.id};
+    try {
+      await ref.read(shoppingRepositoryProvider).setConsolidatedItemsClaimedBy(
+            tripId: widget.tripId,
+            itemIds: itemIds.toList(growable: false),
+            claimedBy: chosen,
+          );
+      if (!mounted) return;
+      setState(() {
+        _consolidatedItems = _consolidatedItems
+            .map(
+              (entry) => itemIds.contains(entry.item.id)
+                  ? _ConsolidatedEditableItem(
+                      categoryId: entry.categoryId,
+                      item: _shoppingItemClaimedBy(entry.item, chosen),
+                    )
+                  : entry,
+            )
+            .toList(growable: false);
+      });
+    } on ConsolidatedShoppingRowNotPersistedException {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.shoppingConsolidatedRowNotPersisted)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
+
   Future<void> _saveConsolidatedList(BuildContext context) async {
     if (_isSavingConsolidated || _consolidatedItems.isEmpty) return;
     final l10n = AppLocalizations.of(context)!;
@@ -1006,6 +1150,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     required bool consolidatedStructureLocked,
     required bool showConsolidatedSaveButton,
     required bool isSavingConsolidated,
+    required List<ShoppingAssignee> assignees,
     required AsyncValue<ConsolidatedListFirestorePayload> consolidatedRemoteAsync,
     required bool suppressRemoteConsolidatedSync,
     required Widget listActionsMenu,
@@ -1047,6 +1192,9 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     }
 
     final groups = _groupByCategory(_consolidatedItems, categories);
+    final allItemsByCategory = {
+      for (final entry in groups) entry.key: entry.value,
+    };
     final visibleGroups = <MapEntry<String, List<ShoppingItem>>>[];
     for (final entry in groups) {
       final filtered = entry.value
@@ -1116,6 +1264,16 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                   itemCount: visibleGroups.length,
                   itemBuilder: (context, index) {
                     final entry = visibleGroups[index];
+                    // Whole category, whatever the filters: items nobody has
+                    // bought or taken yet.
+                    final freeItems = (allItemsByCategory[entry.key] ??
+                            const <ShoppingItem>[])
+                        .where(
+                          (item) =>
+                              !item.checked &&
+                              (item.claimedBy?.trim() ?? '').isEmpty,
+                        )
+                        .toList(growable: false);
                     return _ConsolidatedCategorySection(
                       l10n: l10n,
                       label: _categoryLabel(
@@ -1144,6 +1302,21 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                             rowItem,
                             entry.key,
                           ),
+                      onRequestAssign: assignees.isEmpty
+                          ? null
+                          : (dialogContext, rowItem) =>
+                              _assignConsolidatedItem(
+                                dialogContext,
+                                rowItem,
+                                assignees,
+                              ),
+                      onAssignCategory: assignees.isEmpty || freeItems.isEmpty
+                          ? null
+                          : () => _assignConsolidatedCategory(
+                                context,
+                                freeItems,
+                                assignees,
+                              ),
                     );
                   },
                 ),
@@ -1297,6 +1470,19 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
   }
 }
 
+ShoppingItem _shoppingItemClaimedBy(ShoppingItem item, String? claimedBy) =>
+    ShoppingItem(
+      id: item.id,
+      label: item.label,
+      checked: item.checked,
+      quantityValue: item.quantityValue,
+      quantityUnit: item.quantityUnit,
+      createdAt: item.createdAt,
+      order: item.order,
+      createdBy: item.createdBy,
+      claimedBy: claimedBy,
+    );
+
 String _normalizeItemLabel(String raw) {
   return raw.trim().toLowerCase();
 }
@@ -1399,9 +1585,12 @@ class _ConsolidatedCategorySection extends StatelessWidget {
     required this.onItemChanged,
     required this.onItemDeleted,
     required this.onRequestChangeCategory,
+    this.onRequestAssign,
+    this.onAssignCategory,
   });
 
   static const String _changeCategoryActionId = 'change_consolidated_category';
+  static const String _assignItemActionId = 'assign_consolidated_item';
 
   final AppLocalizations l10n;
   final String label;
@@ -1428,6 +1617,14 @@ class _ConsolidatedCategorySection extends StatelessWidget {
   final Future<void> Function(BuildContext context, ShoppingItem item)
       onRequestChangeCategory;
 
+  /// Assigns one item to a participant; null hides the action (non-admins).
+  final Future<void> Function(BuildContext context, ShoppingItem item)?
+      onRequestAssign;
+
+  /// Assigns the free items of the category; null hides the action
+  /// (non-admins, or no free item left).
+  final Future<void> Function()? onAssignCategory;
+
   @override
   Widget build(BuildContext context) {
     final checked = items.where((item) => item.checked).length;
@@ -1453,6 +1650,26 @@ class _ConsolidatedCategorySection extends StatelessWidget {
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
           ),
+          if (onAssignCategory != null)
+            PopupMenuButton<String>(
+              tooltip: l10n.commonMoreActions,
+              icon: Icon(
+                PhosphorIconsRegular.dotsThreeVertical,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              onSelected: (_) => unawaited(onAssignCategory!()),
+              itemBuilder: (context) => [
+                PopupMenuItem<String>(
+                  value: 'assign_category',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(PhosphorIconsRegular.userPlus),
+                    title: Text(l10n.shoppingAssignCategoryMenu),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
       tilePadding: const EdgeInsets.only(left: 14, right: 8),
@@ -1476,6 +1693,12 @@ class _ConsolidatedCategorySection extends StatelessWidget {
                       label: l10n.shoppingChangeCategoryMenu,
                       icon: PhosphorIconsRegular.folderSimpleUser,
                     ),
+                    if (onRequestAssign != null && !items[i].checked)
+                      IngredientLineCustomMenuItem(
+                        actionId: _assignItemActionId,
+                        label: l10n.shoppingAssignMenu,
+                        icon: PhosphorIconsRegular.userPlus,
+                      ),
                   ],
             onCustomMenuAction: structureLocked
                 ? null
@@ -1484,6 +1707,8 @@ class _ConsolidatedCategorySection extends StatelessWidget {
                       unawaited(
                         onRequestChangeCategory(context, items[i]),
                       );
+                    } else if (actionId == _assignItemActionId) {
+                      unawaited(onRequestAssign!(listContext, items[i]));
                     }
                   },
             onToggleCheckedOverride: (checked) async {

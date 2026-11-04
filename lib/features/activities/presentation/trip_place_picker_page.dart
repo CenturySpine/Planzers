@@ -478,10 +478,17 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
                   tooltip: l10n.activitiesPlaceMyLocation,
                   onPressed: _locating ? null : _locateMe,
                   child: _locating
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          // The theme draws progress in the FAB background
+                          // color: use the FAB foreground to keep it visible.
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Theme.of(context)
+                                .floatingActionButtonTheme
+                                .foregroundColor,
+                          ),
                         )
                       : const Icon(PhosphorIconsRegular.crosshair),
                 ),
