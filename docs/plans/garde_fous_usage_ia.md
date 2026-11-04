@@ -283,6 +283,13 @@ Dans [`functions/index.js`](../../functions/index.js), deux callables région `e
 
 ### Phase 3 — Migration CF-native pour les appels IA client (effort ~1 jour, optionnelle)
 
+> **Statut :** réalisée le 04/11/2026, déclenchée par le refus App Check des
+> appels Firebase AI Logic sur preview. La génération de recettes passe par la
+> CF `generateRecipeWithAi` (`functions/recipe_ai.js`, appels REST Gemini) ;
+> l'app n'utilise plus Firebase AI Logic et le gate Dart `AiQuotaGate`,
+> devenu inutile, a été supprimé. Les CF `reserveAiQuota` / `refundAiQuota`
+> restent déployées pour les versions de l'app déjà publiées.
+
 Objectif : enforcement strict, impossible à bypasser par un client modifié.
 
 #### Quand l'envisager

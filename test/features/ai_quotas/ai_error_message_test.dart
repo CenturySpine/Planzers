@@ -1,5 +1,4 @@
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_ai/firebase_ai.dart' show ServerException;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quota_models.dart';
@@ -18,10 +17,6 @@ void main() {
 
       expect(
         aiErrorMessage(l10n, error, AiFeature.shoppingConsolidation),
-        l10n.aiServiceUnavailable,
-      );
-      expect(
-        aiErrorMessage(l10n, ServerException('402'), AiFeature.recipeIngredients),
         l10n.aiServiceUnavailable,
       );
     });

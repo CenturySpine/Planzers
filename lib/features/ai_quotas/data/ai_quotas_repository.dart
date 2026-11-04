@@ -1,7 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quota_models.dart';
 
 final aiQuotasRepositoryProvider = Provider<AiQuotasRepository>((ref) {
@@ -40,55 +38,6 @@ class AiQuotasRepository {
     final today = _todayUtcKey();
     if (data['currentDayKey'] != today) return 0;
     return (data['currentDayCount'] as num?)?.toInt() ?? 0;
-  }
-
-  /// Calls the CF `reserveAiQuota`. Throws [AiQuotaExceededException] if any
-  /// quota is exceeded; maps the typed error codes from the CF.
-  Future<void> reserve({
-    required AiFeature feature,
-    required String uid,
-    required String tripId,
-  }) async {
-    try {
-      final callable = FirebaseFunctions.instanceFor(
-        region: kFirebaseFunctionsRegion,
-      ).httpsCallable('reserveAiQuota');
-      await callable.call<Map<String, dynamic>>({
-        'featureKey': feature.firestoreKey,
-        'tripId': tripId,
-      });
-    } on FirebaseFunctionsException catch (e) {
-      if (e.code == 'resource-exhausted') {
-        final reason = switch (e.message) {
-          'quota-user' => AiQuotaExceededReason.userDaily,
-          'quota-trip' => AiQuotaExceededReason.tripDaily,
-          'quota-trip-lifetime' => AiQuotaExceededReason.tripLifetime,
-          'circuit-breaker' => AiQuotaExceededReason.circuitBreaker,
-          _ => AiQuotaExceededReason.userDaily,
-        };
-        throw AiQuotaExceededException(reason);
-      }
-      rethrow;
-    }
-  }
-
-  /// Calls the CF `refundAiQuota`. Best-effort: errors are swallowed.
-  Future<void> refund({
-    required AiFeature feature,
-    required String uid,
-    required String tripId,
-  }) async {
-    try {
-      final callable = FirebaseFunctions.instanceFor(
-        region: kFirebaseFunctionsRegion,
-      ).httpsCallable('refundAiQuota');
-      await callable.call<Map<String, dynamic>>({
-        'featureKey': feature.firestoreKey,
-        'tripId': tripId,
-      });
-    } catch (_) {
-      // Best-effort: refund failure is not critical.
-    }
   }
 
   /// Combines user and trip quota streams into a single [AiQuotaSnapshot].

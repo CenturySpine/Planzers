@@ -1,4 +1,3 @@
-import 'package:firebase_ai/firebase_ai.dart' show ThinkingLevel;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planerz/features/ai_settings/data/ai_settings.dart';
 
@@ -57,12 +56,5 @@ void main() {
       aiProviderModels[AiProvider.anthropic],
       contains(AiSettings.defaults.anthropicModel),
     );
-  });
-
-  test('maps the generic thinking levels to Gemini levels', () {
-    expect(AiThinkingLevel.minimal.geminiThinkingLevel, ThinkingLevel.minimal);
-    expect(AiThinkingLevel.low.geminiThinkingLevel, ThinkingLevel.low);
-    expect(AiThinkingLevel.medium.geminiThinkingLevel, ThinkingLevel.medium);
-    expect(AiThinkingLevel.high.geminiThinkingLevel, ThinkingLevel.high);
   });
 }

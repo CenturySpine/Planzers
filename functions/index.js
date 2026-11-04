@@ -5337,6 +5337,11 @@ const { exportTrip, importTrip } = require('./trip_transfer');
 exports.exportTrip = exportTrip;
 exports.importTrip = importTrip;
 
+// --- AI recipe generation (meal editor) ---
+const { generateRecipeWithAi } = require('./recipe_ai');
+
+exports.generateRecipeWithAi = generateRecipeWithAi;
+
 // --- Public API / OAuth (Ridgegear and future third-party clients) ---
 const {
   getOAuthClientPublicInfo,

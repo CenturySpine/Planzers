@@ -11,8 +11,9 @@ final aiSettingsProvider = StreamProvider.autoDispose<AiSettings>(
   (ref) => ref.watch(aiSettingsRepositoryProvider).watch(),
 );
 
-/// Reads and writes `system/aiSettings`. Any signed-in user can read it;
-/// only application owners can write it (Firestore rules).
+/// Reads and writes `system/aiSettings` for the administration. Only
+/// application owners can write it (Firestore rules); the AI Cloud Functions
+/// read it on each call.
 class AiSettingsRepository {
   AiSettingsRepository({required this.firestore});
 
@@ -25,9 +26,6 @@ class AiSettingsRepository {
 
   Stream<AiSettings> watch() =>
       _doc.snapshots().map((snap) => AiSettings.fromFirestore(snap.data()));
-
-  Future<AiSettings> fetch() async =>
-      AiSettings.fromFirestore((await _doc.get()).data());
 
   Future<void> save(AiSettings settings) => _doc.set(settings.toFirestore());
 }

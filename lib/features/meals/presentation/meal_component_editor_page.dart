@@ -11,9 +11,7 @@ import 'package:planerz/core/presentation/ai_billed_support_banner.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quota_config.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quota_models.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quotas_repository.dart';
-import 'package:planerz/features/ai_quotas/domain/ai_quota_gate.dart';
 import 'package:planerz/features/ai_quotas/presentation/ai_error_message.dart';
-import 'package:planerz/features/ai_settings/data/ai_settings_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
@@ -243,24 +241,14 @@ class _MealComponentEditorPageState
     _lastAiCallAt = DateTime.now();
 
     try {
-      final result = await ref.read(aiQuotaGateProvider).call(
-        feature: AiFeature.recipeIngredients,
-        uid: uid,
+      // Quotas are enforced by the Cloud Function (owners exempted).
+      final result = await generateRecipeIngredients(
         tripId: widget.tripId,
-        isApplicationOwner: widget.isApplicationOwner,
-        aiCall: () async {
-          final aiSettings =
-              await ref.read(aiSettingsRepositoryProvider).fetch();
-          return generateRecipeIngredients(
-            recipeName: request.recipeName,
-            servings: request.servings,
-            catalogItems: widget.catalogItems,
-            mode: request.mode,
-            model: aiSettings.googleModel,
-            thinkingLevel: aiSettings.thinkingLevel,
-            language: widget.language,
-          );
-        },
+        recipeName: request.recipeName,
+        servings: request.servings,
+        catalogItems: widget.catalogItems,
+        mode: request.mode,
+        language: widget.language,
       );
       if (!mounted) return;
       if (result.ingredients.isEmpty) {
@@ -284,20 +272,6 @@ class _MealComponentEditorPageState
           ingredientsGeneratedByAi: true,
         );
       });
-    } on AiQuotaExceededException catch (e) {
-      if (!mounted) return;
-      final config = aiQuotaConfigs[AiFeature.recipeIngredients]!;
-      final message = switch (e.reason) {
-        AiQuotaExceededReason.userDaily =>
-          l10n.aiQuotaUserExceeded(config.perUserPerDay),
-        AiQuotaExceededReason.tripDaily =>
-          l10n.aiQuotaTripExceeded(config.perTripPerDay),
-        AiQuotaExceededReason.tripLifetime =>
-          l10n.aiQuotaTripLifetimeExceeded(config.perTripLifetime),
-        AiQuotaExceededReason.circuitBreaker =>
-          l10n.aiQuotaCircuitBreakerTripped,
-      };
-      messenger.showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(

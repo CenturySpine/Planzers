@@ -1,5 +1,4 @@
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_ai/firebase_ai.dart' show QuotaExceeded, ServerException;
 import 'package:planerz/features/ai_quotas/data/ai_quota_config.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quota_models.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -26,10 +25,6 @@ String aiErrorMessage(
     // Cloud Functions report any provider failure (HTTP 402, 429, 5xx) so.
     if (error.code == 'unavailable') return l10n.aiServiceUnavailable;
     return l10n.commonErrorWithDetails(error.message ?? error.code);
-  }
-  // Same failures when the app calls the provider directly (Firebase AI).
-  if (error is ServerException || error is QuotaExceeded) {
-    return l10n.aiServiceUnavailable;
   }
   return l10n.commonErrorWithDetails(error.toString());
 }

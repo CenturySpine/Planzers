@@ -1,9 +1,7 @@
-import 'package:firebase_ai/firebase_ai.dart' show ThinkingLevel;
-
-/// AI provider used by the server-side AI features (Cloud Functions).
+/// AI provider used by shopping list consolidation.
 ///
-/// Client-side AI features (Firebase AI Logic) always call Google and use
-/// [AiSettings.googleModel], whatever the selected provider.
+/// Recipe generation always calls Google and uses [AiSettings.googleModel],
+/// whatever the selected provider.
 enum AiProvider {
   google('google'),
   anthropic('anthropic');
@@ -14,7 +12,7 @@ enum AiProvider {
 }
 
 /// Provider-agnostic thinking level, translated into each provider's own
-/// values (see functions/ai_settings.js for the server-side translation).
+/// values by the Cloud Functions (see functions/ai_settings.js).
 enum AiThinkingLevel {
   minimal('minimal'),
   low('low'),
@@ -24,14 +22,6 @@ enum AiThinkingLevel {
   const AiThinkingLevel(this.firestoreValue);
 
   final String firestoreValue;
-
-  /// Gemini thinking level for Firebase AI Logic calls.
-  ThinkingLevel get geminiThinkingLevel => switch (this) {
-        AiThinkingLevel.minimal => ThinkingLevel.minimal,
-        AiThinkingLevel.low => ThinkingLevel.low,
-        AiThinkingLevel.medium => ThinkingLevel.medium,
-        AiThinkingLevel.high => ThinkingLevel.high,
-      };
 }
 
 /// Models offered in the administration for each provider. Every model listed
