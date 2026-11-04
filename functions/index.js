@@ -26,6 +26,7 @@ const {
 } = require('./activity_place_preview');
 const { runTripLifecycle } = require('./trip_lifecycle');
 const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate');
+const { assertTripMemberOrApplicationOwner } = require('./trip_membership');
 const {
   buildNotificationQueueDocId,
   enqueueTripNotification,
@@ -4794,8 +4795,7 @@ exports.consolidateTripShoppingWithAi = onCall(
     }
 
     const db = admin.firestore();
-    const userSnap = await db.collection('users').doc(uid).get();
-    const isApplicationOwner = userSnap.exists && userSnap.data()?.isApplicationOwner === true;
+    const { isApplicationOwner } = await assertTripMemberOrApplicationOwner({ db, tripId, uid });
 
     const tripRef = db.collection('trips').doc(tripId);
     const mode = normalizeString(request.data?.mode);
@@ -4876,7 +4876,8 @@ exports.consolidateTripShoppingWithAi = onCall(
 
 /**
  * Atomically checks and increments AI usage quota for the calling user and
- * the given trip. Throws resource-exhausted if any quota is exceeded.
+ * the given trip. Throws permission-denied if the caller is not a member of
+ * the trip, resource-exhausted if any quota is exceeded.
  *
  * Request: { featureKey: string, tripId: string }
  * Response: { ok: true }
@@ -4895,6 +4896,7 @@ exports.reserveAiQuota = onCall(
       throw new HttpsError('invalid-argument', 'featureKey et tripId requis');
     }
 
+    await assertTripMemberOrApplicationOwner({ tripId, uid });
     await reserveQuota({ featureKey, tripId, uid });
     return { ok: true };
   }
@@ -4902,7 +4904,8 @@ exports.reserveAiQuota = onCall(
 
 /**
  * Decrements AI usage quota counters (floor at 0) after a failed AI call.
- * Best-effort: always returns ok regardless of internal errors.
+ * Throws permission-denied if the caller is not a member of the trip;
+ * otherwise best-effort: returns ok regardless of internal errors.
  *
  * Request: { featureKey: string, tripId: string }
  * Response: { ok: true }
@@ -4921,6 +4924,7 @@ exports.refundAiQuota = onCall(
       throw new HttpsError('invalid-argument', 'featureKey et tripId requis');
     }
 
+    await assertTripMemberOrApplicationOwner({ tripId, uid });
     await refundQuota({ featureKey, tripId, uid }).catch(() => {});
     return { ok: true };
   }
