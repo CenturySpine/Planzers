@@ -108,6 +108,7 @@ describe('assertTripMemberOrApplicationOwner', () => {
 
 describe('AI callables check trip membership first', () => {
   const source = fs.readFileSync(path.join(__dirname, 'index.js'), 'utf8');
+  const recipeSource = fs.readFileSync(path.join(__dirname, 'recipe_ai.js'), 'utf8');
 
   function callableBlock(exportName) {
     const start = source.indexOf(`exports.${exportName} = onCall`);
@@ -116,8 +117,14 @@ describe('AI callables check trip membership first', () => {
     return source.slice(start, nextExport === -1 ? source.length : nextExport);
   }
 
-  function assertGuardBefore(exportName, sensitiveCalls) {
-    const block = callableBlock(exportName);
+  function recipeCallableBlock() {
+    const start = recipeSource.indexOf('const generateRecipeWithAi = onCall');
+    assert.notEqual(start, -1, 'generateRecipeWithAi callable not found');
+    const end = recipeSource.indexOf('\nmodule.exports', start);
+    return recipeSource.slice(start, end === -1 ? recipeSource.length : end);
+  }
+
+  function assertGuardBefore(exportName, sensitiveCalls, block = callableBlock(exportName)) {
     const guard = block.indexOf('await assertTripMemberOrApplicationOwner(');
     assert.notEqual(guard, -1, `${exportName} does not check trip membership`);
     for (const call of sensitiveCalls) {
@@ -133,6 +140,14 @@ describe('AI callables check trip membership first', () => {
       ".collection('meals')",
       'withAiQuota(',
     ]);
+  });
+
+  it('generateRecipeWithAi checks before using the quota and calling the AI', () => {
+    assertGuardBefore(
+      'generateRecipeWithAi',
+      ['withAiQuota(', 'callGemini('],
+      recipeCallableBlock()
+    );
   });
 
   it('reserveAiQuota checks before reserving', () => {

@@ -17,6 +17,7 @@ const admin = require('firebase-admin');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { withAiQuota } = require('./utils/aiQuotaGate');
 const { readAiSettings, providerThinkingLevel } = require('./ai_settings');
+const { assertTripMemberOrApplicationOwner } = require('./trip_membership');
 
 // Mirrors RecipeAiMode in lib/features/meals/data/recipe_ingredients_ai_service.dart.
 const RECIPE_AI_MODES = Object.freeze(['ingredientsOnly', 'ingredientsAndInstructions']);
@@ -225,8 +226,7 @@ const generateRecipeWithAi = onCall(
     }
 
     const db = admin.firestore();
-    const userSnap = await db.collection('users').doc(uid).get();
-    const isApplicationOwner = userSnap.exists && userSnap.data()?.isApplicationOwner === true;
+    const { isApplicationOwner } = await assertTripMemberOrApplicationOwner({ db, tripId, uid });
 
     return withAiQuota(
       { featureKey: 'recipeIngredients', tripId, uid, isApplicationOwner },
