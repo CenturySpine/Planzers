@@ -229,20 +229,28 @@ void main() {
       );
     }
 
-    testWidgets('spreads the chips from one margin to the other',
-        (tester) async {
-      await pumpBar(tester, 1000);
-      final chips = find.byType(RawChip);
-      expect(chips, findsNWidgets(5));
-      expect(tester.getTopLeft(chips.first).dx, 16);
-      expect(tester.getTopRight(chips.last).dx, 1000 - 16);
-    });
+    for (final width in [1000.0, 360.0, 240.0]) {
+      testWidgets('shares the whole width between the chips at $width px',
+          (tester) async {
+        await pumpBar(tester, width);
+        expect(tester.takeException(), isNull);
+        final chips = find.byType(RawChip);
+        expect(chips, findsNWidgets(5));
+        expect(tester.getTopLeft(chips.first).dx, closeTo(16, 0.01));
+        expect(tester.getTopRight(chips.last).dx, closeTo(width - 16, 0.01));
+        expect(find.byType(Scrollable), findsNothing);
+      });
+    }
 
-    testWidgets('scrolls instead of overflowing on a narrow screen',
-        (tester) async {
-      await pumpBar(tester, 240);
-      expect(tester.takeException(), isNull);
-      expect(find.byType(RawChip), findsNWidgets(5));
+    testWidgets('gives more room to longer labels', (tester) async {
+      await pumpBar(tester, 360);
+      double chipWidth(String label) => tester
+          .getSize(find.ancestor(
+            of: find.text(label),
+            matching: find.byType(RawChip),
+          ))
+          .width;
+      expect(chipWidth('Déjà achetés'), greaterThan(chipWidth('Tous')));
     });
   });
 }
