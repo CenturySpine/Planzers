@@ -31,10 +31,15 @@ class TripMealDetailsPage extends ConsumerStatefulWidget {
     super.key,
     required this.tripId,
     this.mealId,
+    this.initialDate,
   });
 
   final String tripId;
   final String? mealId;
+
+  /// Day a new meal starts on (e.g. the day selected in the planning).
+  /// Falls back to the trip's first day.
+  final DateTime? initialDate;
 
   bool get isCreate => mealId == null || mealId!.trim().isEmpty;
 
@@ -1478,9 +1483,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
               _hydrateFromMeal(meal, participants);
             } else if (!_isHydrated) {
               _isHydrated = true;
-              final tripStart = trip.startDate;
-              if (tripStart != null) {
-                _mealDate = DateUtils.dateOnly(tripStart);
+              final initialDate = widget.initialDate ?? trip.startDate;
+              if (initialDate != null) {
+                _mealDate = DateUtils.dateOnly(initialDate);
               }
             }
             final areAllParticipantsSelected = memberIds.isNotEmpty &&

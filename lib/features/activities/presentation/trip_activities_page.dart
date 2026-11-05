@@ -29,6 +29,7 @@ import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_lodging.dart';
 import 'package:planerz/features/trips/data/trip_lodging_plan.dart';
 import 'package:planerz/features/trips/data/trip_lodgings_repository.dart';
+import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_lodging_editor_sheet.dart';
@@ -532,6 +533,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
           ? _ActivitiesExpandableFab(
               tripId: trip.id,
               canCreateMeal: canCreateMeal,
+              selectedDay: _agendaSelectedDay,
             )
           : null,
     );
@@ -740,10 +742,14 @@ class _ActivitiesExpandableFab extends StatelessWidget {
   const _ActivitiesExpandableFab({
     required this.tripId,
     required this.canCreateMeal,
+    required this.selectedDay,
   });
 
   final String tripId;
   final bool canCreateMeal;
+
+  /// Day selected in the agenda: a meal added from here starts on it.
+  final DateTime selectedDay;
 
   void _openActivityCreate(
     BuildContext context,
@@ -803,7 +809,10 @@ class _ActivitiesExpandableFab extends StatelessWidget {
                   option(
                     ActivityFilterGroup.repas,
                     l10n.activitiesFilterRepas,
-                    () => context.push('/trips/$tripId/meals/new'),
+                    () => context.push(
+                      '/trips/$tripId/meals/new'
+                      '?day=${TripMemberStay.dateKeyFromDateTime(selectedDay)}',
+                    ),
                   ),
                 // Nights and transports are not added here: nights follow the
                 // trip's lodgings, and the planning offers transports between

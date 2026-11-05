@@ -243,6 +243,8 @@ final GoRouter appRouter = GoRouter(
           path: 'meals/new',
           builder: (context, state) => TripMealDetailsPage(
             tripId: state.pathParameters['tripId']!,
+            initialDate:
+                DateTime.tryParse(state.uri.queryParameters['day'] ?? ''),
           ),
         ),
         GoRoute(
