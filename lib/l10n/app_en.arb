@@ -944,6 +944,8 @@
   "shoppingPrivateItemTooltip": "Private · only visible to you",
   "shoppingMakePrivateMenu": "Make private",
   "shoppingMakeSharedMenu": "Make visible to everyone",
+  "shoppingAddSharedItem": "Shared item",
+  "shoppingAddPrivateItem": "Private item",
   "shoppingAddToPackingMenu": "Add to packing list",
   "shoppingInPackingListTooltip": "In the packing list",
   "shoppingPackingLabelCount": "{label} ×{quantity}",

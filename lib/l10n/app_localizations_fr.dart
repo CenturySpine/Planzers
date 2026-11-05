@@ -2374,6 +2374,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get shoppingMakeSharedMenu => 'Rendre visible par tous';
 
   @override
+  String get shoppingAddSharedItem => 'Article partagé';
+
+  @override
+  String get shoppingAddPrivateItem => 'Article privé';
+
+  @override
   String get shoppingAddToPackingMenu => 'Ajouter à « À emporter »';
 
   @override
@@ -6739,6 +6745,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get shoppingMakeSharedMenu => 'Rendre visible par tous';
+
+  @override
+  String get shoppingAddSharedItem => 'Article partagé';
+
+  @override
+  String get shoppingAddPrivateItem => 'Article privé';
 
   @override
   String get shoppingAddToPackingMenu => 'Ajouter à « À emporter »';

@@ -905,6 +905,8 @@
   "shoppingPrivateItemTooltip": "Privé · visible par vous seul",
   "shoppingMakePrivateMenu": "Rendre privé",
   "shoppingMakeSharedMenu": "Rendre visible par tous",
+  "shoppingAddSharedItem": "Article partagé",
+  "shoppingAddPrivateItem": "Article privé",
   "shoppingAddToPackingMenu": "Ajouter à « À emporter »",
   "shoppingInPackingListTooltip": "Dans la liste « À emporter »",
   "shoppingPackingLabelCount": "{label} ×{quantity}",

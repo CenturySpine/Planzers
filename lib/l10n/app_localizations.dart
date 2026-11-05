@@ -4261,6 +4261,18 @@ abstract class AppLocalizations {
   /// **'Rendre visible par tous'**
   String get shoppingMakeSharedMenu;
 
+  /// No description provided for @shoppingAddSharedItem.
+  ///
+  /// In fr, this message translates to:
+  /// **'Article partagé'**
+  String get shoppingAddSharedItem;
+
+  /// No description provided for @shoppingAddPrivateItem.
+  ///
+  /// In fr, this message translates to:
+  /// **'Article privé'**
+  String get shoppingAddPrivateItem;
+
   /// No description provided for @shoppingAddToPackingMenu.
   ///
   /// In fr, this message translates to:

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:planerz/app/theme/app_icons.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -110,6 +111,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     with SingleTickerProviderStateMixin {
   late final TextEditingController _searchController;
   late final TabController _tabController;
+  int _currentTabIndex = 0;
   ShoppingListStatusFilter _manualListStatusFilter = ShoppingListStatusFilter.all;
   bool _manualOnlyClaimedByMe = false;
   bool _manualOnlyPrivate = false;
@@ -128,7 +130,14 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this)
+      ..addListener(_onTabChanged);
+  }
+
+  /// The add button depends on the tab, so it is rebuilt on tab changes.
+  void _onTabChanged() {
+    if (_tabController.index == _currentTabIndex) return;
+    setState(() => _currentTabIndex = _tabController.index);
   }
 
   @override
@@ -157,10 +166,17 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
 
   Future<void> _addFromFabAddItem(
     BuildContext context, {
+    required bool manualLockRestrictsEditing,
     required bool consolidatedLockRestrictsEditing,
   }) async {
     if (_tabController.index == 0) {
-      await _addManualListItem();
+      // The lock only covers the shared list: private items can still be
+      // added, so there is nothing to choose.
+      final isPrivate = manualLockRestrictsEditing
+          ? true
+          : await _pickManualItemVisibility(context);
+      if (isPrivate == null) return;
+      await _addManualListItem(isPrivate: isPrivate);
       return;
     }
     await _addConsolidatedListItem(
@@ -169,18 +185,78 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     );
   }
 
-  Future<void> _addManualListItem() async {
+  /// Asks whether the new free-list item is shared or private (true); null
+  /// when the sheet is dismissed.
+  Future<bool?> _pickManualItemVisibility(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return showModalBottomSheet<bool>(
+      context: context,
+      builder: (sheetContext) {
+        final colorScheme = Theme.of(sheetContext).colorScheme;
+        Widget option(IconData icon, String label, bool isPrivate) => ListTile(
+              leading: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: colorScheme.onPrimaryContainer,
+                ),
+              ),
+              title: Text(label),
+              trailing: const Icon(PhosphorIconsRegular.plus),
+              onTap: () => Navigator.of(sheetContext).pop(isPrivate),
+            );
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                  child: Text(
+                    l10n.commonAdd,
+                    style: Theme.of(sheetContext).textTheme.titleLarge,
+                  ),
+                ),
+                option(
+                  PhosphorIconsRegular.users,
+                  l10n.shoppingAddSharedItem,
+                  false,
+                ),
+                option(
+                  PhosphorIconsRegular.lock,
+                  l10n.shoppingAddPrivateItem,
+                  true,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _addManualListItem({required bool isPrivate}) async {
     final topOrder = widget.items.isEmpty ? 0 : (widget.items.first.order - 1);
-    // With the « private » filter on, a new item is private so it stays in
-    // sight.
     final newItemId = await ref.read(shoppingRepositoryProvider).addItem(
           tripId: widget.tripId,
           label: '',
           order: topOrder,
-          isPrivate: _manualOnlyPrivate,
+          isPrivate: isPrivate,
         );
     if (!mounted) return;
-    setState(() => _pendingAutofocusItemId = newItemId);
+    setState(() {
+      // A shared item would be hidden by the « private » filter.
+      if (!isPrivate) _manualOnlyPrivate = false;
+      _pendingAutofocusItemId = newItemId;
+    });
   }
 
   Future<void> _addConsolidatedListItem(
@@ -442,6 +518,8 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
           minRole: TripPermissionRole.admin,
         );
     final showShoppingFab = isAdminOrAbove || !locks.manualListLocked;
+    // On the free list, private items can be added even when it is locked.
+    final showAddItemFab = _currentTabIndex == 0 || showShoppingFab;
     final currentUserOwnerAsync = ref.watch(
       usersDataByIdsKeyStreamProvider(stableUsersIdsKey([currentUid])),
     );
@@ -904,7 +982,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                   child: const Center(child: CircularProgressIndicator()),
                 ),
               ),
-            if (showShoppingFab)
+            if (showAddItemFab)
               Positioned(
                 right: 16,
                 bottom: 16,
@@ -914,6 +992,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                   onPressed: () => unawaited(
                     _addFromFabAddItem(
                       context,
+                      manualLockRestrictsEditing: manualLockRestrictsEditing,
                       consolidatedLockRestrictsEditing:
                           consolidatedLockRestrictsEditing,
                     ),
