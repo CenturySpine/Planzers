@@ -117,8 +117,8 @@ class TripLodgingStageCard extends StatelessWidget {
     }
 
     final directionsTarget = tripLodgingDirectionsTarget(lodging);
-    final hasPreview =
-        lodging.linkUrl.trim().isNotEmpty && lodging.linkPreview.isNotEmpty;
+    final linkUrl = lodging.linkUrl.trim();
+    final hasPreview = linkUrl.isNotEmpty && lodging.linkPreview.isNotEmpty;
     return Material(
       color: AppTokens.surface,
       surfaceTintColor: Colors.transparent,
@@ -154,6 +154,13 @@ class TripLodgingStageCard extends StatelessWidget {
                       : '',
                 ),
               ),
+              if (linkUrl.isNotEmpty)
+                IconButton(
+                  tooltip: l10n.tripLodgingOpenLink,
+                  icon: const Icon(PhosphorIconsRegular.arrowSquareOut),
+                  color: AppTokens.secondary,
+                  onPressed: () => openTripLodgingLink(context, linkUrl),
+                ),
               if (directionsTarget.isNotEmpty)
                 IconButton(
                   tooltip: l10n.tripOverviewOpenLocation,

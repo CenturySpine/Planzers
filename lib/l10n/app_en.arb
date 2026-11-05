@@ -1315,6 +1315,7 @@
   "tripLodgingMissing": "Lodging not filled in",
   "tripLodgingPrevious": "Previous stage",
   "tripLodgingNext": "Next stage",
+  "tripLodgingOpenLink": "Open link",
   "tripLodgingReuseLabel": "Already in this trip",
   "tripLodgingAddressLabel": "Address",
   "tripLodgingPlaceRequired": "Fill in at least a name, an address or a link.",

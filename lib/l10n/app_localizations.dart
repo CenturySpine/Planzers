@@ -6080,6 +6080,12 @@ abstract class AppLocalizations {
   /// **'Étape suivante'**
   String get tripLodgingNext;
 
+  /// No description provided for @tripLodgingOpenLink.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir le lien'**
+  String get tripLodgingOpenLink;
+
   /// No description provided for @tripLodgingReuseLabel.
   ///
   /// In fr, this message translates to:

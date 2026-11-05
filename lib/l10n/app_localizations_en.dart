@@ -3388,6 +3388,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripLodgingNext => 'Next stage';
 
   @override
+  String get tripLodgingOpenLink => 'Open link';
+
+  @override
   String get tripLodgingReuseLabel => 'Already in this trip';
 
   @override
@@ -7720,6 +7723,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripLodgingNext => 'Next stage';
+
+  @override
+  String get tripLodgingOpenLink => 'Open link';
 
   @override
   String get tripLodgingReuseLabel => 'Already in this trip';

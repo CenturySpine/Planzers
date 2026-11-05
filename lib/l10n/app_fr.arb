@@ -1315,6 +1315,7 @@
   "tripLodgingMissing": "Hébergement non renseigné",
   "tripLodgingPrevious": "Étape précédente",
   "tripLodgingNext": "Étape suivante",
+  "tripLodgingOpenLink": "Ouvrir le lien",
   "tripLodgingReuseLabel": "Déjà dans le voyage",
   "tripLodgingAddressLabel": "Adresse",
   "tripLodgingPlaceRequired": "Renseigne au moins un nom, une adresse ou un lien.",

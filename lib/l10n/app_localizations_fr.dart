@@ -3417,6 +3417,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripLodgingNext => 'Étape suivante';
 
   @override
+  String get tripLodgingOpenLink => 'Ouvrir le lien';
+
+  @override
   String get tripLodgingReuseLabel => 'Déjà dans le voyage';
 
   @override
@@ -7788,6 +7791,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripLodgingNext => 'Étape suivante';
+
+  @override
+  String get tripLodgingOpenLink => 'Ouvrir le lien';
 
   @override
   String get tripLodgingReuseLabel => 'Déjà dans le voyage';
