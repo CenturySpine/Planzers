@@ -3170,6 +3170,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'No traveler is allowed in this section to share an expense.';
 
   @override
+  String get expensesAttachmentsTitle => 'Receipts';
+
+  @override
+  String get expensesAttachmentsAdd => 'Add a receipt';
+
+  @override
+  String expensesAttachmentsLimit(int max) {
+    return '$max receipts at most per expense';
+  }
+
+  @override
+  String get expensesAttachmentsAddFailed => 'Could not add the receipt';
+
+  @override
+  String get expensesAttachmentsDeleteTitle => 'Delete this receipt?';
+
+  @override
   String chatSendImpossible(Object error) {
     return 'Unable to send: $error';
   }
@@ -7505,6 +7522,23 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get expensesNoAllowedTravelerInPostForShare =>
       'No traveler is allowed in this section to share an expense.';
+
+  @override
+  String get expensesAttachmentsTitle => 'Receipts';
+
+  @override
+  String get expensesAttachmentsAdd => 'Add a receipt';
+
+  @override
+  String expensesAttachmentsLimit(int max) {
+    return '$max receipts at most per expense';
+  }
+
+  @override
+  String get expensesAttachmentsAddFailed => 'Could not add the receipt';
+
+  @override
+  String get expensesAttachmentsDeleteTitle => 'Delete this receipt?';
 
   @override
   String chatSendImpossible(Object error) {

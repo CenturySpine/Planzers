@@ -3198,6 +3198,24 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucun voyageur autorisé dans ce poste pour partager une dépense.';
 
   @override
+  String get expensesAttachmentsTitle => 'Justificatifs';
+
+  @override
+  String get expensesAttachmentsAdd => 'Ajouter un justificatif';
+
+  @override
+  String expensesAttachmentsLimit(int max) {
+    return '$max justificatifs maximum par dépense';
+  }
+
+  @override
+  String get expensesAttachmentsAddFailed =>
+      'Impossible d\'ajouter le justificatif';
+
+  @override
+  String get expensesAttachmentsDeleteTitle => 'Supprimer ce justificatif ?';
+
+  @override
   String chatSendImpossible(Object error) {
     return 'Envoi impossible : $error';
   }
@@ -7572,6 +7590,24 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get expensesNoAllowedTravelerInPostForShare =>
       'Aucun voyageur autorisé dans ce poste pour partager une dépense.';
+
+  @override
+  String get expensesAttachmentsTitle => 'Justificatifs';
+
+  @override
+  String get expensesAttachmentsAdd => 'Ajouter un justificatif';
+
+  @override
+  String expensesAttachmentsLimit(int max) {
+    return '$max justificatifs maximum par dépense';
+  }
+
+  @override
+  String get expensesAttachmentsAddFailed =>
+      'Impossible d\'ajouter le justificatif';
+
+  @override
+  String get expensesAttachmentsDeleteTitle => 'Supprimer ce justificatif ?';
 
   @override
   String chatSendImpossible(Object error) {

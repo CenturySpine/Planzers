@@ -1236,6 +1236,18 @@
   "expensesExpenseSaved": "Dépense enregistrée",
   "expensesNewExpenseTitle": "Nouvelle dépense",
   "expensesNoAllowedTravelerInPostForShare": "Aucun voyageur autorisé dans ce poste pour partager une dépense.",
+  "expensesAttachmentsTitle": "Justificatifs",
+  "expensesAttachmentsAdd": "Ajouter un justificatif",
+  "expensesAttachmentsLimit": "{max} justificatifs maximum par dépense",
+  "@expensesAttachmentsLimit": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "expensesAttachmentsAddFailed": "Impossible d'ajouter le justificatif",
+  "expensesAttachmentsDeleteTitle": "Supprimer ce justificatif ?",
   "chatSendImpossible": "Envoi impossible : {error}",
   "@chatSendImpossible": {"placeholders": {"error": {}}},
   "chatNoRecentEmoji": "Aucun emoji récent",

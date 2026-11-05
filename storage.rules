@@ -73,6 +73,22 @@ service firebase.storage {
         && isValidBannerFileName(fileName);
     }
 
+    // Receipts attached to an expense, stored like activity photos and read
+    // by every trip member (rule below):
+    // trips/{tripId}/expenses/{expenseId}/<attachmentId>.jpg and <attachmentId>_thumb.jpg
+    // Removed server-side when their record or their expense is deleted, and
+    // with the trip's files; the author may remove a file left without record.
+    match /trips/{tripId}/expenses/{expenseId}/{fileName} {
+      allow create: if isTripMember(tripId)
+        && resource == null
+        && request.resource.size <= 3 * 1024 * 1024
+        && request.resource.contentType == 'image/jpeg'
+        && fileName.matches('[A-Za-z0-9]+(_thumb)?[.]jpg')
+        && request.resource.metadata.authorId == request.auth.uid;
+      allow delete: if isTripMember(tripId)
+        && resource.metadata.authorId == request.auth.uid;
+    }
+
     match /trips/{tripId}/{allPaths=**} {
       allow read: if isTripMember(tripId);
       allow write: if false;

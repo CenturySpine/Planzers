@@ -4,8 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
+import 'package:planerz/features/expenses/data/expense_attachment.dart';
+import 'package:planerz/features/expenses/data/expense_attachments_repository.dart';
 import 'package:planerz/features/expenses/data/expense_icon_catalog.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
+import 'package:planerz/features/expenses/presentation/expense_attachments_section.dart';
 import 'package:planerz/features/expenses/presentation/expense_format.dart';
 import 'package:planerz/features/expenses/presentation/expense_icon_picker_sheet.dart';
 import 'package:planerz/features/trips/data/participant_group.dart';
@@ -65,6 +68,9 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
   ExpenseSplitMode _splitMode = ExpenseSplitMode.equal;
   final Map<String, TextEditingController> _shareControllers = {};
   bool _saving = false;
+
+  /// Receipts picked before saving, uploaded once the expense exists.
+  final List<Uint8List> _pendingAttachments = [];
 
   List<String> get _scopeMemberIds => widget.participantScopeMemberIds
       .map((id) => id.trim())
@@ -156,6 +162,35 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
     setState(() => _expenseDate = picked);
   }
 
+  Future<void> _addAttachments() async {
+    final photos = await pickExpenseAttachmentPhotos(
+      context,
+      remaining: expenseAttachmentsMaxPerExpense - _pendingAttachments.length,
+    );
+    if (photos.isEmpty || !mounted) return;
+    setState(() => _pendingAttachments.addAll(photos));
+  }
+
+  /// Uploads the picked receipts to the new expense; true when one failed
+  /// (the expense stays saved).
+  Future<bool> _uploadPendingAttachments(String expenseId) async {
+    final repository = ref.read(expenseAttachmentsRepositoryProvider);
+    var failed = false;
+    for (final bytes in List.of(_pendingAttachments)) {
+      try {
+        await repository.addAttachment(
+          tripId: widget.tripId,
+          expenseId: expenseId,
+          bytes: bytes,
+        );
+      } catch (error) {
+        debugPrint('expense attachment upload failed: $error');
+        failed = true;
+      }
+    }
+    return failed;
+  }
+
   Future<void> _save() async {
     if (_saving || !_isValid(AppLocalizations.of(context)!)) return;
     final l10n = AppLocalizations.of(context)!;
@@ -179,7 +214,7 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
     }
     setState(() => _saving = true);
     try {
-      await ref.read(expensesRepositoryProvider).addExpense(
+      final expenseId = await ref.read(expensesRepositoryProvider).addExpense(
             tripId: widget.tripId,
             groupId: widget.groupId,
             title: _titleController.text,
@@ -192,10 +227,17 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
             splitMode: _splitMode,
             participantShares: shares,
           );
+      final attachmentsFailed = await _uploadPendingAttachments(expenseId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
         SnackBar(content: Text(l10n.expensesExpenseSaved)),
       );
+      if (attachmentsFailed) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.expensesAttachmentsAddFailed)),
+        );
+      }
       Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
@@ -232,56 +274,75 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Form(
-                key: _formKey,
-                child: _ExpenseFormBody(
-                  titleController: _titleController,
-                  amountController: _amountController,
-                  iconKey: _iconKey,
-                  currency: _currency,
-                  paidBy: _paidBy,
-                  expenseDate: _expenseDate,
-                  splitMode: _splitMode,
-                  participantIds: _participantIds,
-                  shareControllers: _shareControllers,
-                  members: members,
-                  memberLabel: (id) => _label(id, l10n),
-                  editing: true,
-                  currentUserMemberId: widget.currentUserMemberId,
-                  groupParts: groupParts,
-                  locale: locale,
-                  onIconPick: () async {
-                    final picked = await showExpenseIconPickerSheet(
-                      context,
-                      currentKey: _iconKey,
-                      title: l10n.expensesIconExpenseTitle,
-                    );
-                    if (picked != null) setState(() => _iconKey = picked);
-                  },
-                  onCurrencyChanged: (v) => setState(() => _currency = v),
-                  onPaidByChanged: (v) => setState(() => _paidBy = v),
-                  onPickDate: _pickDate,
-                  onSplitModeChanged: _onSplitModeChanged,
-                  onParticipantToggled: (id, on) {
-                    setState(() {
-                      if (on) {
-                        _participantIds.add(id);
-                        if (_splitMode == ExpenseSplitMode.customAmounts) {
-                          final total = _parsedTotal();
-                          final each =
-                              _participantIds.isEmpty ? 0.0 : total / _participantIds.length;
-                          _shareControllers[id] = TextEditingController(
-                            text: each.toStringAsFixed(2),
-                          );
-                        }
-                      } else {
-                        _participantIds.remove(id);
-                        _shareControllers.remove(id)?.dispose();
-                      }
-                    });
-                  },
-                  onShareChanged: () => setState(() {}),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Form(
+                    key: _formKey,
+                    child: _ExpenseFormBody(
+                      titleController: _titleController,
+                      amountController: _amountController,
+                      iconKey: _iconKey,
+                      currency: _currency,
+                      paidBy: _paidBy,
+                      expenseDate: _expenseDate,
+                      splitMode: _splitMode,
+                      participantIds: _participantIds,
+                      shareControllers: _shareControllers,
+                      members: members,
+                      memberLabel: (id) => _label(id, l10n),
+                      editing: true,
+                      currentUserMemberId: widget.currentUserMemberId,
+                      groupParts: groupParts,
+                      locale: locale,
+                      onIconPick: () async {
+                        final picked = await showExpenseIconPickerSheet(
+                          context,
+                          currentKey: _iconKey,
+                          title: l10n.expensesIconExpenseTitle,
+                        );
+                        if (picked != null) setState(() => _iconKey = picked);
+                      },
+                      onCurrencyChanged: (v) => setState(() => _currency = v),
+                      onPaidByChanged: (v) => setState(() => _paidBy = v),
+                      onPickDate: _pickDate,
+                      onSplitModeChanged: _onSplitModeChanged,
+                      onParticipantToggled: (id, on) {
+                        setState(() {
+                          if (on) {
+                            _participantIds.add(id);
+                            if (_splitMode == ExpenseSplitMode.customAmounts) {
+                              final total = _parsedTotal();
+                              final each =
+                                  _participantIds.isEmpty ? 0.0 : total / _participantIds.length;
+                              _shareControllers[id] = TextEditingController(
+                                text: each.toStringAsFixed(2),
+                              );
+                            }
+                          } else {
+                            _participantIds.remove(id);
+                            _shareControllers.remove(id)?.dispose();
+                          }
+                        });
+                      },
+                      onShareChanged: () => setState(() {}),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  PendingExpenseAttachments(
+                    photos: _pendingAttachments,
+                    onAdd: !_saving &&
+                            _pendingAttachments.length <
+                                expenseAttachmentsMaxPerExpense
+                        ? _addAttachments
+                        : null,
+                    onRemove: _saving
+                        ? null
+                        : (index) => setState(
+                              () => _pendingAttachments.removeAt(index),
+                            ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -688,62 +749,73 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Form(
-                key: _formKey,
-                child: _ExpenseFormBody(
-                  titleController: _titleController,
-                  amountController: _amountController,
-                  iconKey: _iconKey,
-                  currency: _currency,
-                  paidBy: _paidBy,
-                  expenseDate: _expenseDate,
-                  splitMode: _splitMode,
-                  participantIds: _participantIds,
-                  shareControllers: _shareControllers,
-                  members: members,
-                  memberLabel: (id) => _label(id, l10n),
-                  editing: _editing,
-                  currentUserMemberId: widget.currentUserMemberId,
-                  groupParts: groupParts,
-                  locale: locale,
-                  onIconPick: _editing
-                      ? () async {
-                          final picked = await showExpenseIconPickerSheet(
-                            context,
-                            currentKey: _iconKey,
-                            title: l10n.expensesIconExpenseTitle,
-                          );
-                          if (picked != null) setState(() => _iconKey = picked);
-                        }
-                      : null,
-                  onCurrencyChanged:
-                      _editing ? (v) => setState(() => _currency = v) : null,
-                  onPaidByChanged: _editing ? (v) => setState(() => _paidBy = v) : null,
-                  onPickDate: _editing ? _pickDate : null,
-                  onSplitModeChanged: _editing ? _onSplitModeChanged : null,
-                  onParticipantToggled: _editing
-                      ? (id, on) {
-                          setState(() {
-                            if (on) {
-                              _participantIds.add(id);
-                              if (_splitMode == ExpenseSplitMode.customAmounts) {
-                                final total = _parsedTotal();
-                                final each = _participantIds.isEmpty
-                                    ? 0.0
-                                    : total / _participantIds.length;
-                                _shareControllers[id] = TextEditingController(
-                                  text: each.toStringAsFixed(2),
-                                );
-                              }
-                            } else {
-                              _participantIds.remove(id);
-                              _shareControllers.remove(id)?.dispose();
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Form(
+                    key: _formKey,
+                    child: _ExpenseFormBody(
+                      titleController: _titleController,
+                      amountController: _amountController,
+                      iconKey: _iconKey,
+                      currency: _currency,
+                      paidBy: _paidBy,
+                      expenseDate: _expenseDate,
+                      splitMode: _splitMode,
+                      participantIds: _participantIds,
+                      shareControllers: _shareControllers,
+                      members: members,
+                      memberLabel: (id) => _label(id, l10n),
+                      editing: _editing,
+                      currentUserMemberId: widget.currentUserMemberId,
+                      groupParts: groupParts,
+                      locale: locale,
+                      onIconPick: _editing
+                          ? () async {
+                              final picked = await showExpenseIconPickerSheet(
+                                context,
+                                currentKey: _iconKey,
+                                title: l10n.expensesIconExpenseTitle,
+                              );
+                              if (picked != null) setState(() => _iconKey = picked);
                             }
-                          });
-                        }
-                      : null,
-                  onShareChanged: () => setState(() {}),
-                ),
+                          : null,
+                      onCurrencyChanged:
+                          _editing ? (v) => setState(() => _currency = v) : null,
+                      onPaidByChanged: _editing ? (v) => setState(() => _paidBy = v) : null,
+                      onPickDate: _editing ? _pickDate : null,
+                      onSplitModeChanged: _editing ? _onSplitModeChanged : null,
+                      onParticipantToggled: _editing
+                          ? (id, on) {
+                              setState(() {
+                                if (on) {
+                                  _participantIds.add(id);
+                                  if (_splitMode == ExpenseSplitMode.customAmounts) {
+                                    final total = _parsedTotal();
+                                    final each = _participantIds.isEmpty
+                                        ? 0.0
+                                        : total / _participantIds.length;
+                                    _shareControllers[id] = TextEditingController(
+                                      text: each.toStringAsFixed(2),
+                                    );
+                                  }
+                                } else {
+                                  _participantIds.remove(id);
+                                  _shareControllers.remove(id)?.dispose();
+                                }
+                              });
+                            }
+                          : null,
+                      onShareChanged: () => setState(() {}),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ExpenseAttachmentsSection(
+                    tripId: widget.tripId,
+                    expenseId: widget.expense.id,
+                    canEdit: widget.canEditExpense,
+                  ),
+                ],
               ),
             ),
           ),

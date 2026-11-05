@@ -21,6 +21,10 @@ const {
   deleteMealPhotoRecords,
 } = require('./wallet_cleanup');
 const {
+  deleteExpenseAttachmentFiles,
+  deleteExpenseAttachments,
+} = require('./expense_attachments');
+const {
   activityPlaceQuery,
   activityPlaceQueryKey,
 } = require('./activity_place_preview');
@@ -5316,6 +5320,33 @@ exports.deleteActivityPhotoFilesOnDeleted = onDocumentDeleted(
       tripId: event.params.tripId,
       uid: event.params.uid,
       photoId: event.params.photoId,
+    });
+  }
+);
+
+// Receipts follow their expense: deleting it (alone, with its post or with
+// the trip) removes its receipts, records and files.
+exports.deleteExpenseAttachmentsOnExpenseDeleted = onDocumentDeleted(
+  'trips/{tripId}/expenses/{expenseId}',
+  async (event) => {
+    await deleteExpenseAttachments({
+      db: admin.firestore(),
+      bucket: admin.storage().bucket(),
+      tripId: event.params.tripId,
+      expenseId: event.params.expenseId,
+    });
+  }
+);
+
+// Whoever deletes a receipt record, its files are removed too.
+exports.deleteExpenseAttachmentFilesOnDeleted = onDocumentDeleted(
+  'trips/{tripId}/expenses/{expenseId}/attachments/{attachmentId}',
+  async (event) => {
+    await deleteExpenseAttachmentFiles({
+      bucket: admin.storage().bucket(),
+      tripId: event.params.tripId,
+      expenseId: event.params.expenseId,
+      attachmentId: event.params.attachmentId,
     });
   }
 );

@@ -5702,6 +5702,36 @@ abstract class AppLocalizations {
   /// **'Aucun voyageur autorisé dans ce poste pour partager une dépense.'**
   String get expensesNoAllowedTravelerInPostForShare;
 
+  /// No description provided for @expensesAttachmentsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Justificatifs'**
+  String get expensesAttachmentsTitle;
+
+  /// No description provided for @expensesAttachmentsAdd.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un justificatif'**
+  String get expensesAttachmentsAdd;
+
+  /// No description provided for @expensesAttachmentsLimit.
+  ///
+  /// In fr, this message translates to:
+  /// **'{max} justificatifs maximum par dépense'**
+  String expensesAttachmentsLimit(int max);
+
+  /// No description provided for @expensesAttachmentsAddFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'ajouter le justificatif'**
+  String get expensesAttachmentsAddFailed;
+
+  /// No description provided for @expensesAttachmentsDeleteTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer ce justificatif ?'**
+  String get expensesAttachmentsDeleteTitle;
+
   /// No description provided for @chatSendImpossible.
   ///
   /// In fr, this message translates to:

@@ -808,6 +808,34 @@ service cloud.firestore {
           && request.resource.data.get('operationType', 'expense') != 'settlement';
         allow delete: if isTripMember(tripId)
           && resource.data.get('operationType', 'expense') != 'settlement';
+
+        /// Receipts attached to an expense (photos, stored like activity
+        /// photos under trips/{tripId}/expenses/{expenseId}/). Read by every
+        /// trip member; never changed once recorded. Like the expense itself,
+        /// who may add or remove them (and how many) is applied by the app.
+        /// The files are removed server-side when a record is deleted, and
+        /// the records with their expense.
+        match /attachments/{attachmentId} {
+          function isValidExpenseAttachment(data) {
+            return data.keys().hasOnly(['url', 'thumbUrl', 'createdBy', 'createdAt'])
+              && data.url is string
+              && data.url.size() > 0
+              && data.url.size() <= 2048
+              && data.thumbUrl is string
+              && data.thumbUrl.size() > 0
+              && data.thumbUrl.size() <= 2048
+              && data.createdBy == request.auth.uid
+              && data.createdAt == request.time;
+          }
+
+          allow read: if isTripMember(tripId);
+          allow create: if isTripMember(tripId)
+            && isValidExpenseAttachment(request.resource.data)
+            && get(/databases/$(database)/documents/trips/$(tripId)/expenses/$(expenseId))
+                .data.get('operationType', 'expense') != 'settlement';
+          allow update: if false;
+          allow delete: if isTripMember(tripId);
+        }
       }
 
       match /rooms/{roomId} {

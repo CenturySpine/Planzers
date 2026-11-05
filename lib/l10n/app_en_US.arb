@@ -1197,6 +1197,18 @@
   "expensesExpenseSaved": "Expense saved",
   "expensesNewExpenseTitle": "New expense",
   "expensesNoAllowedTravelerInPostForShare": "No traveler is allowed in this section to share an expense.",
+  "expensesAttachmentsTitle": "Receipts",
+  "expensesAttachmentsAdd": "Add a receipt",
+  "expensesAttachmentsLimit": "{max} receipts at most per expense",
+  "@expensesAttachmentsLimit": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "expensesAttachmentsAddFailed": "Could not add the receipt",
+  "expensesAttachmentsDeleteTitle": "Delete this receipt?",
   "chatSendImpossible": "Unable to send: {error}",
   "@chatSendImpossible": {"placeholders": {"error": {}}},
   "chatNoRecentEmoji": "No recent emoji",
