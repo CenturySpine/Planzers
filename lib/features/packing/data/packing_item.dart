@@ -32,6 +32,7 @@ class PackingItem {
     required this.scope,
     required this.shared,
     this.createdAt,
+    this.sourceShoppingItemId,
   });
 
   final String id;
@@ -47,6 +48,10 @@ class PackingItem {
 
   final DateTime? createdAt;
 
+  /// Id of the private shopping item this item was added from, if any (its
+  /// text is a copy: later changes to the shopping item do not follow).
+  final String? sourceShoppingItemId;
+
   /// True when the item comes from a pushed organiser list and cannot be
   /// edited or removed by the traveler (only checked/unchecked).
   bool get isFromOrganiser => scope == PackingItemScope.admin;
@@ -61,6 +66,7 @@ class PackingItem {
       scope: PackingItemScope.fromValue(data['scope']),
       shared: data['shared'] == true,
       createdAt: rawCreatedAt is Timestamp ? rawCreatedAt.toDate() : null,
+      sourceShoppingItemId: (data['sourceShoppingItemId'] as String?)?.trim(),
     );
   }
 }

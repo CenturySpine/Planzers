@@ -2199,7 +2199,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shoppingFiltersHelpBody =>
-      'The filters for all items, to buy, and already checked are mutually exclusive. The « claimed by me » filter adds on top and only keeps your claimed lines among what those filters already show.';
+      'The filters for all items, to buy, and already checked are mutually exclusive. The « claimed by me » and « private » filters add on top and only keep your claimed or private lines among what those filters already show.';
 
   @override
   String get shoppingFilterAll => 'All items';
@@ -2331,6 +2331,46 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get shoppingConsolidatedRowNotPersisted =>
       'This item is not on the saved list yet. An administrator must save the consolidated list before this can be shared with everyone.';
+
+  @override
+  String get shoppingFilterPrivate => 'Private';
+
+  @override
+  String get shoppingFilterPrivateTooltip => 'My private items';
+
+  @override
+  String get shoppingPrivateItemTooltip => 'Private · only visible to you';
+
+  @override
+  String get shoppingMakePrivateMenu => 'Make private';
+
+  @override
+  String get shoppingMakeSharedMenu => 'Make visible to everyone';
+
+  @override
+  String get shoppingAddToPackingMenu => 'Add to packing list';
+
+  @override
+  String get shoppingInPackingListTooltip => 'In the packing list';
+
+  @override
+  String shoppingPackingLabelCount(String label, double quantity) {
+    final intl.NumberFormat quantityNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String quantityString = quantityNumberFormat.format(quantity);
+
+    return '$label ×$quantityString';
+  }
+
+  @override
+  String shoppingPackingLabelMeasure(
+      String label, double quantity, String unit) {
+    final intl.NumberFormat quantityNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String quantityString = quantityNumberFormat.format(quantity);
+
+    return '$label ($quantityString $unit)';
+  }
 
   @override
   String get activityCategorySport => 'Sport';
@@ -6487,7 +6527,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get shoppingFiltersHelpBody =>
-      'The filters for all items, to buy, and already checked are mutually exclusive. The « claimed by me » filter adds on top and only keeps your claimed lines among what those filters already show.';
+      'The filters for all items, to buy, and already checked are mutually exclusive. The « claimed by me » and « private » filters add on top and only keep your claimed or private lines among what those filters already show.';
 
   @override
   String get shoppingFilterAll => 'All items';
@@ -6619,6 +6659,46 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get shoppingConsolidatedRowNotPersisted =>
       'This item is not on the saved list yet. An administrator must save the consolidated list before this can be shared with everyone.';
+
+  @override
+  String get shoppingFilterPrivate => 'Private';
+
+  @override
+  String get shoppingFilterPrivateTooltip => 'My private items';
+
+  @override
+  String get shoppingPrivateItemTooltip => 'Private · only visible to you';
+
+  @override
+  String get shoppingMakePrivateMenu => 'Make private';
+
+  @override
+  String get shoppingMakeSharedMenu => 'Make visible to everyone';
+
+  @override
+  String get shoppingAddToPackingMenu => 'Add to packing list';
+
+  @override
+  String get shoppingInPackingListTooltip => 'In the packing list';
+
+  @override
+  String shoppingPackingLabelCount(String label, double quantity) {
+    final intl.NumberFormat quantityNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String quantityString = quantityNumberFormat.format(quantity);
+
+    return '$label ×$quantityString';
+  }
+
+  @override
+  String shoppingPackingLabelMeasure(
+      String label, double quantity, String unit) {
+    final intl.NumberFormat quantityNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String quantityString = quantityNumberFormat.format(quantity);
+
+    return '$label ($quantityString $unit)';
+  }
 
   @override
   String get activityCategorySport => 'Sport';

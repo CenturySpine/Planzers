@@ -28,6 +28,7 @@ class ShoppingItemRow extends ConsumerStatefulWidget {
     this.currentParticipantId = '',
     this.checkableOnBehalfIds = const <String>{},
     this.claimLabelsById = const <String, String>{},
+    this.addedToPackingList = false,
   });
 
   final String tripId;
@@ -58,6 +59,9 @@ class ShoppingItemRow extends ConsumerStatefulWidget {
   /// Display names by participant id and user id, for holders without a
   /// loaded profile (participants without an account).
   final Map<String, String> claimLabelsById;
+
+  /// Whether the item is in the current user's "À emporter" list.
+  final bool addedToPackingList;
 
   @override
   ConsumerState<ShoppingItemRow> createState() => _ShoppingItemRowState();
@@ -104,6 +108,7 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
           tripId: widget.tripId,
           itemId: widget.item.id,
           checked: value ?? false,
+          isPrivate: widget.item.isPrivate,
         );
   }
 
@@ -115,6 +120,7 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
     await ref.read(shoppingRepositoryProvider).deleteItem(
           tripId: widget.tripId,
           itemId: widget.item.id,
+          isPrivate: widget.item.isPrivate,
         );
   }
 
@@ -144,6 +150,8 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
   }
 
   Future<void> _toggleClaim() async {
+    // A private item always stays with its owner.
+    if (widget.item.isPrivate) return;
     final user = FirebaseAuth.instance.currentUser;
     final uid = user?.uid.trim() ?? '';
     if (uid.isEmpty) return;
@@ -206,6 +214,7 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
               checked: widget.item.checked,
               quantityValue: value.quantityValue,
               quantityUnit: value.quantityUnit,
+              isPrivate: widget.item.isPrivate,
             );
       },
       onDelete: _confirmAndDelete,
@@ -224,16 +233,58 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
         ),
         Transform.translate(
           offset: const Offset(-4, 0),
-          child: _ClaimButton(
-            isClaimedByMe: isClaimedByMe,
-            isClaimedByOther: isClaimedByOther,
-            claimedByLabel: claimedByLabel,
-            claimedByPhotoUrl: claimedByPhotoUrl,
-            onTap: _toggleClaim,
-            l10n: AppLocalizations.of(context)!,
-          ),
+          child: widget.item.isPrivate
+              ? _PrivateBadge(l10n: AppLocalizations.of(context)!)
+              : _ClaimButton(
+                  isClaimedByMe: isClaimedByMe,
+                  isClaimedByOther: isClaimedByOther,
+                  claimedByLabel: claimedByLabel,
+                  claimedByPhotoUrl: claimedByPhotoUrl,
+                  onTap: _toggleClaim,
+                  l10n: AppLocalizations.of(context)!,
+                ),
         ),
       ],
+      labelTrailingWidgets: [
+        if (widget.addedToPackingList)
+          Tooltip(
+            message: AppLocalizations.of(context)!.shoppingInPackingListTooltip,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Icon(
+                PhosphorIconsRegular.suitcaseRolling,
+                size: 18,
+                color: colorScheme.primary,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Takes the place of the claim button on a private item: it is always held
+/// by its owner, the only one who sees it.
+class _PrivateBadge extends StatelessWidget {
+  const _PrivateBadge({required this.l10n});
+
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: l10n.shoppingPrivateItemTooltip,
+      child: SizedBox(
+        width: 26,
+        height: 26,
+        child: Center(
+          child: Icon(
+            PhosphorIconsFill.lock,
+            size: 16,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      ),
     );
   }
 }

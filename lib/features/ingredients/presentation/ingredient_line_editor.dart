@@ -46,6 +46,7 @@ class IngredientLineEditor extends ConsumerStatefulWidget {
     required this.onSave,
     required this.onDelete,
     this.prefixWidgets = const [],
+    this.labelTrailingWidgets = const [],
     this.hintText = 'Article…',
     this.autoFocusLabel = false,
     this.onAutoFocusHandled,
@@ -64,6 +65,9 @@ class IngredientLineEditor extends ConsumerStatefulWidget {
   final Future<void> Function(IngredientLineValue value) onSave;
   final Future<void> Function() onDelete;
   final List<Widget> prefixWidgets;
+
+  /// Shown right after the label, before the quantity (e.g. status icons).
+  final List<Widget> labelTrailingWidgets;
   final String hintText;
   final bool autoFocusLabel;
   final VoidCallback? onAutoFocusHandled;
@@ -316,6 +320,7 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
                   },
                 ),
               ),
+              ...widget.labelTrailingWidgets,
               if (widget.structureLocked)
                 _ReadOnlyQuantityDisplay(
                   quantityText: _formatQuantity(

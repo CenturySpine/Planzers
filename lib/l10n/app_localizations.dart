@@ -3994,7 +3994,7 @@ abstract class AppLocalizations {
   /// No description provided for @shoppingFiltersHelpBody.
   ///
   /// In fr, this message translates to:
-  /// **'Les filtres « tous », « à acheter » et « déjà achetés » sont exclusifs entre eux. Le filtre « claimés par moi » se cumule avec celui-ci et ne montre que vos lignes claimées parmi le résultat.'**
+  /// **'Les filtres « tous », « à acheter » et « déjà achetés » sont exclusifs entre eux. Les filtres « claimés par moi » et « privés » se cumulent avec celui-ci et ne montrent que vos lignes claimées ou privées parmi le résultat.'**
   String get shoppingFiltersHelpBody;
 
   /// No description provided for @shoppingFilterAll.
@@ -4230,6 +4230,61 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Cet article ne figure pas encore sur la liste enregistrée. Un administrateur doit enregistrer la consolidation pour partager cette action.'**
   String get shoppingConsolidatedRowNotPersisted;
+
+  /// No description provided for @shoppingFilterPrivate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Privés'**
+  String get shoppingFilterPrivate;
+
+  /// No description provided for @shoppingFilterPrivateTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes articles privés'**
+  String get shoppingFilterPrivateTooltip;
+
+  /// No description provided for @shoppingPrivateItemTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Privé · visible par vous seul'**
+  String get shoppingPrivateItemTooltip;
+
+  /// No description provided for @shoppingMakePrivateMenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rendre privé'**
+  String get shoppingMakePrivateMenu;
+
+  /// No description provided for @shoppingMakeSharedMenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rendre visible par tous'**
+  String get shoppingMakeSharedMenu;
+
+  /// No description provided for @shoppingAddToPackingMenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter à « À emporter »'**
+  String get shoppingAddToPackingMenu;
+
+  /// No description provided for @shoppingInPackingListTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dans la liste « À emporter »'**
+  String get shoppingInPackingListTooltip;
+
+  /// No description provided for @shoppingPackingLabelCount.
+  ///
+  /// In fr, this message translates to:
+  /// **'{label} ×{quantity}'**
+  String shoppingPackingLabelCount(String label, double quantity);
+
+  /// No description provided for @shoppingPackingLabelMeasure.
+  ///
+  /// In fr, this message translates to:
+  /// **'{label} ({quantity} {unit})'**
+  String shoppingPackingLabelMeasure(
+      String label, double quantity, String unit);
 
   /// No description provided for @activityCategorySport.
   ///

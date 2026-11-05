@@ -15,12 +15,15 @@ enum ShoppingListStatusFilter {
 /// An item can be held by the user's account ([currentUid]) or, when an admin
 /// assigned it before the user had an account, by their trip participant id
 /// ([currentParticipantId]).
+///
+/// [onlyPrivate] further restricts it to the user's private items.
 bool shoppingItemMatchesShoppingListFilters(
   ShoppingItem item, {
   required ShoppingListStatusFilter statusFilter,
   required bool onlyClaimedByMe,
   required String currentUid,
   String currentParticipantId = '',
+  bool onlyPrivate = false,
 }) {
   final statusOk = switch (statusFilter) {
     ShoppingListStatusFilter.all => true,
@@ -28,6 +31,7 @@ bool shoppingItemMatchesShoppingListFilters(
     ShoppingListStatusFilter.done => item.checked,
   };
   if (!statusOk) return false;
+  if (onlyPrivate && !item.isPrivate) return false;
   if (!onlyClaimedByMe) return true;
   final claimedBy = item.claimedBy?.trim() ?? '';
   return claimedBy.isNotEmpty &&
@@ -36,8 +40,8 @@ bool shoppingItemMatchesShoppingListFilters(
               claimedBy == currentParticipantId));
 }
 
-/// Status chips (exclusive) + optional « claimed by me » chip, in a
-/// single compact scrollable row.
+/// Status chips (exclusive) + « claimed by me » and optional « private »
+/// chips (cumulative), in a single compact scrollable row.
 class ShoppingListFilterBar extends StatelessWidget {
   const ShoppingListFilterBar({
     super.key,
@@ -45,6 +49,8 @@ class ShoppingListFilterBar extends StatelessWidget {
     required this.onlyClaimedByMe,
     required this.onStatusChanged,
     required this.onOnlyClaimedByMeChanged,
+    this.onlyPrivate = false,
+    this.onOnlyPrivateChanged,
     this.trailing = const [],
   });
 
@@ -52,6 +58,10 @@ class ShoppingListFilterBar extends StatelessWidget {
   final bool onlyClaimedByMe;
   final ValueChanged<ShoppingListStatusFilter> onStatusChanged;
   final ValueChanged<bool> onOnlyClaimedByMeChanged;
+  final bool onlyPrivate;
+
+  /// Null hides the « private » chip (lists without private items).
+  final ValueChanged<bool>? onOnlyPrivateChanged;
 
   /// Extra actions shown at the end of the row (e.g. list overflow menu).
   final List<Widget> trailing;
@@ -60,40 +70,57 @@ class ShoppingListFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     Widget status(ShoppingListStatusFilter value, String label, String tip) =>
-        Padding(
-          padding: const EdgeInsets.only(right: 6),
-          child: Tooltip(
-            message: tip,
-            child: ChoiceChip(
-              label: Text(label),
-              selected: selectedStatus == value,
-              onSelected: (_) => onStatusChanged(value),
-            ),
+        Tooltip(
+          message: tip,
+          child: ChoiceChip(
+            label: Text(label),
+            selected: selectedStatus == value,
+            onSelected: (_) => onStatusChanged(value),
           ),
         );
+    final chips = <Widget>[
+      status(ShoppingListStatusFilter.all, l10n.commonAll,
+          l10n.shoppingFilterAll),
+      status(ShoppingListStatusFilter.todo, l10n.shoppingFilterTodo,
+          l10n.shoppingFilterTodo),
+      status(ShoppingListStatusFilter.done, l10n.shoppingFilterDone,
+          l10n.shoppingFilterDone),
+      Tooltip(
+        message: l10n.shoppingFilterClaimedByMe,
+        child: FilterChip(
+          avatar: const Icon(PhosphorIconsFill.user),
+          label: Text(l10n.commonMe),
+          selected: onlyClaimedByMe,
+          onSelected: onOnlyClaimedByMeChanged,
+        ),
+      ),
+      if (onOnlyPrivateChanged != null)
+        Tooltip(
+          message: l10n.shoppingFilterPrivateTooltip,
+          child: FilterChip(
+            avatar: const Icon(PhosphorIconsFill.lock),
+            label: Text(l10n.shoppingFilterPrivate),
+            selected: onlyPrivate,
+            onSelected: onOnlyPrivateChanged,
+          ),
+        ),
+    ];
     return Row(
       children: [
         Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                status(ShoppingListStatusFilter.all, l10n.commonAll,
-                    l10n.shoppingFilterAll),
-                status(ShoppingListStatusFilter.todo, l10n.shoppingFilterTodo,
-                    l10n.shoppingFilterTodo),
-                status(ShoppingListStatusFilter.done, l10n.shoppingFilterDone,
-                    l10n.shoppingFilterDone),
-                Tooltip(
-                  message: l10n.shoppingFilterClaimedByMe,
-                  child: FilterChip(
-                    avatar: const Icon(PhosphorIconsFill.user),
-                    label: Text(l10n.commonMe),
-                    selected: onlyClaimedByMe,
-                    onSelected: onOnlyClaimedByMeChanged,
-                  ),
+          // Chips spread over the whole width; on screens too narrow for
+          // them all, the row scrolls instead.
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  spacing: 6,
+                  children: chips,
                 ),
-              ],
+              ),
             ),
           ),
         ),

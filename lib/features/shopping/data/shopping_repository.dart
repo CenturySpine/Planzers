@@ -24,6 +24,16 @@ final tripShoppingItemsStreamProvider =
       .watchShoppingItems(tripId);
 });
 
+/// Live private shopping items of the current user for a trip, ordered like
+/// the shared list. Only their owner can read them.
+final tripPrivateShoppingItemsStreamProvider =
+    StreamProvider.autoDispose.family<List<ShoppingItem>, String>(
+        (ref, tripId) {
+  return ref
+      .watch(shoppingRepositoryProvider)
+      .watchPrivateShoppingItems(tripId);
+});
+
 /// Live lock flags for manual vs consolidated shopping tabs.
 final tripShoppingListLocksStreamProvider =
     StreamProvider.autoDispose.family<TripShoppingListLocks, String>(
@@ -45,6 +55,10 @@ const String kConsolidatedShoppingMetaDocId = 'meta';
 
 /// Subcollection under each trip for the saved consolidated shopping list.
 const String kConsolidatedShoppingItemsCollection = 'consolidatedShoppingItems';
+
+/// Subcollection under each trip holding, per user id, the shopping items
+/// only that user sees (`privateShoppingLists/{uid}/items/{itemId}`).
+const String kPrivateShoppingListsCollection = 'privateShoppingLists';
 
 /// Thrown when a consolidated row is toggled or claimed but has no matching
 /// Firestore document (list not saved yet, or row removed).
@@ -73,6 +87,28 @@ class ShoppingRepository {
 
   CollectionReference<Map<String, dynamic>> _col(String tripId) =>
       firestore.collection('trips').doc(tripId).collection('shoppingItems');
+
+  CollectionReference<Map<String, dynamic>> _privateCol(
+    String tripId,
+    String uid,
+  ) =>
+      firestore
+          .collection('trips')
+          .doc(tripId)
+          .collection(kPrivateShoppingListsCollection)
+          .doc(uid)
+          .collection('items');
+
+  /// The document of a shared item, or of a private item of [uid].
+  DocumentReference<Map<String, dynamic>> _itemRef(
+    String tripId,
+    String itemId, {
+    required bool isPrivate,
+    required String uid,
+  }) =>
+      isPrivate
+          ? _privateCol(tripId, uid).doc(itemId)
+          : _col(tripId).doc(itemId);
 
   CollectionReference<Map<String, dynamic>> _consolidatedCol(String tripId) =>
       firestore
@@ -140,6 +176,22 @@ class ShoppingRepository {
         .orderBy('order', descending: false)
         .snapshots()
         .map((snap) => snap.docs.map(ShoppingItem.fromDoc).toList());
+  }
+
+  Stream<List<ShoppingItem>> watchPrivateShoppingItems(String tripId) {
+    final cleanId = tripId.trim();
+    final uid = auth.currentUser?.uid.trim() ?? '';
+    if (cleanId.isEmpty || uid.isEmpty) {
+      return Stream.value(const <ShoppingItem>[]);
+    }
+    return _privateCol(cleanId, uid)
+        .orderBy('order', descending: false)
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((doc) => ShoppingItem.fromDoc(doc, isPrivate: true))
+              .toList(),
+        );
   }
 
   Stream<ConsolidatedListFirestorePayload> watchConsolidatedShoppingList(
@@ -345,6 +397,7 @@ class ShoppingRepository {
     double quantityValue = 1.0,
     ShoppingUnit quantityUnit = ShoppingUnit.unit,
     required int order,
+    bool isPrivate = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) throw StateError('Utilisateur non connecte');
@@ -352,7 +405,9 @@ class ShoppingRepository {
     final cleanTripId = tripId.trim();
     if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
 
-    final doc = await _col(cleanTripId).add({
+    final target =
+        isPrivate ? _privateCol(cleanTripId, user.uid) : _col(cleanTripId);
+    final doc = await target.add({
       'label': label.trim(),
       'checked': false,
       'quantityValue': quantityValue,
@@ -360,8 +415,47 @@ class ShoppingRepository {
       'order': order,
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': user.uid,
+      if (isPrivate) 'claimedBy': user.uid,
     });
     return doc.id;
+  }
+
+  /// Moves [item] between the shared list and the current user's private
+  /// list, keeping its id. The item ends up held by the current user either
+  /// way: a private item is always theirs, and they keep it once shared.
+  Future<void> setItemPrivate({
+    required String tripId,
+    required ShoppingItem item,
+    required bool isPrivate,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw StateError('Utilisateur non connecte');
+
+    final cleanTripId = tripId.trim();
+    final cleanItemId = item.id.trim();
+    if (cleanTripId.isEmpty || cleanItemId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+    if (item.isPrivate == isPrivate) return;
+
+    final sharedRef = _col(cleanTripId).doc(cleanItemId);
+    final privateRef = _privateCol(cleanTripId, user.uid).doc(cleanItemId);
+    final createdBy = item.createdBy?.trim() ?? '';
+    final batch = firestore.batch();
+    batch.set(isPrivate ? privateRef : sharedRef, {
+      'label': item.label.trim(),
+      'checked': item.checked,
+      'quantityValue': item.quantityValue,
+      'quantityUnit': item.quantityUnit.firestoreValue,
+      'order': item.order,
+      'createdAt': Timestamp.fromDate(item.createdAt),
+      'createdBy': createdBy.isEmpty ? user.uid : createdBy,
+      'claimedBy': user.uid,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedBy': user.uid,
+    });
+    batch.delete(isPrivate ? sharedRef : privateRef);
+    await batch.commit();
   }
 
   Future<void> updateItem({
@@ -371,6 +465,7 @@ class ShoppingRepository {
     required bool checked,
     required double quantityValue,
     required ShoppingUnit quantityUnit,
+    bool isPrivate = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) throw StateError('Utilisateur non connecte');
@@ -381,7 +476,12 @@ class ShoppingRepository {
       throw StateError('Parametres invalides');
     }
 
-    await _col(cleanTripId).doc(cleanItemId).update({
+    await _itemRef(
+      cleanTripId,
+      cleanItemId,
+      isPrivate: isPrivate,
+      uid: user.uid,
+    ).update({
       'label': label.trim(),
       'checked': checked,
       'quantityValue': quantityValue,
@@ -395,6 +495,7 @@ class ShoppingRepository {
     required String tripId,
     required String itemId,
     required bool checked,
+    bool isPrivate = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) throw StateError('Utilisateur non connecte');
@@ -405,7 +506,12 @@ class ShoppingRepository {
       throw StateError('Parametres invalides');
     }
 
-    await _col(cleanTripId).doc(cleanItemId).update({
+    await _itemRef(
+      cleanTripId,
+      cleanItemId,
+      isPrivate: isPrivate,
+      uid: user.uid,
+    ).update({
       'checked': checked,
       'updatedAt': FieldValue.serverTimestamp(),
       'updatedBy': user.uid,
@@ -560,6 +666,7 @@ class ShoppingRepository {
   Future<void> deleteItem({
     required String tripId,
     required String itemId,
+    bool isPrivate = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) throw StateError('Utilisateur non connecte');
@@ -570,7 +677,12 @@ class ShoppingRepository {
       throw StateError('Parametres invalides');
     }
 
-    await _col(cleanTripId).doc(cleanItemId).delete();
+    await _itemRef(
+      cleanTripId,
+      cleanItemId,
+      isPrivate: isPrivate,
+      uid: user.uid,
+    ).delete();
   }
 
   /// Asks the backend to consolidate the trip shopping list with AI-driven
@@ -616,18 +728,24 @@ class ShoppingRepository {
       throw StateError('Droits insuffisants pour supprimer les éléments cochés');
     }
 
-    final checkedSnapshot = await _col(cleanTripId)
-        .where('checked', isEqualTo: true)
-        .get();
+    // The shared checked items, and the caller's own private ones.
+    final snapshots = await Future.wait([
+      _col(cleanTripId).where('checked', isEqualTo: true).get(),
+      _privateCol(cleanTripId, user.uid)
+          .where('checked', isEqualTo: true)
+          .get(),
+    ]);
+    final docs = [for (final snap in snapshots) ...snap.docs];
+    if (docs.isEmpty) return 0;
 
-    if (checkedSnapshot.docs.isEmpty) return 0;
-
-    final batch = firestore.batch();
-    for (final doc in checkedSnapshot.docs) {
-      batch.delete(doc.reference);
+    for (var start = 0; start < docs.length; start += 450) {
+      final batch = firestore.batch();
+      for (final doc in docs.skip(start).take(450)) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
     }
-    await batch.commit();
-    return checkedSnapshot.docs.length;
+    return docs.length;
   }
 }
 

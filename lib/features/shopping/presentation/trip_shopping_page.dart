@@ -15,6 +15,7 @@ import 'package:planerz/features/auth/data/users_repository.dart'
         usersDataByIdsKeyStreamProvider,
         usersRepositoryProvider;
 import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
+import 'package:planerz/features/packing/data/packing_repository.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/features/shopping/data/shopping_list_locks.dart';
 import 'package:planerz/features/shopping/data/shopping_repository.dart';
@@ -47,11 +48,18 @@ class TripShoppingPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final trip = TripScope.of(context);
     final itemsAsync = ref.watch(tripShoppingItemsStreamProvider(trip.id));
+    // The current user's private items join the shared ones in the free list.
+    // They never hold the page back: the shared list shows on its own.
+    final privateItems = ref
+            .watch(tripPrivateShoppingItemsStreamProvider(trip.id))
+            .asData
+            ?.value ??
+        const <ShoppingItem>[];
 
     return itemsAsync.when(
       data: (items) => _ShoppingList(
         tripId: trip.id,
-        items: items,
+        items: _withPrivateItems(items, privateItems),
         trip: trip,
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -63,6 +71,24 @@ class TripShoppingPage extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// The free list as the current user sees it: shared and private items in
+/// one order. While an item moves between the two lists it may briefly be in
+/// both: the private copy wins.
+List<ShoppingItem> _withPrivateItems(
+  List<ShoppingItem> sharedItems,
+  List<ShoppingItem> privateItems,
+) {
+  if (privateItems.isEmpty) return sharedItems;
+  final privateIds = {for (final item in privateItems) item.id};
+  return [
+    ...sharedItems.where((item) => !privateIds.contains(item.id)),
+    ...privateItems,
+  ]..sort((a, b) {
+      final byOrder = a.order.compareTo(b.order);
+      return byOrder != 0 ? byOrder : a.id.compareTo(b.id);
+    });
 }
 
 class _ShoppingList extends ConsumerStatefulWidget {
@@ -86,6 +112,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
   late final TabController _tabController;
   ShoppingListStatusFilter _manualListStatusFilter = ShoppingListStatusFilter.all;
   bool _manualOnlyClaimedByMe = false;
+  bool _manualOnlyPrivate = false;
   ShoppingListStatusFilter _consolidatedListStatusFilter =
       ShoppingListStatusFilter.all;
   bool _consolidatedOnlyClaimedByMe = false;
@@ -115,6 +142,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
       _consolidatedItems = const [];
       _manualListStatusFilter = ShoppingListStatusFilter.all;
       _manualOnlyClaimedByMe = false;
+      _manualOnlyPrivate = false;
       _consolidatedListStatusFilter = ShoppingListStatusFilter.all;
       _consolidatedOnlyClaimedByMe = false;
     }
@@ -143,10 +171,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
 
   Future<void> _addManualListItem() async {
     final topOrder = widget.items.isEmpty ? 0 : (widget.items.first.order - 1);
+    // With the « private » filter on, a new item is private so it stays in
+    // sight.
     final newItemId = await ref.read(shoppingRepositoryProvider).addItem(
           tripId: widget.tripId,
           label: '',
           order: topOrder,
+          isPrivate: _manualOnlyPrivate,
         );
     if (!mounted) return;
     setState(() => _pendingAutofocusItemId = newItemId);
@@ -361,6 +392,17 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     final currentParticipantId =
         ref.watch(myTripMemberStreamProvider(widget.tripId)).asData?.value?.id ??
             '';
+    // Private items can go to the current traveler's "À emporter" list;
+    // those already there are flagged on their row.
+    final packingParticipantId =
+        ref.watch(myPackingParticipantIdProvider(widget.tripId));
+    final packedShoppingItemIds = <String>{
+      for (final packingItem
+          in ref.watch(myPackingItemsStreamProvider(widget.tripId)).asData?.value ??
+              const [])
+        if ((packingItem.sourceShoppingItemId ?? '').isNotEmpty)
+          packingItem.sourceShoppingItemId!,
+    };
     // Admins prepare who buys what: assign items or whole categories, and tick
     // items for participants who cannot sign in.
     final assignees = isAdminOrAbove
@@ -423,6 +465,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
             onlyClaimedByMe: _manualOnlyClaimedByMe,
             currentUid: currentUid,
             currentParticipantId: currentParticipantId,
+            onlyPrivate: _manualOnlyPrivate,
           ),
         )
         .toList(growable: false);
@@ -654,6 +697,9 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                                   setState(() => _manualListStatusFilter = f),
                               onOnlyClaimedByMeChanged: (v) =>
                                   setState(() => _manualOnlyClaimedByMe = v),
+                              onlyPrivate: _manualOnlyPrivate,
+                              onOnlyPrivateChanged: (v) =>
+                                  setState(() => _manualOnlyPrivate = v),
                             ),
                           ),
                           PzProgressBar(
@@ -728,34 +774,74 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                                             item: item,
                                             usersDataById: usersDataById,
                                             normalizedLabelCounts: normalizedLabelCounts,
-                                            structureLocked: manualLockRestrictsEditing,
+                                            // The lock is about the shared
+                                            // list: private items stay
+                                            // editable by their owner.
+                                            structureLocked: !item.isPrivate &&
+                                                manualLockRestrictsEditing,
                                             currentParticipantId:
                                                 currentParticipantId,
                                             checkableOnBehalfIds:
                                                 checkableOnBehalfIds,
                                             claimLabelsById: participantLabels,
+                                            addedToPackingList:
+                                                packedShoppingItemIds
+                                                    .contains(item.id),
                                             customMenuItems:
-                                                assignees.isNotEmpty && !item.checked
-                                                    ? [
-                                                        IngredientLineCustomMenuItem(
-                                                          actionId:
-                                                              _assignItemActionId,
-                                                          label: l10n
-                                                              .shoppingAssignMenu,
-                                                          icon: PhosphorIconsRegular
-                                                              .userPlus,
-                                                        ),
-                                                      ]
-                                                    : null,
+                                                _manualItemMenuItems(
+                                              l10n,
+                                              item,
+                                              canAssign: assignees.isNotEmpty,
+                                              isMine: _isHeldBy(
+                                                item,
+                                                currentUid,
+                                                currentParticipantId,
+                                              ),
+                                              canShare:
+                                                  !manualLockRestrictsEditing,
+                                              canAddToPacking:
+                                                  packingParticipantId !=
+                                                          null &&
+                                                      !packedShoppingItemIds
+                                                          .contains(item.id),
+                                            ),
                                             onCustomMenuAction: (actionId) {
-                                              if (actionId == _assignItemActionId) {
-                                                unawaited(
-                                                  _assignManualItem(
-                                                    context,
-                                                    item,
-                                                    assignees,
-                                                  ),
-                                                );
+                                              switch (actionId) {
+                                                case _assignItemActionId:
+                                                  unawaited(
+                                                    _assignManualItem(
+                                                      context,
+                                                      item,
+                                                      assignees,
+                                                    ),
+                                                  );
+                                                case _makePrivateActionId:
+                                                  unawaited(
+                                                    _setItemPrivate(
+                                                      context,
+                                                      item,
+                                                      true,
+                                                    ),
+                                                  );
+                                                case _makeSharedActionId:
+                                                  unawaited(
+                                                    _setItemPrivate(
+                                                      context,
+                                                      item,
+                                                      false,
+                                                    ),
+                                                  );
+                                                case _addToPackingActionId:
+                                                  if (packingParticipantId !=
+                                                      null) {
+                                                    unawaited(
+                                                      _addToPackingList(
+                                                        context,
+                                                        item,
+                                                        packingParticipantId,
+                                                      ),
+                                                    );
+                                                  }
                                               }
                                             },
                                             autoFocusLabel:
@@ -978,6 +1064,111 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
   }
 
   static const String _assignItemActionId = 'assign_shopping_item';
+  static const String _makePrivateActionId = 'make_shopping_item_private';
+  static const String _makeSharedActionId = 'make_shopping_item_shared';
+  static const String _addToPackingActionId = 'add_shopping_item_to_packing';
+
+  /// Whether [item] is held by the current user (account or participant id).
+  static bool _isHeldBy(
+    ShoppingItem item,
+    String currentUid,
+    String currentParticipantId,
+  ) {
+    final claimedBy = item.claimedBy?.trim() ?? '';
+    if (claimedBy.isEmpty) return false;
+    return claimedBy == currentUid ||
+        (currentParticipantId.isNotEmpty && claimedBy == currentParticipantId);
+  }
+
+  /// Row actions of the free list, besides delete. A shared item still to
+  /// buy can be assigned (admins) or made private when free or held by the
+  /// current user; a private item can go to the "À emporter" list or be
+  /// shared again.
+  List<IngredientLineCustomMenuItem>? _manualItemMenuItems(
+    AppLocalizations l10n,
+    ShoppingItem item, {
+    required bool canAssign,
+    required bool isMine,
+    required bool canShare,
+    required bool canAddToPacking,
+  }) {
+    final isFree = (item.claimedBy?.trim() ?? '').isEmpty;
+    final entries = <IngredientLineCustomMenuItem>[
+      if (item.isPrivate) ...[
+        if (canAddToPacking && item.label.trim().isNotEmpty)
+          IngredientLineCustomMenuItem(
+            actionId: _addToPackingActionId,
+            label: l10n.shoppingAddToPackingMenu,
+            icon: PhosphorIconsRegular.suitcaseRolling,
+          ),
+        if (canShare)
+          IngredientLineCustomMenuItem(
+            actionId: _makeSharedActionId,
+            label: l10n.shoppingMakeSharedMenu,
+            icon: PhosphorIconsRegular.lockOpen,
+          ),
+      ] else if (!item.checked) ...[
+        if (canAssign)
+          IngredientLineCustomMenuItem(
+            actionId: _assignItemActionId,
+            label: l10n.shoppingAssignMenu,
+            icon: PhosphorIconsRegular.userPlus,
+          ),
+        if (isFree || isMine)
+          IngredientLineCustomMenuItem(
+            actionId: _makePrivateActionId,
+            label: l10n.shoppingMakePrivateMenu,
+            icon: PhosphorIconsRegular.lock,
+          ),
+      ],
+    ];
+    return entries.isEmpty ? null : entries;
+  }
+
+  Future<void> _setItemPrivate(
+    BuildContext context,
+    ShoppingItem item,
+    bool isPrivate,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(shoppingRepositoryProvider).setItemPrivate(
+            tripId: widget.tripId,
+            item: item,
+            isPrivate: isPrivate,
+          );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
+
+  /// Copies a private [item] (label and quantity) into the current
+  /// traveler's "À emporter" list, showing that module if it was hidden.
+  Future<void> _addToPackingList(
+    BuildContext context,
+    ShoppingItem item,
+    String participantId,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(packingRepositoryProvider).addFromShoppingItem(
+            tripId: widget.tripId,
+            participantId: participantId,
+            shoppingItemId: item.id,
+            label: _packingLabelFor(l10n, item),
+          );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
 
   /// Admin action: puts [item] of the manual list in the hands of a
   /// participant (or nobody).
@@ -1391,6 +1582,11 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                 icon: PhosphorIconsRegular.userCircle,
                 label: l10n.shoppingFilterClaimedByMe,
               ),
+              const SizedBox(height: 8),
+              _FilterLegendRow(
+                icon: PhosphorIconsRegular.lock,
+                label: l10n.shoppingFilterPrivateTooltip,
+              ),
             ],
           ),
           actions: [
@@ -1517,6 +1713,20 @@ ShoppingItem _shoppingItemClaimedBy(ShoppingItem item, String? claimedBy) =>
 
 String _normalizeItemLabel(String raw) {
   return raw.trim().toLowerCase();
+}
+
+/// Text of the "À emporter" item made from a shopping [item]: its label and
+/// its quantity.
+String _packingLabelFor(AppLocalizations l10n, ShoppingItem item) {
+  final label = item.label.trim();
+  if (item.quantityUnit == ShoppingUnit.unit) {
+    return l10n.shoppingPackingLabelCount(label, item.quantityValue);
+  }
+  return l10n.shoppingPackingLabelMeasure(
+    label,
+    item.quantityValue,
+    item.quantityUnit.label,
+  );
 }
 
 enum _ConsolidationMode { full, manualOnly }

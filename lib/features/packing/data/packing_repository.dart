@@ -144,6 +144,45 @@ class PackingRepository {
     });
   }
 
+  /// Adds a shopping item to the traveler's list as plain text ([label]),
+  /// and shows the module if it was not. The packing item takes the id of
+  /// the shopping item and keeps it in `sourceShoppingItemId`, so the
+  /// shopping list can tell it was added (and adding twice cannot duplicate).
+  Future<void> addFromShoppingItem({
+    required String tripId,
+    required String participantId,
+    required String shoppingItemId,
+    required String label,
+  }) async {
+    final cleanLabel = label.trim();
+    final cleanShoppingItemId = shoppingItemId.trim();
+    if (participantId.trim().isEmpty) {
+      throw StateError('Voyageur invalide');
+    }
+    if (cleanLabel.isEmpty || cleanShoppingItemId.isEmpty) return;
+    final batch = firestore.batch();
+    batch.set(
+      _itemsRef(tripId, participantId).doc(cleanShoppingItemId),
+      <String, dynamic>{
+        'label': cleanLabel,
+        'checked': false,
+        'scope': PackingItemScope.self.value,
+        'shared': false,
+        'sourceShoppingItemId': cleanShoppingItemId,
+        'createdAt': FieldValue.serverTimestamp(),
+      },
+    );
+    batch.set(
+      _listRef(tripId, participantId),
+      <String, dynamic>{
+        'enabled': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+    await batch.commit();
+  }
+
   /// Flags a personal item as "group" (pushed to the other travelers) or
   /// back to "personal". Organiser items must not be passed here.
   Future<void> setShared({

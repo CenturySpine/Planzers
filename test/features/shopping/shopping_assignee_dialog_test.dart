@@ -160,5 +160,89 @@ void main() {
       expect(claimedByMe('m2'), isFalse);
       expect(claimedByMe(null), isFalse);
     });
+
+    test('keeps only private items when the private filter is on, '
+        'combined with the other filters', () {
+      ShoppingItem item({required bool isPrivate, required bool checked}) =>
+          ShoppingItem(
+            id: 'i1',
+            label: 'Crème solaire',
+            checked: checked,
+            quantityValue: 1,
+            quantityUnit: ShoppingUnit.unit,
+            createdAt: DateTime(2026),
+            claimedBy: 'u1',
+            isPrivate: isPrivate,
+          );
+      bool matches(
+        ShoppingItem it, {
+        ShoppingListStatusFilter status = ShoppingListStatusFilter.all,
+        bool onlyClaimedByMe = false,
+      }) =>
+          shoppingItemMatchesShoppingListFilters(
+            it,
+            statusFilter: status,
+            onlyClaimedByMe: onlyClaimedByMe,
+            currentUid: 'u1',
+            onlyPrivate: true,
+          );
+
+      expect(matches(item(isPrivate: true, checked: false)), isTrue);
+      expect(matches(item(isPrivate: false, checked: false)), isFalse);
+      expect(
+        matches(
+          item(isPrivate: true, checked: true),
+          status: ShoppingListStatusFilter.todo,
+        ),
+        isFalse,
+      );
+      expect(
+        matches(item(isPrivate: true, checked: false), onlyClaimedByMe: true),
+        isTrue,
+      );
+    });
+  });
+
+  group('ShoppingListFilterBar', () {
+    Future<void> pumpBar(WidgetTester tester, double width) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(width, 400);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('fr'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ShoppingListFilterBar(
+                selectedStatus: ShoppingListStatusFilter.all,
+                onlyClaimedByMe: false,
+                onStatusChanged: (_) {},
+                onOnlyClaimedByMeChanged: (_) {},
+                onOnlyPrivateChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('spreads the chips from one margin to the other',
+        (tester) async {
+      await pumpBar(tester, 1000);
+      final chips = find.byType(RawChip);
+      expect(chips, findsNWidgets(5));
+      expect(tester.getTopLeft(chips.first).dx, 16);
+      expect(tester.getTopRight(chips.last).dx, 1000 - 16);
+    });
+
+    testWidgets('scrolls instead of overflowing on a narrow screen',
+        (tester) async {
+      await pumpBar(tester, 240);
+      expect(tester.takeException(), isNull);
+      expect(find.byType(RawChip), findsNWidgets(5));
+    });
   });
 }

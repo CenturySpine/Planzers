@@ -65,7 +65,8 @@ enum ShoppingUnit {
 }
 
 /// A shopping list item for a trip
-/// (`trips/{tripId}/shoppingItems/{itemId}`).
+/// (`trips/{tripId}/shoppingItems/{itemId}`), or a private item of the
+/// current user (`trips/{tripId}/privateShoppingLists/{uid}/items/{itemId}`).
 class ShoppingItem {
   ShoppingItem({
     required this.id,
@@ -77,6 +78,7 @@ class ShoppingItem {
     this.order = 0,
     this.createdBy,
     this.claimedBy,
+    this.isPrivate = false,
   });
 
   final String id;
@@ -89,7 +91,14 @@ class ShoppingItem {
   final String? createdBy;
   final String? claimedBy;
 
-  factory ShoppingItem.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+  /// True for an item only its owner sees: always held by them, never part
+  /// of the shared list nor of its consolidation.
+  final bool isPrivate;
+
+  factory ShoppingItem.fromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc, {
+    bool isPrivate = false,
+  }) {
     final data = doc.data() ?? const <String, dynamic>{};
 
     final createdAtRaw = data['createdAt'];
@@ -129,6 +138,7 @@ class ShoppingItem {
       order: order,
       createdBy: (data['createdBy'] as String?)?.trim(),
       claimedBy: (data['claimedBy'] as String?)?.trim(),
+      isPrivate: isPrivate,
     );
   }
 
