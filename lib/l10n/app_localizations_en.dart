@@ -2325,6 +2325,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shoppingCategoryUnassigned => 'Unassigned';
 
   @override
+  String get shoppingCategoryNone => 'Uncategorized';
+
+  @override
+  String get shoppingCategoryAnimaux => 'Pet Supplies';
+
+  @override
+  String get shoppingCategoryBebe => 'Baby';
+
+  @override
+  String get shoppingCategoryBoissons => 'Beverages';
+
+  @override
+  String get shoppingCategoryBoucherie => 'Meat & Poultry';
+
+  @override
+  String get shoppingCategoryBoulangerieViennoiserie => 'Bakery & Pastries';
+
+  @override
+  String get shoppingCategoryConserves => 'Canned Goods';
+
+  @override
+  String get shoppingCategoryCremerie => 'Dairy';
+
+  @override
+  String get shoppingCategoryEntretien => 'Household Cleaning';
+
+  @override
+  String get shoppingCategoryEpicerieSalee => 'Pantry';
+
+  @override
+  String get shoppingCategoryEpicerieSucree => 'Baking & Sweets';
+
+  @override
+  String get shoppingCategoryFruitsEtLegumes => 'Fresh Produce';
+
+  @override
+  String get shoppingCategoryHygiene => 'Personal Care';
+
+  @override
+  String get shoppingCategoryMaison => 'Home & Stationery';
+
+  @override
+  String get shoppingCategoryPetitDejeunerEtGouter => 'Breakfast & Snacks';
+
+  @override
+  String get shoppingCategoryPoissonnerie => 'Fish & Seafood';
+
+  @override
+  String get shoppingCategoryRayonFrais => 'Chilled';
+
+  @override
+  String get shoppingCategorySurgeles => 'Frozen';
+
+  @override
   String get shoppingConsolidatedAddBlockedWhenLocked =>
       'The consolidated list is locked.';
 
@@ -6677,6 +6731,60 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get shoppingCategoryUnassigned => 'Unassigned';
+
+  @override
+  String get shoppingCategoryNone => 'Uncategorized';
+
+  @override
+  String get shoppingCategoryAnimaux => 'Pet Supplies';
+
+  @override
+  String get shoppingCategoryBebe => 'Baby';
+
+  @override
+  String get shoppingCategoryBoissons => 'Beverages';
+
+  @override
+  String get shoppingCategoryBoucherie => 'Meat & Poultry';
+
+  @override
+  String get shoppingCategoryBoulangerieViennoiserie => 'Bakery & Pastries';
+
+  @override
+  String get shoppingCategoryConserves => 'Canned Goods';
+
+  @override
+  String get shoppingCategoryCremerie => 'Dairy';
+
+  @override
+  String get shoppingCategoryEntretien => 'Household Cleaning';
+
+  @override
+  String get shoppingCategoryEpicerieSalee => 'Pantry';
+
+  @override
+  String get shoppingCategoryEpicerieSucree => 'Baking & Sweets';
+
+  @override
+  String get shoppingCategoryFruitsEtLegumes => 'Fresh Produce';
+
+  @override
+  String get shoppingCategoryHygiene => 'Personal Care';
+
+  @override
+  String get shoppingCategoryMaison => 'Home & Stationery';
+
+  @override
+  String get shoppingCategoryPetitDejeunerEtGouter => 'Breakfast & Snacks';
+
+  @override
+  String get shoppingCategoryPoissonnerie => 'Fish & Seafood';
+
+  @override
+  String get shoppingCategoryRayonFrais => 'Chilled';
+
+  @override
+  String get shoppingCategorySurgeles => 'Frozen';
 
   @override
   String get shoppingConsolidatedAddBlockedWhenLocked =>

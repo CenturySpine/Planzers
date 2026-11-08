@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:planerz/features/shopping/data/shopping_category.dart';
 
 /// Unit types for shopping item quantities.
 enum ShoppingUnit {
@@ -79,6 +80,7 @@ class ShoppingItem {
     this.createdBy,
     this.claimedBy,
     this.isPrivate = false,
+    this.categoryId,
   });
 
   final String id;
@@ -94,6 +96,10 @@ class ShoppingItem {
   /// True for an item only its owner sees: always held by them, never part
   /// of the shared list nor of its consolidation.
   final bool isPrivate;
+
+  /// Grocery category chosen on the free list (one of
+  /// [kShoppingCategoryIds]); null when the item has none.
+  final String? categoryId;
 
   factory ShoppingItem.fromDoc(
     DocumentSnapshot<Map<String, dynamic>> doc, {
@@ -139,6 +145,7 @@ class ShoppingItem {
       createdBy: (data['createdBy'] as String?)?.trim(),
       claimedBy: (data['claimedBy'] as String?)?.trim(),
       isPrivate: isPrivate,
+      categoryId: knownShoppingCategoryId(data['categoryId'] as String?),
     );
   }
 

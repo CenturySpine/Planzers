@@ -3,6 +3,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/core/firebase/firebase_functions_region.dart';
+import 'package:planerz/features/shopping/data/shopping_category.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/features/shopping/data/shopping_list_locks.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -441,6 +442,7 @@ class ShoppingRepository {
     final sharedRef = _col(cleanTripId).doc(cleanItemId);
     final privateRef = _privateCol(cleanTripId, user.uid).doc(cleanItemId);
     final createdBy = item.createdBy?.trim() ?? '';
+    final categoryId = item.categoryId;
     final batch = firestore.batch();
     batch.set(isPrivate ? privateRef : sharedRef, {
       'label': item.label.trim(),
@@ -448,6 +450,7 @@ class ShoppingRepository {
       'quantityValue': item.quantityValue,
       'quantityUnit': item.quantityUnit.firestoreValue,
       'order': item.order,
+      if (categoryId != null) 'categoryId': categoryId,
       'createdAt': Timestamp.fromDate(item.createdAt),
       'createdBy': createdBy.isEmpty ? user.uid : createdBy,
       'claimedBy': user.uid,
@@ -486,6 +489,36 @@ class ShoppingRepository {
       'checked': checked,
       'quantityValue': quantityValue,
       'quantityUnit': quantityUnit.firestoreValue,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedBy': user.uid,
+    });
+  }
+
+  /// Sorts a free-list item into a grocery category; a null [categoryId]
+  /// leaves it without one.
+  Future<void> setItemCategory({
+    required String tripId,
+    required String itemId,
+    required String? categoryId,
+    bool isPrivate = false,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw StateError('Utilisateur non connecte');
+
+    final cleanTripId = tripId.trim();
+    final cleanItemId = itemId.trim();
+    if (cleanTripId.isEmpty || cleanItemId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+
+    final cleanCategoryId = knownShoppingCategoryId(categoryId);
+    await _itemRef(
+      cleanTripId,
+      cleanItemId,
+      isPrivate: isPrivate,
+      uid: user.uid,
+    ).update({
+      'categoryId': cleanCategoryId ?? FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
       'updatedBy': user.uid,
     });

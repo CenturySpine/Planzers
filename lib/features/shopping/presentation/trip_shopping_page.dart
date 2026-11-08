@@ -17,6 +17,7 @@ import 'package:planerz/features/auth/data/users_repository.dart'
         usersRepositoryProvider;
 import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
 import 'package:planerz/features/packing/data/packing_repository.dart';
+import 'package:planerz/features/shopping/data/shopping_category.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/features/shopping/data/shopping_list_locks.dart';
 import 'package:planerz/features/shopping/data/shopping_repository.dart';
@@ -547,6 +548,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
           ),
         )
         .toList(growable: false);
+    final manualGroups = _groupManualItemsByCategory(filteredItems);
     final claimedByIds = <String>{
       ...widget.items
           .map((item) => item.claimedBy?.trim() ?? '')
@@ -652,6 +654,53 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
       stream: usersDataStream,
       builder: (context, usersSnap) {
         final usersDataById = usersSnap.data ?? const <String, Map<String, dynamic>>{};
+        Widget buildManualItemRow(ShoppingItem item) => ShoppingItemRow(
+              key: ValueKey(item.id),
+              tripId: widget.tripId,
+              item: item,
+              usersDataById: usersDataById,
+              normalizedLabelCounts: normalizedLabelCounts,
+              // The lock is about the shared list: private items stay
+              // editable by their owner.
+              structureLocked: !item.isPrivate && manualLockRestrictsEditing,
+              currentParticipantId: currentParticipantId,
+              checkableOnBehalfIds: checkableOnBehalfIds,
+              claimLabelsById: participantLabels,
+              addedToPackingList: packedShoppingItemIds.contains(item.id),
+              customMenuItems: _manualItemMenuItems(
+                l10n,
+                item,
+                canAssign: assignees.isNotEmpty,
+                isMine: _isHeldBy(item, currentUid, currentParticipantId),
+                canShare: !manualLockRestrictsEditing,
+                canAddToPacking: packingParticipantId != null &&
+                    !packedShoppingItemIds.contains(item.id),
+              ),
+              onCustomMenuAction: (actionId) {
+                switch (actionId) {
+                  case _changeManualCategoryActionId:
+                    unawaited(_changeManualItemCategory(context, item));
+                  case _assignItemActionId:
+                    unawaited(_assignManualItem(context, item, assignees));
+                  case _makePrivateActionId:
+                    unawaited(_setItemPrivate(context, item, true));
+                  case _makeSharedActionId:
+                    unawaited(_setItemPrivate(context, item, false));
+                  case _addToPackingActionId:
+                    if (packingParticipantId != null) {
+                      unawaited(
+                        _addToPackingList(context, item, packingParticipantId),
+                      );
+                    }
+                }
+              },
+              autoFocusLabel: item.id == _pendingAutofocusItemId,
+              onAutoFocusHandled: () {
+                if (!mounted) return;
+                if (_pendingAutofocusItemId != item.id) return;
+                setState(() => _pendingAutofocusItemId = null);
+              },
+            );
         return Stack(
           fit: StackFit.expand,
           children: [
@@ -834,102 +883,30 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                                           ),
                                         ),
                                       )
-                                    : ListView.separated(
+                                    : ListView.builder(
                                         padding: const EdgeInsets.fromLTRB(
                                             12, 4, 12, 88),
-                                        itemCount: filteredItems.length,
-                                        separatorBuilder: (_, __) =>
-                                            const SizedBox.shrink(),
+                                        itemCount: manualGroups.length,
                                         itemBuilder: (context, index) {
-                                          final item = filteredItems[index];
-                                          return _ShoppingCardSlice(
-                                            isFirst: index == 0,
-                                            isLast: index ==
-                                                filteredItems.length - 1,
-                                            child: ShoppingItemRow(
-                                            key: ValueKey(item.id),
-                                            tripId: widget.tripId,
-                                            item: item,
-                                            usersDataById: usersDataById,
-                                            normalizedLabelCounts: normalizedLabelCounts,
-                                            // The lock is about the shared
-                                            // list: private items stay
-                                            // editable by their owner.
-                                            structureLocked: !item.isPrivate &&
-                                                manualLockRestrictsEditing,
-                                            currentParticipantId:
-                                                currentParticipantId,
-                                            checkableOnBehalfIds:
-                                                checkableOnBehalfIds,
-                                            claimLabelsById: participantLabels,
-                                            addedToPackingList:
-                                                packedShoppingItemIds
-                                                    .contains(item.id),
-                                            customMenuItems:
-                                                _manualItemMenuItems(
-                                              l10n,
-                                              item,
-                                              canAssign: assignees.isNotEmpty,
-                                              isMine: _isHeldBy(
-                                                item,
-                                                currentUid,
-                                                currentParticipantId,
-                                              ),
-                                              canShare:
-                                                  !manualLockRestrictsEditing,
-                                              canAddToPacking:
-                                                  packingParticipantId !=
-                                                          null &&
-                                                      !packedShoppingItemIds
-                                                          .contains(item.id),
+                                          final group = manualGroups[index];
+                                          return _ShoppingCategoryCard(
+                                            key: ValueKey(
+                                              'manual_category_${group.key}',
                                             ),
-                                            onCustomMenuAction: (actionId) {
-                                              switch (actionId) {
-                                                case _assignItemActionId:
-                                                  unawaited(
-                                                    _assignManualItem(
-                                                      context,
-                                                      item,
-                                                      assignees,
-                                                    ),
-                                                  );
-                                                case _makePrivateActionId:
-                                                  unawaited(
-                                                    _setItemPrivate(
-                                                      context,
-                                                      item,
-                                                      true,
-                                                    ),
-                                                  );
-                                                case _makeSharedActionId:
-                                                  unawaited(
-                                                    _setItemPrivate(
-                                                      context,
-                                                      item,
-                                                      false,
-                                                    ),
-                                                  );
-                                                case _addToPackingActionId:
-                                                  if (packingParticipantId !=
-                                                      null) {
-                                                    unawaited(
-                                                      _addToPackingList(
-                                                        context,
-                                                        item,
-                                                        packingParticipantId,
-                                                      ),
-                                                    );
-                                                  }
-                                              }
-                                            },
-                                            autoFocusLabel:
-                                                item.id == _pendingAutofocusItemId,
-                                            onAutoFocusHandled: () {
-                                              if (!mounted) return;
-                                              if (_pendingAutofocusItemId != item.id) return;
-                                              setState(() => _pendingAutofocusItemId = null);
-                                            },
-                                          ),
+                                            label: group.key.isEmpty
+                                                ? l10n.shoppingCategoryNone
+                                                : shoppingCategoryLabel(
+                                                    l10n,
+                                                    group.key,
+                                                  ),
+                                            checkedCount: group.value
+                                                .where((item) => item.checked)
+                                                .length,
+                                            total: group.value.length,
+                                            children: [
+                                              for (final item in group.value)
+                                                buildManualItemRow(item),
+                                            ],
                                           );
                                         },
                                       ),
@@ -1142,6 +1119,8 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     }
   }
 
+  static const String _changeManualCategoryActionId =
+      'change_shopping_item_category';
   static const String _assignItemActionId = 'assign_shopping_item';
   static const String _makePrivateActionId = 'make_shopping_item_private';
   static const String _makeSharedActionId = 'make_shopping_item_shared';
@@ -1159,11 +1138,11 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
         (currentParticipantId.isNotEmpty && claimedBy == currentParticipantId);
   }
 
-  /// Row actions of the free list, besides delete. A shared item still to
-  /// buy can be assigned (admins) or made private when free or held by the
-  /// current user; a private item can go to the "À emporter" list or be
-  /// shared again.
-  List<IngredientLineCustomMenuItem>? _manualItemMenuItems(
+  /// Row actions of the free list, besides delete. Any item can be sorted
+  /// into a category. A shared item still to buy can be assigned (admins) or
+  /// made private when free or held by the current user; a private item can
+  /// go to the "À emporter" list or be shared again.
+  List<IngredientLineCustomMenuItem> _manualItemMenuItems(
     AppLocalizations l10n,
     ShoppingItem item, {
     required bool canAssign,
@@ -1172,7 +1151,12 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     required bool canAddToPacking,
   }) {
     final isFree = (item.claimedBy?.trim() ?? '').isEmpty;
-    final entries = <IngredientLineCustomMenuItem>[
+    return <IngredientLineCustomMenuItem>[
+      IngredientLineCustomMenuItem(
+        actionId: _changeManualCategoryActionId,
+        label: l10n.shoppingChangeCategoryMenu,
+        icon: PhosphorIconsRegular.folderSimpleUser,
+      ),
       if (item.isPrivate) ...[
         if (canAddToPacking && item.label.trim().isNotEmpty)
           IngredientLineCustomMenuItem(
@@ -1201,7 +1185,42 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
           ),
       ],
     ];
-    return entries.isEmpty ? null : entries;
+  }
+
+  /// Sorts a free-list [item] into a grocery category, or takes it out of
+  /// its category.
+  Future<void> _changeManualItemCategory(
+    BuildContext context,
+    ShoppingItem item,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final currentId = item.categoryId ?? '';
+    final chosen = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => _CategoryPickerDialog(
+        options: [
+          (id: '', label: l10n.shoppingCategoryNone),
+          for (final id in kShoppingCategoryIds)
+            (id: id, label: shoppingCategoryLabel(l10n, id)),
+        ],
+        initialId: currentId,
+      ),
+    );
+    if (chosen == null || chosen == currentId || !mounted) return;
+    try {
+      await ref.read(shoppingRepositoryProvider).setItemCategory(
+            tripId: widget.tripId,
+            itemId: item.id,
+            categoryId: chosen.isEmpty ? null : chosen,
+            isPrivate: item.isPrivate,
+          );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
   }
 
   Future<void> _setItemPrivate(
@@ -1763,12 +1782,15 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
         : categoryIds.first;
     final chosen = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => _ChangeConsolidatedCategoryDialog(
-        l10n: l10n,
-        categoryIds: categoryIds,
-        categoriesMeta: result.categories,
-        languageCode: languageCode,
-        initialCategoryId: initialId,
+      builder: (dialogContext) => _CategoryPickerDialog(
+        options: [
+          for (final id in categoryIds)
+            (
+              id: id,
+              label: _categoryLabel(l10n, id, languageCode, result.categories),
+            ),
+        ],
+        initialId: initialId,
       ),
     );
     if (!mounted || chosen == null) return;
@@ -1859,6 +1881,22 @@ List<ConsolidatedShoppingCategory> _categoriesPersistedWithUnassigned(
     return List<ConsolidatedShoppingCategory>.from(base);
   }
   return [...base, kUnassignedConsolidatedCategoryMeta];
+}
+
+/// The free list by grocery category: items without one first (key ''),
+/// then the categories in catalog order. Items keep their list order.
+List<MapEntry<String, List<ShoppingItem>>> _groupManualItemsByCategory(
+  List<ShoppingItem> items,
+) {
+  final byCategory = <String, List<ShoppingItem>>{};
+  for (final item in items) {
+    (byCategory[item.categoryId ?? ''] ??= []).add(item);
+  }
+  return [
+    for (final id in ['', ...kShoppingCategoryIds])
+      if (byCategory[id] case final categoryItems?)
+        MapEntry(id, categoryItems),
+  ];
 }
 
 List<MapEntry<String, List<ShoppingItem>>> _groupByCategory(
@@ -1954,31 +1992,13 @@ class _ConsolidatedCategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final checked = items.where((item) => item.checked).length;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Card(
-        child: ExpansionTile(
-      initiallyExpanded: true,
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
-          ),
-          Text(
-            '$checked/${items.length}',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-          ),
-          if (onAssignCategory != null)
-            PopupMenuButton<String>(
+    return _ShoppingCategoryCard(
+      label: label,
+      checkedCount: items.where((item) => item.checked).length,
+      total: items.length,
+      trailing: onAssignCategory == null
+          ? null
+          : PopupMenuButton<String>(
               tooltip: l10n.commonMoreActions,
               icon: Icon(
                 PhosphorIconsRegular.dotsThreeVertical,
@@ -1997,12 +2017,8 @@ class _ConsolidatedCategorySection extends StatelessWidget {
                 ),
               ],
             ),
-        ],
-      ),
-      tilePadding: const EdgeInsets.only(left: 14, right: 8),
-      childrenPadding: const EdgeInsets.only(left: 6, right: 6, bottom: 4),
       children: [
-        for (int i = 0; i < items.length; i++) ...[
+        for (int i = 0; i < items.length; i++)
           ShoppingItemRow(
             key: ValueKey(items[i].id),
             tripId: tripId,
@@ -2067,9 +2083,66 @@ class _ConsolidatedCategorySection extends StatelessWidget {
               onItemDeleted(items[i].id);
             },
           ),
-          if (i < items.length - 1) const Divider(indent: 38),
-        ],
       ],
+    );
+  }
+}
+
+/// A category of a shopping list: a card that folds its item rows under the
+/// category name and how many of them are bought.
+class _ShoppingCategoryCard extends StatelessWidget {
+  const _ShoppingCategoryCard({
+    super.key,
+    required this.label,
+    required this.checkedCount,
+    required this.total,
+    required this.children,
+    this.trailing,
+  });
+
+  final String label;
+  final int checkedCount;
+  final int total;
+  final List<Widget> children;
+
+  /// Shown after the progress (e.g. the category actions).
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Card(
+        child: ExpansionTile(
+          initiallyExpanded: true,
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+              ),
+              Text(
+                '$checkedCount/$total',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+              ),
+              if (trailing != null) trailing!,
+            ],
+          ),
+          tilePadding: const EdgeInsets.only(left: 14, right: 8),
+          childrenPadding: const EdgeInsets.only(left: 6, right: 6, bottom: 4),
+          children: [
+            for (int i = 0; i < children.length; i++) ...[
+              children[i],
+              if (i < children.length - 1) const Divider(indent: 38),
+            ],
+          ],
         ),
       ),
     );
@@ -2272,40 +2345,35 @@ class _OptionTile extends StatelessWidget {
   }
 }
 
-class _ChangeConsolidatedCategoryDialog extends StatefulWidget {
-  const _ChangeConsolidatedCategoryDialog({
-    required this.l10n,
-    required this.categoryIds,
-    required this.categoriesMeta,
-    required this.languageCode,
-    required this.initialCategoryId,
+/// Picks one category among [options] (id and display name); pops the
+/// chosen id.
+class _CategoryPickerDialog extends StatefulWidget {
+  const _CategoryPickerDialog({
+    required this.options,
+    required this.initialId,
   });
 
-  final AppLocalizations l10n;
-  final List<String> categoryIds;
-  final List<ConsolidatedShoppingCategory> categoriesMeta;
-  final String languageCode;
-  final String initialCategoryId;
+  final List<({String id, String label})> options;
+  final String initialId;
 
   @override
-  State<_ChangeConsolidatedCategoryDialog> createState() =>
-      _ChangeConsolidatedCategoryDialogState();
+  State<_CategoryPickerDialog> createState() => _CategoryPickerDialogState();
 }
 
-class _ChangeConsolidatedCategoryDialogState
-    extends State<_ChangeConsolidatedCategoryDialog> {
+class _CategoryPickerDialogState extends State<_CategoryPickerDialog> {
   late String _selectedId;
 
   @override
   void initState() {
     super.initState();
-    _selectedId = widget.initialCategoryId;
+    _selectedId = widget.initialId;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: Text(widget.l10n.shoppingChangeCategoryDialogTitle),
+      title: Text(l10n.shoppingChangeCategoryDialogTitle),
       content: SizedBox(
         width: double.maxFinite,
         child: RadioGroup<String>(
@@ -2320,19 +2388,12 @@ class _ChangeConsolidatedCategoryDialogState
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                for (final id in widget.categoryIds)
+                for (final option in widget.options)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Radio<String>(value: id),
-                    title: Text(
-                      _categoryLabel(
-                        widget.l10n,
-                        id,
-                        widget.languageCode,
-                        widget.categoriesMeta,
-                      ),
-                    ),
-                    onTap: () => setState(() => _selectedId = id),
+                    leading: Radio<String>(value: option.id),
+                    title: Text(option.label),
+                    onTap: () => setState(() => _selectedId = option.id),
                   ),
               ],
             ),
@@ -2342,55 +2403,13 @@ class _ChangeConsolidatedCategoryDialogState
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(widget.l10n.commonCancel),
+          child: Text(l10n.commonCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(_selectedId),
-          child: Text(widget.l10n.commonConfirm),
+          child: Text(l10n.commonConfirm),
         ),
       ],
-    );
-  }
-}
-
-
-/// Renders consecutive list rows as one rounded white card.
-class _ShoppingCardSlice extends StatelessWidget {
-  const _ShoppingCardSlice({
-    required this.isFirst,
-    required this.isLast,
-    required this.child,
-  });
-
-  final bool isFirst;
-  final bool isLast;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    const r = Radius.circular(14);
-    final border = BorderSide(color: Theme.of(context).dividerColor);
-    return Container(
-      padding: EdgeInsets.fromLTRB(4, isFirst ? 4 : 0, 0, isLast ? 4 : 0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.vertical(
-          top: isFirst ? r : Radius.zero,
-          bottom: isLast ? r : Radius.zero,
-        ),
-        border: Border(
-          left: border,
-          right: border,
-          top: isFirst ? border : BorderSide.none,
-          bottom: isLast ? border : BorderSide.none,
-        ),
-      ),
-      child: isLast
-          ? child
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [child, const Divider(indent: 40)],
-            ),
     );
   }
 }

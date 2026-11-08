@@ -2351,6 +2351,62 @@ class AppLocalizationsFr extends AppLocalizations {
   String get shoppingCategoryUnassigned => 'Non assigné';
 
   @override
+  String get shoppingCategoryNone => 'Sans catégorie';
+
+  @override
+  String get shoppingCategoryAnimaux => 'Animaux';
+
+  @override
+  String get shoppingCategoryBebe => 'Bébé';
+
+  @override
+  String get shoppingCategoryBoissons => 'Boissons';
+
+  @override
+  String get shoppingCategoryBoucherie => 'Boucherie';
+
+  @override
+  String get shoppingCategoryBoulangerieViennoiserie =>
+      'Boulangerie & Viennoiserie';
+
+  @override
+  String get shoppingCategoryConserves => 'Conserves';
+
+  @override
+  String get shoppingCategoryCremerie => 'Crémerie';
+
+  @override
+  String get shoppingCategoryEntretien => 'Entretien';
+
+  @override
+  String get shoppingCategoryEpicerieSalee => 'Épicerie salée';
+
+  @override
+  String get shoppingCategoryEpicerieSucree => 'Épicerie sucrée';
+
+  @override
+  String get shoppingCategoryFruitsEtLegumes => 'Fruits et légumes';
+
+  @override
+  String get shoppingCategoryHygiene => 'Hygiène';
+
+  @override
+  String get shoppingCategoryMaison => 'Maison';
+
+  @override
+  String get shoppingCategoryPetitDejeunerEtGouter =>
+      'Petit-déjeuner et goûter';
+
+  @override
+  String get shoppingCategoryPoissonnerie => 'Poissonnerie';
+
+  @override
+  String get shoppingCategoryRayonFrais => 'Rayon frais';
+
+  @override
+  String get shoppingCategorySurgeles => 'Surgelés';
+
+  @override
   String get shoppingConsolidatedAddBlockedWhenLocked =>
       'La liste consolidée est verrouillée.';
 
@@ -6743,6 +6799,62 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get shoppingCategoryUnassigned => 'Non assigné';
+
+  @override
+  String get shoppingCategoryNone => 'Sans catégorie';
+
+  @override
+  String get shoppingCategoryAnimaux => 'Animaux';
+
+  @override
+  String get shoppingCategoryBebe => 'Bébé';
+
+  @override
+  String get shoppingCategoryBoissons => 'Boissons';
+
+  @override
+  String get shoppingCategoryBoucherie => 'Boucherie';
+
+  @override
+  String get shoppingCategoryBoulangerieViennoiserie =>
+      'Boulangerie & Viennoiserie';
+
+  @override
+  String get shoppingCategoryConserves => 'Conserves';
+
+  @override
+  String get shoppingCategoryCremerie => 'Crémerie';
+
+  @override
+  String get shoppingCategoryEntretien => 'Entretien';
+
+  @override
+  String get shoppingCategoryEpicerieSalee => 'Épicerie salée';
+
+  @override
+  String get shoppingCategoryEpicerieSucree => 'Épicerie sucrée';
+
+  @override
+  String get shoppingCategoryFruitsEtLegumes => 'Fruits et légumes';
+
+  @override
+  String get shoppingCategoryHygiene => 'Hygiène';
+
+  @override
+  String get shoppingCategoryMaison => 'Maison';
+
+  @override
+  String get shoppingCategoryPetitDejeunerEtGouter =>
+      'Petit-déjeuner et goûter';
+
+  @override
+  String get shoppingCategoryPoissonnerie => 'Poissonnerie';
+
+  @override
+  String get shoppingCategoryRayonFrais => 'Rayon frais';
+
+  @override
+  String get shoppingCategorySurgeles => 'Surgelés';
 
   @override
   String get shoppingConsolidatedAddBlockedWhenLocked =>

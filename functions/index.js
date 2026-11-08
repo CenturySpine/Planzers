@@ -33,6 +33,12 @@ const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate'
 const { assertTripMemberOrApplicationOwner } = require('./trip_membership');
 const { shoppingHolderIds, isShoppingItemHeldBy } = require('./shopping_claims');
 const {
+  SHOPPING_CATEGORIES,
+  SHOPPING_CATEGORY_IDS,
+  normalizeShoppingCategoryId,
+  applyChosenShoppingCategories,
+} = require('./shopping_categories');
+const {
   normalizeCarpoolDirection,
   carDirection,
   participantIdsSeatedInDirection,
@@ -4384,6 +4390,7 @@ function buildAiConsolidationSystemPrompt(lang) {
       '- If units are incompatible, keep separate lines.',
       '- sourceType must be manual, recipe, or mixed according to the consolidated origin.',
       "- For each consolidated ingredient, assign a categoryId from the identifiers provided in the prompt. Choose the most precise category. Use 'divers' if no category fits.",
+      '- A manualShoppingItems line may carry a categoryId chosen by a traveler: the consolidated line that contains it must keep that categoryId.',
     ].join('\n');
   }
   return [
@@ -4395,6 +4402,7 @@ function buildAiConsolidationSystemPrompt(lang) {
     '- Si les unites sont incompatibles, garder des lignes separees.',
     '- sourceType doit valoir manual, recipe, ou mixed selon l origine consolidee.',
     "- Pour chaque ingredient consolide, assigne un categoryId parmi les identifiants fournis dans le prompt. Choisis la categorie la plus precise. Utilise 'divers' si aucune categorie ne convient.",
+    '- Une ligne de manualShoppingItems peut porter un categoryId choisi par un voyageur : la ligne consolidee qui la contient doit garder ce categoryId.',
   ].join('\n');
 }
 
@@ -4454,26 +4462,7 @@ function buildAiConsolidationToolSchema(lang) {
               description: isFr
                 ? 'Identifiant de la categorie de course (voir liste fournie). Utiliser "divers" si aucune ne convient.'
                 : 'Shopping category identifier (see provided list). Use "divers" if none fits.',
-              enum: [
-                'animaux',
-                'bebe',
-                'boissons',
-                'boucherie',
-                'boulangerie-viennoiserie',
-                'conserves',
-                'cremerie',
-                'divers',
-                'entretien',
-                'epicerie-salee',
-                'epicerie-sucree',
-                'fruits-et-legumes',
-                'hygiene',
-                'maison',
-                'petit-dejeuner-et-gouter',
-                'poissonnerie',
-                'rayon-frais',
-                'surgeles',
-              ],
+              enum: [...SHOPPING_CATEGORY_IDS],
             },
             manualOriginalLineCount: {
               type: 'integer',
@@ -4534,26 +4523,7 @@ function buildAiConsolidationToolSchema(lang) {
   };
 }
 
-const AI_CONSOLIDATION_CATEGORIES = [
-  { id: 'animaux',                  fr: 'Animaux',                    en: 'Pet Supplies'       },
-  { id: 'bebe',                     fr: 'Bébé',                       en: 'Baby'               },
-  { id: 'boissons',                 fr: 'Boissons',                   en: 'Beverages'          },
-  { id: 'boucherie',                fr: 'Boucherie',                  en: 'Meat & Poultry'     },
-  { id: 'boulangerie-viennoiserie', fr: 'Boulangerie & Viennoiserie', en: 'Bakery & Pastries'  },
-  { id: 'conserves',                fr: 'Conserves',                  en: 'Canned Goods'       },
-  { id: 'cremerie',                 fr: 'Crémerie',                   en: 'Dairy'              },
-  { id: 'divers',                   fr: 'Divers',                     en: 'Miscellaneous'      },
-  { id: 'entretien',                fr: 'Entretien',                  en: 'Household Cleaning' },
-  { id: 'epicerie-salee',           fr: 'Épicerie salée',             en: 'Pantry'             },
-  { id: 'epicerie-sucree',          fr: 'Épicerie sucrée',            en: 'Baking & Sweets'    },
-  { id: 'fruits-et-legumes',        fr: 'Fruits et légumes',          en: 'Fresh Produce'      },
-  { id: 'hygiene',                  fr: 'Hygiène',                    en: 'Personal Care'      },
-  { id: 'maison',                   fr: 'Maison',                     en: 'Home & Stationery'  },
-  { id: 'petit-dejeuner-et-gouter', fr: 'Petit-déjeuner et goûter',   en: 'Breakfast & Snacks' },
-  { id: 'poissonnerie',             fr: 'Poissonnerie',               en: 'Fish & Seafood'     },
-  { id: 'rayon-frais',              fr: 'Rayon frais',                en: 'Chilled'            },
-  { id: 'surgeles',                 fr: 'Surgelés',                   en: 'Frozen'             },
-];
+const AI_CONSOLIDATION_CATEGORIES = SHOPPING_CATEGORIES;
 
 function buildAiConsolidationUserPrompt(manualShoppingItems, recipeIngredients, lang, manualOnly = false) {
   const categoriesLine = AI_CONSOLIDATION_CATEGORIES
@@ -4722,7 +4692,7 @@ async function callGeminiConsolidation({ apiKey, model, thinkingLevel, systemPro
  * @param {Object} params
  * @param {{provider:string, googleModel:string, anthropicModel:string, thinkingLevel:string}} params.settings
  *   - AI settings from the administration (see ai_settings.js).
- * @param {Array<{label:string,quantityValue:number,quantityUnit:string}>} params.manualShoppingItems
+ * @param {Array<{label:string,quantityValue:number,quantityUnit:string,categoryId?:string}>} params.manualShoppingItems
  * @param {Array<{label:string,quantityValue:number,quantityUnit:string}>} params.recipeIngredients
  * @param {'fr'|'en'} [params.lang='fr'] - Language for prompts and item labels in the output.
  * @returns {Promise<{summary:object, consolidatedItems:Array<object>}>}
@@ -4791,13 +4761,19 @@ function toFiniteQuantity(value) {
   return Number.isFinite(n) ? n : 0;
 }
 
-function buildAiInputRow(rawLabel, rawQuantityValue, rawQuantityUnit) {
+/**
+ * One AI input line. [rawCategoryId] is the category a traveler chose on the
+ * free list; it is passed on only when it is a known one.
+ */
+function buildAiInputRow(rawLabel, rawQuantityValue, rawQuantityUnit, rawCategoryId) {
   const label = normalizeString(rawLabel);
   if (!label) return null;
+  const categoryId = normalizeShoppingCategoryId(rawCategoryId);
   return {
     label,
     quantityValue: toFiniteQuantity(rawQuantityValue),
     quantityUnit: normalizeString(rawQuantityUnit) || 'unit',
+    ...(categoryId ? { categoryId } : {}),
   };
 }
 
@@ -4805,7 +4781,8 @@ function buildAiInputRow(rawLabel, rawQuantityValue, rawQuantityUnit) {
  * POC callable: consolidates a trip's shopping list with AI-driven merging.
  *
  * Reads from Firestore (no writes):
- *   - Manual items: `trips/{tripId}/shoppingItems` where `checked == false`.
+ *   - Manual items: `trips/{tripId}/shoppingItems` where `checked == false`,
+ *     with the category a traveler may have chosen (kept in the result).
  *   - Recipe items: `trips/{tripId}/meals` where `mealMode == 'cooked'`,
  *     flattened from each component's `ingredients` array.
  *
@@ -4840,7 +4817,7 @@ exports.consolidateTripShoppingWithAi = onCall(
       tripRef
         .collection('shoppingItems')
         .where('checked', '==', false)
-        .select('label', 'quantityValue', 'quantityUnit')
+        .select('label', 'quantityValue', 'quantityUnit', 'categoryId')
         .get(),
       manualOnly
         ? Promise.resolve({ docs: [] })
@@ -4854,7 +4831,12 @@ exports.consolidateTripShoppingWithAi = onCall(
     const manualShoppingItems = [];
     for (const doc of shoppingSnap.docs) {
       const data = doc.data() || {};
-      const row = buildAiInputRow(data.label, data.quantityValue, data.quantityUnit);
+      const row = buildAiInputRow(
+        data.label,
+        data.quantityValue,
+        data.quantityUnit,
+        data.categoryId
+      );
       if (row) manualShoppingItems.push(row);
     }
 
@@ -4899,7 +4881,16 @@ exports.consolidateTripShoppingWithAi = onCall(
           lang,
           manualOnly,
         });
-        return { summary, consolidatedItems, categories: AI_CONSOLIDATION_CATEGORIES };
+        return {
+          summary,
+          // The AI is asked to keep the categories chosen on the free list;
+          // this makes sure of it.
+          consolidatedItems: applyChosenShoppingCategories(
+            consolidatedItems,
+            manualShoppingItems
+          ),
+          categories: AI_CONSOLIDATION_CATEGORIES,
+        };
       }
     );
   }

@@ -4219,6 +4219,114 @@ abstract class AppLocalizations {
   /// **'Non assigné'**
   String get shoppingCategoryUnassigned;
 
+  /// No description provided for @shoppingCategoryNone.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sans catégorie'**
+  String get shoppingCategoryNone;
+
+  /// No description provided for @shoppingCategoryAnimaux.
+  ///
+  /// In fr, this message translates to:
+  /// **'Animaux'**
+  String get shoppingCategoryAnimaux;
+
+  /// No description provided for @shoppingCategoryBebe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Bébé'**
+  String get shoppingCategoryBebe;
+
+  /// No description provided for @shoppingCategoryBoissons.
+  ///
+  /// In fr, this message translates to:
+  /// **'Boissons'**
+  String get shoppingCategoryBoissons;
+
+  /// No description provided for @shoppingCategoryBoucherie.
+  ///
+  /// In fr, this message translates to:
+  /// **'Boucherie'**
+  String get shoppingCategoryBoucherie;
+
+  /// No description provided for @shoppingCategoryBoulangerieViennoiserie.
+  ///
+  /// In fr, this message translates to:
+  /// **'Boulangerie & Viennoiserie'**
+  String get shoppingCategoryBoulangerieViennoiserie;
+
+  /// No description provided for @shoppingCategoryConserves.
+  ///
+  /// In fr, this message translates to:
+  /// **'Conserves'**
+  String get shoppingCategoryConserves;
+
+  /// No description provided for @shoppingCategoryCremerie.
+  ///
+  /// In fr, this message translates to:
+  /// **'Crémerie'**
+  String get shoppingCategoryCremerie;
+
+  /// No description provided for @shoppingCategoryEntretien.
+  ///
+  /// In fr, this message translates to:
+  /// **'Entretien'**
+  String get shoppingCategoryEntretien;
+
+  /// No description provided for @shoppingCategoryEpicerieSalee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Épicerie salée'**
+  String get shoppingCategoryEpicerieSalee;
+
+  /// No description provided for @shoppingCategoryEpicerieSucree.
+  ///
+  /// In fr, this message translates to:
+  /// **'Épicerie sucrée'**
+  String get shoppingCategoryEpicerieSucree;
+
+  /// No description provided for @shoppingCategoryFruitsEtLegumes.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fruits et légumes'**
+  String get shoppingCategoryFruitsEtLegumes;
+
+  /// No description provided for @shoppingCategoryHygiene.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hygiène'**
+  String get shoppingCategoryHygiene;
+
+  /// No description provided for @shoppingCategoryMaison.
+  ///
+  /// In fr, this message translates to:
+  /// **'Maison'**
+  String get shoppingCategoryMaison;
+
+  /// No description provided for @shoppingCategoryPetitDejeunerEtGouter.
+  ///
+  /// In fr, this message translates to:
+  /// **'Petit-déjeuner et goûter'**
+  String get shoppingCategoryPetitDejeunerEtGouter;
+
+  /// No description provided for @shoppingCategoryPoissonnerie.
+  ///
+  /// In fr, this message translates to:
+  /// **'Poissonnerie'**
+  String get shoppingCategoryPoissonnerie;
+
+  /// No description provided for @shoppingCategoryRayonFrais.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rayon frais'**
+  String get shoppingCategoryRayonFrais;
+
+  /// No description provided for @shoppingCategorySurgeles.
+  ///
+  /// In fr, this message translates to:
+  /// **'Surgelés'**
+  String get shoppingCategorySurgeles;
+
   /// No description provided for @shoppingConsolidatedAddBlockedWhenLocked.
   ///
   /// In fr, this message translates to:
