@@ -300,6 +300,7 @@ class TripMessagesRepository {
     await _messagesCol(_validId(tripId)).doc(_validId(messageId)).update({
       'text': trimmed,
       'updatedAt': FieldValue.serverTimestamp(),
+      'editedAt': FieldValue.serverTimestamp(),
     });
   }
 

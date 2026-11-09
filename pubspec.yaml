@@ -63,6 +63,7 @@ flutter:
     - liste_courses_compilee.json
     - assets/images/app_icon.png
     - assets/images/planerz_mark.svg
+    - assets/images/chat_background.png
     - assets/images/google_g.svg
     - assets/images/flag_fr.svg
     - assets/images/flag_us.svg

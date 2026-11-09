@@ -5972,6 +5972,12 @@ abstract class AppLocalizations {
   /// **'Messages non lus'**
   String get chatUnreadSeparator;
 
+  /// No description provided for @chatEdited.
+  ///
+  /// In fr, this message translates to:
+  /// **'modifié'**
+  String get chatEdited;
+
   /// No description provided for @chatImageCaptionHint.
   ///
   /// In fr, this message translates to:

@@ -174,6 +174,8 @@ void main() {
 
     final edit = controller.editText('m1', 'Corrigé');
     expect(controller.messageById('m1')!.text, 'Corrigé');
+    expect(controller.messageById('m1')!.isEdited, isTrue);
+    expect(controller.messageById('m0')!.isEdited, isFalse);
     await edit;
 
     backend.failNextWrite = StateError('denied');

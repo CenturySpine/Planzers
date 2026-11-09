@@ -3347,6 +3347,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chatUnreadSeparator => 'Messages non lus';
 
   @override
+  String get chatEdited => 'modifié';
+
+  @override
   String get chatImageCaptionHint => 'Ajouter une légende…';
 
   @override
@@ -7799,6 +7802,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get chatUnreadSeparator => 'Messages non lus';
+
+  @override
+  String get chatEdited => 'modifié';
 
   @override
   String get chatImageCaptionHint => 'Ajouter une légende…';

@@ -3316,6 +3316,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatUnreadSeparator => 'Unread messages';
 
   @override
+  String get chatEdited => 'edited';
+
+  @override
   String get chatImageCaptionHint => 'Add a caption…';
 
   @override
@@ -7726,6 +7729,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get chatUnreadSeparator => 'Unread messages';
+
+  @override
+  String get chatEdited => 'edited';
 
   @override
   String get chatImageCaptionHint => 'Add a caption…';

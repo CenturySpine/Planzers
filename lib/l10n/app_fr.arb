@@ -1292,6 +1292,7 @@
   "chatCropImageTitle": "Recadrer la photo",
   "chatLoadImpossible": "Impossible de charger les messages.",
   "chatUnreadSeparator": "Messages non lus",
+  "chatEdited": "modifié",
   "chatImageCaptionHint": "Ajouter une légende…",
   "appCopyright": "© 2026 Planerz",
   "tripsMemberCount": "{count} membre(s)",

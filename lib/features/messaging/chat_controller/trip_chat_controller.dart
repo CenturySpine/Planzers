@@ -553,14 +553,16 @@ class TripChatController extends ChangeNotifier {
     final message = _stored(messageId);
     final trimmed = text.trim();
     if (message == null || trimmed.isEmpty || trimmed == message.text) return;
-    _replaceStored(message.copyWith(text: trimmed));
+    _replaceStored(message.copyWith(text: trimmed, isEdited: true));
     _recompute();
     try {
       await _backend.updateText(messageId: messageId, text: trimmed);
     } catch (_) {
       final current = _stored(messageId);
       if (!_disposed && current != null) {
-        _replaceStored(current.copyWith(text: message.text));
+        _replaceStored(
+          current.copyWith(text: message.text, isEdited: message.isEdited),
+        );
         _recompute();
       }
       rethrow;

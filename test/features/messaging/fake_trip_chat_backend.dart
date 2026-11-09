@@ -177,7 +177,9 @@ class FakeTripChatBackend implements TripChatBackend {
     log.add('updateText:$messageId:$text');
     _maybeFail();
     final index = store.indexWhere((m) => m.id == messageId);
-    if (index != -1) store[index] = store[index].copyWith(text: text);
+    if (index != -1) {
+      store[index] = store[index].copyWith(text: text, isEdited: true);
+    }
   }
 
   @override

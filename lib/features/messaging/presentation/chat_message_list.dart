@@ -371,7 +371,9 @@ class ChatMessageListState extends State<ChatMessageList> {
       isLastInGroup: isLastInGroup,
       authorLabel: _authorLabel(message.authorId),
       authorPhotoUrl: widget.memberPhotoUrls[message.authorId],
-      timeLabel: timeFormat.format(createdAt),
+      timeLabel: message.isEdited
+          ? '${l10n.chatEdited} ${timeFormat.format(createdAt)}'
+          : timeFormat.format(createdAt),
       crossCache: widget.crossCache,
       highlightedMessageId: _highlightedMessageId,
       quote: quote,

@@ -1292,6 +1292,7 @@
   "chatCropImageTitle": "Crop photo",
   "chatLoadImpossible": "Unable to load messages.",
   "chatUnreadSeparator": "Unread messages",
+  "chatEdited": "edited",
   "chatImageCaptionHint": "Add a caption…",
   "appCopyright": "© 2026 Planerz",
   "tripsMemberCount": "{count} member(s)",

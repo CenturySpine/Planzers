@@ -193,6 +193,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(controller.messageById('m1')!.text, 'Bonjour Robert');
+    expect(find.textContaining('modifié'), findsOneWidget);
     expect(backend.log, contains('updateText:m1:Bonjour Robert'));
     expect(field.controller!.text, 'brouillon');
     expect(find.text('Modifier le message'), findsNothing);

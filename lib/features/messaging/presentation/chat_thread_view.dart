@@ -338,21 +338,27 @@ class _ChatThreadViewState extends State<ChatThreadView> {
       child: Column(
         children: [
           Expanded(
-            child: ChatMessageList(
-              key: _listKey,
-              controller: _controller,
-              currentUserId: widget.currentUserId,
-              memberLabels: widget.memberLabels,
-              memberPhotoUrls: widget.memberPhotoUrls,
-              fallbackAuthorLabel: widget.fallbackAuthorLabel,
-              crossCache: _crossCache,
-              unreadSince: widget.unreadSince,
-              onOpenMenu: (message, rect) =>
-                  unawaited(_openMenu(message, rect)),
-              onImageTap: _openImage,
-              onReactionsTap: (message) => unawaited(_showReactions(message)),
-              onSwipeReply: _startReply,
-              onRetry: (message) => _controller.retry(message.id),
+            child: Stack(
+              children: [
+                const Positioned.fill(child: _ChatBackground()),
+                ChatMessageList(
+                  key: _listKey,
+                  controller: _controller,
+                  currentUserId: widget.currentUserId,
+                  memberLabels: widget.memberLabels,
+                  memberPhotoUrls: widget.memberPhotoUrls,
+                  fallbackAuthorLabel: widget.fallbackAuthorLabel,
+                  crossCache: _crossCache,
+                  unreadSince: widget.unreadSince,
+                  onOpenMenu: (message, rect) =>
+                      unawaited(_openMenu(message, rect)),
+                  onImageTap: _openImage,
+                  onReactionsTap: (message) =>
+                      unawaited(_showReactions(message)),
+                  onSwipeReply: _startReply,
+                  onRetry: (message) => _controller.retry(message.id),
+                ),
+              ],
             ),
           ),
           // Rebuilt with the conversation so the banner follows the message
@@ -371,6 +377,36 @@ class _ChatThreadViewState extends State<ChatThreadView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Faint doodle pattern behind the conversation. It stays still while the
+/// messages scroll over it.
+class _ChatBackground extends StatelessWidget {
+  const _ChatBackground();
+
+  /// Asset pixels per logical pixel: one tile is about 430 wide on screen.
+  static const double _assetScale = 2.8;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: ExcludeSemantics(
+        child: Image.asset(
+          'assets/images/chat_background.png',
+          scale: _assetScale,
+          fit: BoxFit.none,
+          repeat: ImageRepeat.repeat,
+          alignment: Alignment.topCenter,
+          // The asset only carries the drawing shape: its colour comes from
+          // the theme.
+          color: Theme.of(context).colorScheme.primary,
+          colorBlendMode: BlendMode.srcIn,
+          opacity: const AlwaysStoppedAnimation(0.09),
+          filterQuality: FilterQuality.medium,
+        ),
       ),
     );
   }

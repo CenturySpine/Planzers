@@ -33,6 +33,7 @@ class TripMessage {
     this.imageStoragePath,
     this.imageWidth,
     this.imageHeight,
+    this.isEdited = false,
     this.reactionsByUser = const <String, String>{},
     this.sendState = TripMessageSendState.sent,
     this.hasServerTimestamp = true,
@@ -61,6 +62,9 @@ class TripMessage {
   /// ID of the message this is a reply to, or null if not a reply.
   final String? replyToMessageId;
 
+  /// True when the author changed the text after sending it.
+  final bool isEdited;
+
   /// Emoji picked by each user (user id → emoji). One reaction per user.
   final Map<String, String> reactionsByUser;
 
@@ -83,6 +87,7 @@ class TripMessage {
     String? text,
     DateTime? createdAt,
     String? imageUrl,
+    bool? isEdited,
     Map<String, String>? reactionsByUser,
     TripMessageSendState? sendState,
     bool? hasServerTimestamp,
@@ -103,6 +108,7 @@ class TripMessage {
       imageStoragePath: imageStoragePath,
       imageWidth: imageWidth,
       imageHeight: imageHeight,
+      isEdited: isEdited ?? this.isEdited,
       reactionsByUser: reactionsByUser ?? this.reactionsByUser,
       sendState: sendState ?? this.sendState,
       hasServerTimestamp: hasServerTimestamp ?? this.hasServerTimestamp,
@@ -157,6 +163,9 @@ class TripMessage {
         final s = (data['replyToMessageId'] as String?)?.trim();
         return (s == null || s.isEmpty) ? null : s;
       }(),
+      // The key is present (with a pending value) as soon as the edit is
+      // written locally.
+      isEdited: data.containsKey('editedAt'),
       reactionsByUser: _parseReactionsByUser(data['reactionsByUser']),
       sendState: hasServerTimestamp
           ? TripMessageSendState.sent
@@ -190,6 +199,7 @@ class TripMessage {
         other.imageHeight == imageHeight &&
         other.createdAt == createdAt &&
         other.replyToMessageId == replyToMessageId &&
+        other.isEdited == isEdited &&
         other.sendState == sendState &&
         other.hasServerTimestamp == hasServerTimestamp &&
         mapEquals(other.reactionsByUser, reactionsByUser);
