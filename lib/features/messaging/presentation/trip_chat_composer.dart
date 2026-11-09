@@ -1,4 +1,5 @@
 import 'package:planerz/app/theme/app_icons.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
@@ -55,8 +56,23 @@ class _TripChatComposerState extends State<TripChatComposer> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
   }
 
+  /// On phones and tablets (native or mobile browser), Enter inserts a new
+  /// line and messages are sent with the send button. On computers, Enter
+  /// sends and Shift+Enter inserts a new line.
+  static bool get _enterSendsMessage => switch (defaultTargetPlatform) {
+        TargetPlatform.android ||
+        TargetPlatform.iOS ||
+        TargetPlatform.fuchsia =>
+          false,
+        TargetPlatform.linux ||
+        TargetPlatform.macOS ||
+        TargetPlatform.windows =>
+          true,
+      };
+
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent &&
+    if (_enterSendsMessage &&
+        event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.enter &&
         !HardwareKeyboard.instance.isShiftPressed) {
       _handleSubmitted(_textController.text);
