@@ -199,7 +199,6 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
     final navigationShell = widget.navigationShell;
     final tripAsync = ref.watch(tripStreamProvider(tripId));
     final countersAsync = ref.watch(tripNotificationCountersProvider(tripId));
-    final messagesAsync = ref.watch(tripMessagesStreamProvider(tripId));
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(tripId));
     final announcementsAsync =
         ref.watch(tripAnnouncementsStreamProvider(tripId));
@@ -224,7 +223,6 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
     var unreadActivities = 0;
     var unreadExpenses = 0;
     var unreadAnnouncements = 0;
-    final messages = messagesAsync.asData?.value;
     final activities = activitiesAsync.asData?.value;
     final announcements = announcementsAsync.asData?.value;
     final lastReadAt = lastReadAtAsync.asData?.value?.toUtc();
@@ -233,6 +231,13 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
     final activitiesLastReadAt =
         activitiesLastReadAtAsync.asData?.value?.toUtc();
     final counters = countersAsync.asData?.value;
+    // Unread messages normally come from the server-side counters. Recent
+    // messages are only read as a fallback while those counters do not exist.
+    final needsMessagesFallback = countersAsync.hasValue &&
+        !(counters?.hasChannel(TripNotificationChannel.messages) ?? false);
+    final messages = needsMessagesFallback
+        ? ref.watch(tripRecentMessagesStreamProvider(tripId)).asData?.value
+        : null;
     if (counters != null &&
         counters.hasChannel(TripNotificationChannel.messages)) {
       unreadMessages = counters.unreadFor(TripNotificationChannel.messages);

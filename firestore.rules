@@ -1145,7 +1145,12 @@ service cloud.firestore {
                 .hasOnly([
                   'text',
                   'updatedAt',
+                  'editedAt',
                 ])
+              && (
+                !request.resource.data.diff(resource.data).affectedKeys().hasAny(['editedAt'])
+                || request.resource.data.editedAt == request.time
+              )
             )
             || tripMessageReactionUpdateOnly()
           );

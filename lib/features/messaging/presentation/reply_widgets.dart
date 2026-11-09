@@ -1,103 +1,136 @@
-import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/features/trips/data/trip_members_repository.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// Quoted message snippet shown inside the reply-er's bubble (as topWidget of
-/// FlyerChatTextMessage). Tapping it triggers [onTap] (scroll to original).
-class QuotedMessageSnippet extends ConsumerWidget {
+/// One-line summary of a quoted message: its text, or a photo mention.
+class _QuotePreview extends StatelessWidget {
+  const _QuotePreview({
+    required this.text,
+    required this.isImage,
+    required this.style,
+  });
+
+  final String text;
+  final bool isImage;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = text.isNotEmpty
+        ? text
+        : (isImage ? AppLocalizations.of(context)!.chatQuotedImage : '');
+    final preview = Text(
+      label,
+      style: style,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    if (!isImage) return preview;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(PhosphorIconsRegular.camera, size: 14, color: style?.color),
+        const SizedBox(width: 4),
+        Flexible(child: preview),
+      ],
+    );
+  }
+}
+
+/// Quoted message shown at the top of a reply bubble. Tapping it triggers
+/// [onTap] (scroll to the original message).
+class QuotedMessageSnippet extends StatelessWidget {
   const QuotedMessageSnippet({
     super.key,
-    required this.authorId,
+    required this.authorLabel,
     required this.text,
-    required this.tripId,
+    this.isImage = false,
     this.onTap,
   });
 
-  final String authorId;
+  final String authorLabel;
   final String text;
-  final String tripId;
+  final bool isImage;
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(tripId));
-    final authorLabel = memberLabels[authorId] ?? '';
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 6),
-        decoration: BoxDecoration(
-          color: colorScheme.surface.withValues(alpha: 0.18),
-          borderRadius: BorderRadius.circular(6),
-          border: Border(
-            left: BorderSide(color: colorScheme.primary, width: 3),
-          ),
-        ),
-        padding: const EdgeInsets.fromLTRB(8, 5, 8, 5),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (authorLabel.isNotEmpty)
-              Text(
-                authorLabel,
-                style: textTheme.labelSmall?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            Text(
-              text,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.75),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: colorScheme.onSurface.withValues(alpha: 0.07),
+            border: Border(
+              left: BorderSide(color: colorScheme.primary, width: 3),
             ),
-          ],
+          ),
+          padding: const EdgeInsets.fromLTRB(8, 5, 10, 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (authorLabel.isNotEmpty)
+                Text(
+                  authorLabel,
+                  style: textTheme.labelMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              _QuotePreview(
+                text: text,
+                isImage: isImage,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.75),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Banner displayed above the composer input when the user is composing a
-/// reply. Shows the author name, a preview of the quoted text, and a cancel
+/// Banner displayed above the composer input while the user replies to or
+/// edits a message. Shows a title, a preview of the message and a cancel
 /// button.
-class ReplyComposerBanner extends ConsumerWidget {
-  const ReplyComposerBanner({
+class ComposerContextBanner extends StatelessWidget {
+  const ComposerContextBanner({
     super.key,
-    required this.authorId,
+    required this.icon,
+    required this.title,
     required this.text,
-    required this.tripId,
     required this.onCancel,
+    this.isImage = false,
   });
 
-  final String authorId;
+  final IconData icon;
+  final String title;
   final String text;
-  final String tripId;
+  final bool isImage;
   final VoidCallback onCancel;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(tripId));
-    final authorLabel = memberLabels[authorId] ?? '';
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      color: colorScheme.surfaceContainerHighest,
-      padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 4, 0),
       child: Row(
         children: [
+          Icon(icon, size: 20, color: colorScheme.primary),
+          const SizedBox(width: 10),
           Container(
             width: 3,
             height: 36,
@@ -112,23 +145,22 @@ class ReplyComposerBanner extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (authorLabel.isNotEmpty)
+                if (title.isNotEmpty)
                   Text(
-                    authorLabel,
-                    style: textTheme.labelSmall?.copyWith(
+                    title,
+                    style: textTheme.labelMedium?.copyWith(
                       color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                Text(
-                  text,
+                _QuotePreview(
+                  text: text,
+                  isImage: isImage,
                   style: textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
