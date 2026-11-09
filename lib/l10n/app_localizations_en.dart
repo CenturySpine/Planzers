@@ -3241,11 +3241,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesAttachmentsDeleteTitle => 'Delete this receipt?';
 
   @override
-  String chatSendImpossible(Object error) {
-    return 'Unable to send: $error';
-  }
-
-  @override
   String get chatNoRecentEmoji => 'No recent emoji';
 
   @override
@@ -3313,6 +3308,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatCropImageTitle => 'Crop photo';
+
+  @override
+  String get chatLoadImpossible => 'Unable to load messages.';
+
+  @override
+  String get chatUnreadSeparator => 'Unread messages';
+
+  @override
+  String get chatImageCaptionHint => 'Add a caption…';
 
   @override
   String get appCopyright => '© 2026 Planerz';
@@ -7649,11 +7653,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get expensesAttachmentsDeleteTitle => 'Delete this receipt?';
 
   @override
-  String chatSendImpossible(Object error) {
-    return 'Unable to send: $error';
-  }
-
-  @override
   String get chatNoRecentEmoji => 'No recent emoji';
 
   @override
@@ -7721,6 +7720,15 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get chatCropImageTitle => 'Crop photo';
+
+  @override
+  String get chatLoadImpossible => 'Unable to load messages.';
+
+  @override
+  String get chatUnreadSeparator => 'Unread messages';
+
+  @override
+  String get chatImageCaptionHint => 'Add a caption…';
 
   @override
   String get appCopyright => '© 2026 Planerz';

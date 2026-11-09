@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,9 +10,7 @@ import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/features/messaging/data/trip_message.dart';
 import 'package:planerz/features/messaging/data/trip_message_kind.dart';
-import 'package:planerz/features/messaging/data/trip_message_reaction.dart';
 import 'package:planerz/features/messaging/data/trip_message_thread_scope.dart';
-import 'package:planerz/features/trips/data/trip.dart';
 
 final tripMessagesRepositoryProvider = Provider<TripMessagesRepository>((ref) {
   final target = ref.watch(firebaseTargetProvider);
@@ -32,50 +30,23 @@ final tripMessagesRepositoryProvider = Provider<TripMessagesRepository>((ref) {
   );
 });
 
-final tripMessagesStreamProvider =
+/// Most recent main-thread messages of a trip (bounded), oldest first.
+///
+/// Only used as a fallback to count unread messages when the server-side
+/// counters are not available yet.
+final tripRecentMessagesStreamProvider =
     StreamProvider.autoDispose.family<List<TripMessage>, String>((ref, tripId) {
   return ref
       .watch(tripMessagesRepositoryProvider)
-      .watchMessages(tripId, scope: const TripMessageThreadScope.main());
-});
-
-final tripMessagesScopedStreamProvider = StreamProvider.autoDispose
-    .family<List<TripMessage>, TripMessageThreadRequest>((ref, args) {
-  return ref
-      .watch(tripMessagesRepositoryProvider)
-      .watchMessages(args.tripId, scope: args.scope);
-});
-
-final tripMessagesLastReadAtProvider =
-    StreamProvider.autoDispose.family<DateTime?, String>((ref, tripId) {
-  return ref.watch(tripMessagesRepositoryProvider).watchMyLastReadAt(tripId);
-});
-
-final tripMessageReactionsStreamProvider = StreamProvider.autoDispose
-    .family<Map<String, List<TripMessageReaction>>, String>((ref, tripId) {
-  return ref
-      .watch(tripMessagesRepositoryProvider)
-      .watchReactionsByMessage(tripId);
-});
-
-final tripChatDataStreamProvider =
-    StreamProvider.autoDispose.family<TripChatData, String>((ref, tripId) {
-  return ref.watch(tripMessagesRepositoryProvider).watchRecentChatData(
+      .watchLatest(
         tripId,
-        pageSize: 50,
         scope: const TripMessageThreadScope.main(),
-      );
+        limit: 50,
+      )
+      .map((window) => window.messages);
 });
 
-final tripChatDataScopedStreamProvider = StreamProvider.autoDispose
-    .family<TripChatData, TripMessageThreadRequest>((ref, args) {
-  return ref.watch(tripMessagesRepositoryProvider).watchRecentChatData(
-        args.tripId,
-        pageSize: 50,
-        scope: args.scope,
-      );
-});
-
+/// Identifies one conversation: a trip plus a thread inside it.
 class TripMessageThreadRequest {
   const TripMessageThreadRequest({
     required this.tripId,
@@ -106,30 +77,27 @@ class TripMessageThreadRequest {
       );
 }
 
-class TripChatData {
-  const TripChatData({
+/// A slice of a conversation, oldest message first.
+class TripChatWindow {
+  const TripChatWindow({
     required this.messages,
-    required this.reactionsByMessage,
-    this.oldestLoadedDoc,
-    this.hasPotentialOlder = false,
+    required this.olderCursor,
+    required this.mayHaveOlder,
   });
+
+  static const empty = TripChatWindow(
+    messages: <TripMessage>[],
+    olderCursor: null,
+    mayHaveOlder: false,
+  );
 
   final List<TripMessage> messages;
-  final Map<String, List<TripMessageReaction>> reactionsByMessage;
-  final QueryDocumentSnapshot<Map<String, dynamic>>? oldestLoadedDoc;
-  final bool hasPotentialOlder;
-}
 
-class TripChatPage {
-  const TripChatPage({
-    required this.data,
-    required this.nextCursor,
-    required this.hasMore,
-  });
+  /// Opaque position to pass to `fetchOlder` to continue before this slice.
+  final Object? olderCursor;
 
-  final TripChatData data;
-  final QueryDocumentSnapshot<Map<String, dynamic>>? nextCursor;
-  final bool hasMore;
+  /// True when the slice was full, so older messages may exist.
+  final bool mayHaveOlder;
 }
 
 class TripMessagesRepository {
@@ -145,196 +113,124 @@ class TripMessagesRepository {
 
   static const int maxTextLength = 4000;
   static const int maxImageBytes = 10 * 1024 * 1024;
-  static const String _messagesChannelKey = 'messages';
+
+  String? get currentUserId {
+    final uid = auth.currentUser?.uid.trim() ?? '';
+    return uid.isEmpty ? null : uid;
+  }
 
   CollectionReference<Map<String, dynamic>> _messagesCol(String tripId) {
     return firestore.collection('trips').doc(tripId).collection('messages');
   }
 
-  CollectionReference<Map<String, dynamic>> _messageReactionsCol({
-    required String tripId,
-    required String messageId,
-  }) {
-    return _messagesCol(tripId).doc(messageId).collection('reactions');
-  }
+  /// Pre-allocates a message id so the message can be shown before it is
+  /// written.
+  String newMessageId(String tripId) => _messagesCol(tripId.trim()).doc().id;
 
-  DocumentReference<Map<String, dynamic>> _myReadStateDoc(String tripId) {
-    final uid = auth.currentUser?.uid.trim() ?? '';
-    if (uid.isEmpty) {
-      throw StateError('Utilisateur non connecte');
-    }
-    return firestore
-        .collection('trips')
-        .doc(tripId)
-        .collection('notificationReads')
-        .doc(uid);
-  }
-
-  Stream<List<TripMessage>> watchMessages(
+  /// Live view of the [limit] most recent messages of a thread.
+  Stream<TripChatWindow> watchLatest(
     String tripId, {
-    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+    required TripMessageThreadScope scope,
+    required int limit,
   }) {
     final cleanId = tripId.trim();
-    if (cleanId.isEmpty) {
-      return Stream.value(const <TripMessage>[]);
-    }
+    if (cleanId.isEmpty) return Stream.value(TripChatWindow.empty);
     return _messagesQueryForScope(cleanId, scope: scope)
-        .orderBy('createdAt', descending: false)
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
         .snapshots()
-        .map((snap) => snap.docs.map(TripMessage.fromDoc).where((message) {
-              return _matchesScope(message: message, scope: scope);
-            }).toList(growable: false));
+        .map((snap) => _windowFromDocs(snap.docs, scope: scope, limit: limit));
   }
 
-  Stream<DateTime?> watchMyLastReadAt(
+  /// One-shot page of messages older than [cursor].
+  Future<TripChatWindow> fetchOlder(
     String tripId, {
-    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
-  }) {
-    final cleanTripId = tripId.trim();
-    final uid = auth.currentUser?.uid.trim() ?? '';
-    if (cleanTripId.isEmpty || uid.isEmpty) {
-      return Stream.value(null);
+    required TripMessageThreadScope scope,
+    required Object cursor,
+    required int limit,
+  }) async {
+    final cleanId = tripId.trim();
+    if (cleanId.isEmpty ||
+        cursor is! DocumentSnapshot<Map<String, dynamic>>) {
+      return TripChatWindow.empty;
     }
-    return _myReadStateDoc(cleanTripId).snapshots().map((doc) {
-      final data = doc.data();
-      if (data == null) return null;
-      final channels = data['channels'];
-      final raw = channels is Map<String, dynamic>
-          ? channels[_channelKeyForScope(scope)]
-          : null;
-      return switch (raw) {
-        Timestamp ts => ts.toDate(),
-        _ => null,
-      };
-    });
+    final snap = await _messagesQueryForScope(cleanId, scope: scope)
+        .orderBy('createdAt', descending: true)
+        .startAfterDocument(cursor)
+        .limit(limit)
+        .get();
+    return _windowFromDocs(snap.docs, scope: scope, limit: limit);
   }
 
-  Future<void> markMyMessagesAsReadUpTo({
-    required String tripId,
-    required DateTime readUpTo,
-    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+  /// Reads one message of a thread, or null when it no longer exists (or
+  /// belongs to another thread).
+  Future<TripMessage?> fetchMessage(
+    String tripId, {
+    required TripMessageThreadScope scope,
+    required String messageId,
   }) async {
     final cleanTripId = tripId.trim();
-    if (cleanTripId.isEmpty) {
-      throw StateError('Voyage invalide');
-    }
-    await _myReadStateDoc(cleanTripId).set(
-      {
-        'channels': {
-          _channelKeyForScope(scope): Timestamp.fromDate(readUpTo.toUtc()),
-        },
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+    final cleanMessageId = messageId.trim();
+    if (cleanTripId.isEmpty || cleanMessageId.isEmpty) return null;
+    final doc = await _messagesCol(cleanTripId).doc(cleanMessageId).get();
+    if (!doc.exists) return null;
+    final message = TripMessage.fromDoc(doc);
+    return _matchesScope(message: message, scope: scope) ? message : null;
   }
 
-  Future<void> sendMessage({
+  Future<void> sendTextMessage({
     required String tripId,
+    required String messageId,
     required String text,
-    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+    required TripMessageThreadScope scope,
     String? replyToMessageId,
   }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    if (cleanTripId.isEmpty) {
-      throw StateError('Voyage invalide');
-    }
-
-    final trimmed = text.trim();
-    if (trimmed.isEmpty) {
-      throw StateError('Message vide');
-    }
-    if (trimmed.length > maxTextLength) {
-      throw StateError('Message trop long');
-    }
-
-    if (scope.isAdmin) {
-      await _assertIsTripAdmin(cleanTripId, user.uid);
-    }
-
+    final uid = _requireUid();
+    final trimmed = _validText(text);
     final payload = <String, dynamic>{
       'text': trimmed,
-      'authorId': user.uid,
+      'authorId': uid,
       'createdAt': FieldValue.serverTimestamp(),
+      ..._threadFields(scope),
+      ..._replyField(replyToMessageId),
     };
-    payload['threadType'] = scope.threadType.firestoreValue;
-    payload['visibilityType'] = scope.visibilityType.firestoreValue;
-    if (scope.isObject) {
-      payload['threadObjectType'] = (scope.threadObjectType ?? '').trim();
-      payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
-    }
-    final cleanReplyId = replyToMessageId?.trim();
-    if (cleanReplyId != null && cleanReplyId.isNotEmpty) {
-      payload['replyToMessageId'] = cleanReplyId;
-    }
-    await _messagesCol(cleanTripId).add(payload);
+    await _messagesCol(_validId(tripId)).doc(_validId(messageId)).set(payload);
   }
-
-  /// Pre-allocates a Firestore message document id for optimistic UI.
-  String newImageMessageId(String tripId) =>
-      _messagesCol(tripId.trim()).doc().id;
-
-  Future<(double, double)?> decodeImageDimensions(Uint8List bytes) =>
-      _decodeImageDimensions(bytes);
 
   Future<void> sendImageMessage({
     required String tripId,
     required String messageId,
     required Uint8List bytes,
     required String fileExt,
-    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+    required TripMessageThreadScope scope,
     String? replyToMessageId,
     String? caption,
+    double? imageWidth,
+    double? imageHeight,
     void Function(double progress)? onUploadProgress,
   }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    if (cleanTripId.isEmpty) {
-      throw StateError('Voyage invalide');
-    }
-    if (bytes.isEmpty) {
-      throw StateError('Image invalide');
-    }
+    final uid = _requireUid();
+    final cleanTripId = _validId(tripId);
+    final cleanMessageId = _validId(messageId);
+    if (bytes.isEmpty) throw StateError('Image invalide');
     if (bytes.length > maxImageBytes) {
       throw StateError('Image trop volumineuse');
     }
-
     final trimmedCaption = (caption ?? '').trim();
     if (trimmedCaption.length > maxTextLength) {
       throw StateError('Message trop long');
     }
 
-    if (scope.isAdmin) {
-      await _assertIsTripAdmin(cleanTripId, user.uid);
-    }
-
-    final cleanMessageId = messageId.trim();
-    if (cleanMessageId.isEmpty) {
-      throw StateError('Parametres invalides');
-    }
-
     final storageSegmentRe = RegExp(r'^[A-Za-z0-9_-]+$');
     if (!storageSegmentRe.hasMatch(cleanTripId) ||
         !storageSegmentRe.hasMatch(cleanMessageId) ||
-        !storageSegmentRe.hasMatch(user.uid)) {
+        !storageSegmentRe.hasMatch(uid)) {
       throw StateError('Parametres invalides');
     }
 
-    final dimensions = await _decodeImageDimensions(bytes);
     final safeExt = fileExt.trim().toLowerCase().replaceAll('.', '');
     final ext = safeExt.isEmpty ? 'jpg' : safeExt;
-    final messageRef = _messagesCol(cleanTripId).doc(cleanMessageId);
-    final objectPath = 'trips/$cleanTripId/messages/${user.uid}/'
-        '$cleanMessageId.$ext';
+    final objectPath = 'trips/$cleanTripId/messages/$uid/$cleanMessageId.$ext';
     final contentType = switch (ext) {
       'png' => 'image/png',
       'webp' => 'image/webp',
@@ -348,47 +244,44 @@ class TripMessagesRepository {
       bytes,
       SettableMetadata(
         contentType: contentType,
-        customMetadata: {'authorId': user.uid},
+        customMetadata: {'authorId': uid},
       ),
     );
+    StreamSubscription<TaskSnapshot>? progressSub;
     if (onUploadProgress != null) {
-      uploadTask.snapshotEvents.listen((event) {
-        final total = event.totalBytes;
-        if (total > 0) {
-          onUploadProgress(event.bytesTransferred / total);
-        }
-      });
+      progressSub = uploadTask.snapshotEvents.listen(
+        (event) {
+          final total = event.totalBytes;
+          if (total > 0) onUploadProgress(event.bytesTransferred / total);
+        },
+        onError: (_) {},
+      );
     }
-    await uploadTask;
-    final downloadUrl = await objectRef.getDownloadURL();
+    final String downloadUrl;
+    try {
+      await uploadTask;
+      downloadUrl = await objectRef.getDownloadURL();
+    } finally {
+      await progressSub?.cancel();
+    }
 
     final payload = <String, dynamic>{
       'type': TripMessageKind.image.firestoreValue,
       'imageUrl': downloadUrl,
       'imageStoragePath': objectPath,
-      'authorId': user.uid,
+      'authorId': uid,
       'createdAt': FieldValue.serverTimestamp(),
+      if (imageWidth != null && imageHeight != null) ...{
+        'imageWidth': imageWidth,
+        'imageHeight': imageHeight,
+      },
+      if (trimmedCaption.isNotEmpty) 'text': trimmedCaption,
+      ..._threadFields(scope),
+      ..._replyField(replyToMessageId),
     };
-    if (dimensions != null) {
-      payload['imageWidth'] = dimensions.$1;
-      payload['imageHeight'] = dimensions.$2;
-    }
-    if (trimmedCaption.isNotEmpty) {
-      payload['text'] = trimmedCaption;
-    }
-    payload['threadType'] = scope.threadType.firestoreValue;
-    payload['visibilityType'] = scope.visibilityType.firestoreValue;
-    if (scope.isObject) {
-      payload['threadObjectType'] = (scope.threadObjectType ?? '').trim();
-      payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
-    }
-    final cleanReplyId = replyToMessageId?.trim();
-    if (cleanReplyId != null && cleanReplyId.isNotEmpty) {
-      payload['replyToMessageId'] = cleanReplyId;
-    }
 
     try {
-      await messageRef.set(payload);
+      await _messagesCol(cleanTripId).doc(cleanMessageId).set(payload);
     } catch (e) {
       try {
         await objectRef.delete();
@@ -397,44 +290,14 @@ class TripMessagesRepository {
     }
   }
 
-  Future<void> updateMessage({
+  Future<void> updateMessageText({
     required String tripId,
     required String messageId,
     required String text,
-    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
   }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    final cleanMessageId = messageId.trim();
-    if (cleanTripId.isEmpty || cleanMessageId.isEmpty) {
-      throw StateError('Parametres invalides');
-    }
-
-    final trimmed = text.trim();
-    if (trimmed.isEmpty) {
-      throw StateError('Message vide');
-    }
-    if (trimmed.length > maxTextLength) {
-      throw StateError('Message trop long');
-    }
-
-    if (scope.isAdmin) {
-      await _assertIsTripAdmin(cleanTripId, user.uid);
-    }
-
-    final message = await _loadScopedMessage(
-      tripId: cleanTripId,
-      messageId: cleanMessageId,
-      scope: scope,
-    );
-    if (message.isImage) {
-      throw StateError('Message non modifiable');
-    }
-    await _messagesCol(cleanTripId).doc(message.id).update({
+    _requireUid();
+    final trimmed = _validText(text);
+    await _messagesCol(_validId(tripId)).doc(_validId(messageId)).update({
       'text': trimmed,
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -443,27 +306,11 @@ class TripMessagesRepository {
   Future<void> deleteMessage({
     required String tripId,
     required String messageId,
-    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+    String? imageStoragePath,
   }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-    final cleanTripId = tripId.trim();
-    final cleanMessageId = messageId.trim();
-    if (cleanTripId.isEmpty || cleanMessageId.isEmpty) {
-      throw StateError('Parametres invalides');
-    }
-    if (scope.isAdmin) {
-      await _assertIsTripAdmin(cleanTripId, user.uid);
-    }
-    final message = await _loadScopedMessage(
-      tripId: cleanTripId,
-      messageId: cleanMessageId,
-      scope: scope,
-    );
-    await _messagesCol(cleanTripId).doc(message.id).delete();
-    final storagePath = message.imageStoragePath?.trim() ?? '';
+    _requireUid();
+    await _messagesCol(_validId(tripId)).doc(_validId(messageId)).delete();
+    final storagePath = imageStoragePath?.trim() ?? '';
     if (storagePath.isNotEmpty) {
       try {
         await storage.ref(storagePath).delete();
@@ -471,236 +318,40 @@ class TripMessagesRepository {
     }
   }
 
-  Stream<Map<String, List<TripMessageReaction>>> watchReactionsByMessage(
-    String tripId, {
-    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
-  }) {
-    final cleanId = tripId.trim();
-    if (cleanId.isEmpty) {
-      return Stream.value(const <String, List<TripMessageReaction>>{});
-    }
-    return _messagesQueryForScope(cleanId, scope: scope)
-        .snapshots()
-        .map((snap) {
-      final result = <String, List<TripMessageReaction>>{};
-      for (final messageDoc in snap.docs) {
-        final message = TripMessage.fromDoc(messageDoc);
-        if (!_matchesScope(message: message, scope: scope)) continue;
-        result[messageDoc.id] = _parseReactionsByUser(messageDoc.data());
-      }
-      return result;
-    });
-  }
-
-  Stream<TripChatData> watchRecentChatData(
-    String tripId, {
-    required int pageSize,
-    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
-  }) {
-    final cleanId = tripId.trim();
-    if (cleanId.isEmpty) {
-      return Stream.value(
-        const TripChatData(
-          messages: <TripMessage>[],
-          reactionsByMessage: <String, List<TripMessageReaction>>{},
-        ),
-      );
-    }
-    return _messagesQueryForScope(cleanId, scope: scope)
-        .orderBy('createdAt', descending: true)
-        .limit(_queryPageSizeForRequestedPage(pageSize))
-        .snapshots()
-        .map((snap) {
-      return _chatDataFromDocs(
-        docsDescByCreatedAt: snap.docs,
-        pageSize: pageSize,
-        scope: scope,
-      );
-    });
-  }
-
-  Future<TripChatPage> fetchOlderChatPage({
-    required String tripId,
-    required int pageSize,
-    required QueryDocumentSnapshot<Map<String, dynamic>> startAfterDoc,
-    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
-  }) async {
-    final cleanId = tripId.trim();
-    if (cleanId.isEmpty) {
-      return const TripChatPage(
-        data: TripChatData(
-          messages: <TripMessage>[],
-          reactionsByMessage: <String, List<TripMessageReaction>>{},
-        ),
-        nextCursor: null,
-        hasMore: false,
-      );
-    }
-
-    final snap = await _messagesQueryForScope(cleanId, scope: scope)
-        .orderBy('createdAt', descending: true)
-        .startAfterDocument(startAfterDoc)
-        .limit(_queryPageSizeForRequestedPage(pageSize))
-        .get();
-    final pageData = _chatDataFromDocs(
-      docsDescByCreatedAt: snap.docs,
-      pageSize: pageSize,
-      scope: scope,
-    );
-    return TripChatPage(
-      data: pageData,
-      nextCursor: pageData.oldestLoadedDoc,
-      hasMore: pageData.hasPotentialOlder,
-    );
-  }
-
+  /// Sets the current user's reaction on a message, or removes it when
+  /// [emoji] is null.
   Future<void> setMyReaction({
     required String tripId,
     required String messageId,
-    required String emoji,
-    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+    required String? emoji,
   }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    final cleanMessageId = messageId.trim();
-    final cleanEmoji = emoji.trim();
-    if (cleanTripId.isEmpty || cleanMessageId.isEmpty || cleanEmoji.isEmpty) {
-      throw StateError('Parametres invalides');
-    }
-    if (scope.isAdmin) {
-      await _assertIsTripAdmin(cleanTripId, user.uid);
-    }
-    await _loadScopedMessage(
-      tripId: cleanTripId,
-      messageId: cleanMessageId,
-      scope: scope,
-    );
-
-    final uid = user.uid.trim();
-    await _messagesCol(cleanTripId).doc(cleanMessageId).set(
+    final uid = _requireUid();
+    final cleanEmoji = emoji?.trim() ?? '';
+    await _messagesCol(_validId(tripId)).doc(_validId(messageId)).set(
       {
-        'reactionsByUser': {uid: cleanEmoji},
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
-    await _messageReactionsCol(tripId: cleanTripId, messageId: cleanMessageId)
-        .doc(uid)
-        .set(
-      {
-        'emoji': cleanEmoji,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
+        'reactionsByUser': {
+          uid: cleanEmoji.isEmpty ? FieldValue.delete() : cleanEmoji,
+        },
       },
       SetOptions(merge: true),
     );
   }
 
-  Future<void> removeMyReaction({
-    required String tripId,
-    required String messageId,
-    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
-  }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-    final cleanTripId = tripId.trim();
-    final cleanMessageId = messageId.trim();
-    if (cleanTripId.isEmpty || cleanMessageId.isEmpty) {
-      throw StateError('Parametres invalides');
-    }
-    if (scope.isAdmin) {
-      await _assertIsTripAdmin(cleanTripId, user.uid);
-    }
-    await _loadScopedMessage(
-      tripId: cleanTripId,
-      messageId: cleanMessageId,
-      scope: scope,
-    );
-
-    final uid = user.uid.trim();
-    await _messagesCol(cleanTripId).doc(cleanMessageId).set(
-      {
-        'reactionsByUser': {uid: FieldValue.delete()},
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
-    await _messageReactionsCol(tripId: cleanTripId, messageId: cleanMessageId)
-        .doc(uid)
-        .delete();
-  }
-
-  TripChatData _chatDataFromDocs({
-    required List<QueryDocumentSnapshot<Map<String, dynamic>>>
-        docsDescByCreatedAt,
-    required int pageSize,
+  TripChatWindow _windowFromDocs(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docsNewestFirst, {
     required TripMessageThreadScope scope,
+    required int limit,
   }) {
-    final filteredDesc = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
-    for (final doc in docsDescByCreatedAt) {
-      final message = TripMessage.fromDoc(doc);
-      if (!_matchesScope(message: message, scope: scope)) continue;
-      filteredDesc.add(doc);
-      if (filteredDesc.length >= pageSize) break;
-    }
-
-    final docsAsc = filteredDesc.reversed.toList(growable: false);
     final messages = <TripMessage>[];
-    final reactionsByMessage = <String, List<TripMessageReaction>>{};
-    for (final doc in docsAsc) {
-      messages.add(TripMessage.fromDoc(doc));
-      reactionsByMessage[doc.id] = _parseReactionsByUser(doc.data());
+    for (final doc in docsNewestFirst.reversed) {
+      final message = TripMessage.fromDoc(doc);
+      if (_matchesScope(message: message, scope: scope)) messages.add(message);
     }
-
-    return TripChatData(
+    return TripChatWindow(
       messages: messages,
-      reactionsByMessage: reactionsByMessage,
-      oldestLoadedDoc: filteredDesc.isEmpty ? null : filteredDesc.last,
-      hasPotentialOlder: docsDescByCreatedAt.length >= pageSize,
+      olderCursor: docsNewestFirst.isEmpty ? null : docsNewestFirst.last,
+      mayHaveOlder: docsNewestFirst.length >= limit,
     );
-  }
-
-  List<TripMessageReaction> _parseReactionsByUser(Map<String, dynamic> data) {
-    final reactionsRaw = data['reactionsByUser'];
-    if (reactionsRaw is! Map<String, dynamic> || reactionsRaw.isEmpty) {
-      return const <TripMessageReaction>[];
-    }
-    final reactions = <TripMessageReaction>[];
-    reactionsRaw.forEach((uid, rawValue) {
-      final cleanUid = uid.trim();
-      final emoji = rawValue is String ? rawValue.trim() : '';
-      if (cleanUid.isEmpty || emoji.isEmpty) return;
-      reactions.add(
-        TripMessageReaction(
-          userId: cleanUid,
-          emoji: emoji,
-          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-        ),
-      );
-    });
-    return reactions;
-  }
-
-  Future<TripMessage> _loadScopedMessage({
-    required String tripId,
-    required String messageId,
-    required TripMessageThreadScope scope,
-  }) async {
-    final doc = await _messagesCol(tripId).doc(messageId).get();
-    if (!doc.exists) {
-      throw StateError('Message introuvable');
-    }
-    final message = TripMessage.fromDoc(doc);
-    if (!_matchesScope(message: message, scope: scope)) {
-      throw StateError('Message hors thread');
-    }
-    return message;
   }
 
   bool _matchesScope({
@@ -725,6 +376,8 @@ class TripMessagesRepository {
   }) {
     Query<Map<String, dynamic>> query = _messagesCol(tripId);
     if (scope.isMain) {
+      // Legacy main-thread messages have no threadType field, so the thread is
+      // filtered on the client (see [_matchesScope]).
       return query.where(
         'visibilityType',
         isEqualTo: TripMessageVisibilityType.tripAll.firestoreValue,
@@ -749,46 +402,38 @@ class TripMessagesRepository {
     return query;
   }
 
-  int _queryPageSizeForRequestedPage(int requestedPageSize) {
-    final buffered = requestedPageSize * 3;
-    return buffered < requestedPageSize ? requestedPageSize : buffered;
+  Map<String, dynamic> _threadFields(TripMessageThreadScope scope) => {
+        'threadType': scope.threadType.firestoreValue,
+        'visibilityType': scope.visibilityType.firestoreValue,
+        if (scope.isObject) ...{
+          'threadObjectType': (scope.threadObjectType ?? '').trim(),
+          'threadObjectId': (scope.threadObjectId ?? '').trim(),
+        },
+      };
+
+  Map<String, dynamic> _replyField(String? replyToMessageId) {
+    final cleanReplyId = replyToMessageId?.trim() ?? '';
+    return cleanReplyId.isEmpty
+        ? const <String, dynamic>{}
+        : {'replyToMessageId': cleanReplyId};
   }
 
-  Future<void> _assertIsTripAdmin(String tripId, String userId) async {
-    final cleanTripId = tripId.trim();
-    final cleanUserId = userId.trim();
-    if (cleanTripId.isEmpty || cleanUserId.isEmpty) {
-      throw StateError('Parametres invalides');
-    }
-    final doc = await firestore.collection('trips').doc(cleanTripId).get();
-    if (!doc.exists) {
-      throw StateError('Voyage introuvable');
-    }
-    final trip = Trip.fromMap(doc.id, doc.data() ?? const <String, dynamic>{});
-    if (!trip.memberHasAdminRole(cleanUserId)) {
-      throw StateError('Acces reserve aux administrateurs');
-    }
+  String _requireUid() {
+    final uid = currentUserId;
+    if (uid == null) throw StateError('Utilisateur non connecte');
+    return uid;
   }
 
-  String _channelKeyForScope(TripMessageThreadScope scope) {
-    if (scope.isMain) {
-      return _messagesChannelKey;
-    }
-    return scope.channelKey;
+  String _validId(String raw) {
+    final clean = raw.trim();
+    if (clean.isEmpty) throw StateError('Parametres invalides');
+    return clean;
   }
 
-  Future<(double, double)?> _decodeImageDimensions(Uint8List bytes) async {
-    try {
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      final image = frame.image;
-      final width = image.width.toDouble();
-      final height = image.height.toDouble();
-      image.dispose();
-      if (width <= 0 || height <= 0) return null;
-      return (width, height);
-    } catch (_) {
-      return null;
-    }
+  String _validText(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) throw StateError('Message vide');
+    if (trimmed.length > maxTextLength) throw StateError('Message trop long');
+    return trimmed;
   }
 }

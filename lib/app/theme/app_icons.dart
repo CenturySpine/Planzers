@@ -16,6 +16,7 @@ abstract final class PhosphorIconsRegular {
   static const IconData armchair = IconData(0xe012, fontFamily: 'PhosphorRegular');
   static const IconData arrowBendUpLeft = IconData(0xe024, fontFamily: 'PhosphorRegular');
   static const IconData arrowClockwise = IconData(0xe036, fontFamily: 'PhosphorRegular');
+  static const IconData arrowDown = IconData(0xe03e, fontFamily: 'PhosphorRegular');
   static const IconData arrowLeft = IconData(0xe058, fontFamily: 'PhosphorRegular');
   static const IconData arrowRight = IconData(0xe06c, fontFamily: 'PhosphorRegular');
   static const IconData arrowSquareOut = IconData(0xe5de, fontFamily: 'PhosphorRegular');
@@ -72,6 +73,7 @@ abstract final class PhosphorIconsRegular {
   static const IconData confetti = IconData(0xe81a, fontFamily: 'PhosphorRegular');
   static const IconData cookingPot = IconData(0xe764, fontFamily: 'PhosphorRegular');
   static const IconData copy = IconData(0xe1ca, fontFamily: 'PhosphorRegular');
+  static const IconData crop = IconData(0xe1d4, fontFamily: 'PhosphorRegular');
   static const IconData crosshair = IconData(0xe1d6, fontFamily: 'PhosphorRegular');
   static const IconData deviceMobile = IconData(0xe1e0, fontFamily: 'PhosphorRegular');
   static const IconData deviceMobileSlash = IconData(0xee46, fontFamily: 'PhosphorRegular');

@@ -3272,11 +3272,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get expensesAttachmentsDeleteTitle => 'Supprimer ce justificatif ?';
 
   @override
-  String chatSendImpossible(Object error) {
-    return 'Envoi impossible : $error';
-  }
-
-  @override
   String get chatNoRecentEmoji => 'Aucun emoji récent';
 
   @override
@@ -3344,6 +3339,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chatCropImageTitle => 'Recadrer la photo';
+
+  @override
+  String get chatLoadImpossible => 'Impossible de charger les messages.';
+
+  @override
+  String get chatUnreadSeparator => 'Messages non lus';
+
+  @override
+  String get chatImageCaptionHint => 'Ajouter une légende…';
 
   @override
   String get appCopyright => '© 2026 Planerz';
@@ -7722,11 +7726,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get expensesAttachmentsDeleteTitle => 'Supprimer ce justificatif ?';
 
   @override
-  String chatSendImpossible(Object error) {
-    return 'Envoi impossible : $error';
-  }
-
-  @override
   String get chatNoRecentEmoji => 'Aucun emoji récent';
 
   @override
@@ -7794,6 +7793,15 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get chatCropImageTitle => 'Recadrer la photo';
+
+  @override
+  String get chatLoadImpossible => 'Impossible de charger les messages.';
+
+  @override
+  String get chatUnreadSeparator => 'Messages non lus';
+
+  @override
+  String get chatImageCaptionHint => 'Ajouter une légende…';
 
   @override
   String get appCopyright => '© 2026 Planerz';

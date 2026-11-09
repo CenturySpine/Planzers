@@ -5840,12 +5840,6 @@ abstract class AppLocalizations {
   /// **'Supprimer ce justificatif ?'**
   String get expensesAttachmentsDeleteTitle;
 
-  /// No description provided for @chatSendImpossible.
-  ///
-  /// In fr, this message translates to:
-  /// **'Envoi impossible : {error}'**
-  String chatSendImpossible(Object error);
-
   /// No description provided for @chatNoRecentEmoji.
   ///
   /// In fr, this message translates to:
@@ -5965,6 +5959,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Recadrer la photo'**
   String get chatCropImageTitle;
+
+  /// No description provided for @chatLoadImpossible.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible de charger les messages.'**
+  String get chatLoadImpossible;
+
+  /// No description provided for @chatUnreadSeparator.
+  ///
+  /// In fr, this message translates to:
+  /// **'Messages non lus'**
+  String get chatUnreadSeparator;
+
+  /// No description provided for @chatImageCaptionHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter une légende…'**
+  String get chatImageCaptionHint;
 
   /// No description provided for @appCopyright.
   ///
