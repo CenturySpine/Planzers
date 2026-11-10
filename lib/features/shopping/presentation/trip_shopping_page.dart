@@ -481,7 +481,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
           packingItem.sourceShoppingItemId!,
     };
     // Admins prepare who buys what: assign items or whole categories, and tick
-    // items for participants who cannot sign in.
+    // or untick items held by any participant.
     final assignees = isAdminOrAbove
         ? shoppingAssigneesFor(
             participants: participants,
@@ -493,8 +493,12 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
         : const <ShoppingAssignee>[];
     final checkableOnBehalfIds = isAdminOrAbove
         ? {
-            for (final participant in participants)
-              if ((participant.userId?.trim() ?? '').isEmpty) participant.id,
+            for (final participant in participants) ...[
+              participant.id,
+              if ((participant.userId?.trim() ?? '').isNotEmpty)
+                participant.userId!.trim(),
+            ],
+            ...widget.trip.memberUserIds,
           }
         : const <String>{};
     final locks = ref
@@ -1139,9 +1143,9 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
   }
 
   /// Row actions of the free list, besides delete. Any item can be sorted
-  /// into a category. A shared item still to buy can be assigned (admins) or
-  /// made private when free or held by the current user; a private item can
-  /// go to the "À emporter" list or be shared again.
+  /// into a category. A shared item can be assigned (admins) and, while still
+  /// to buy, made private when free or held by the current user; a private
+  /// item can go to the "À emporter" list or be shared again.
   List<IngredientLineCustomMenuItem> _manualItemMenuItems(
     AppLocalizations l10n,
     ShoppingItem item, {
@@ -1170,14 +1174,14 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
             label: l10n.shoppingMakeSharedMenu,
             icon: PhosphorIconsRegular.lockOpen,
           ),
-      ] else if (!item.checked) ...[
+      ] else ...[
         if (canAssign)
           IngredientLineCustomMenuItem(
             actionId: _assignItemActionId,
             label: l10n.shoppingAssignMenu,
             icon: PhosphorIconsRegular.userPlus,
           ),
-        if (isFree || isMine)
+        if (!item.checked && (isFree || isMine))
           IngredientLineCustomMenuItem(
             actionId: _makePrivateActionId,
             label: l10n.shoppingMakePrivateMenu,
@@ -1281,7 +1285,8 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
       context,
       assignees: assignees,
       initialClaimId: item.claimedBy?.trim() ?? '',
-      allowNobody: true,
+      // A bought item keeps a holder: nobody could untick it otherwise.
+      allowNobody: !item.checked,
     );
     if (chosen == null || !mounted) return;
     if (chosen == (item.claimedBy?.trim() ?? '')) return;
@@ -1310,7 +1315,8 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
       context,
       assignees: assignees,
       initialClaimId: item.claimedBy?.trim() ?? '',
-      allowNobody: true,
+      // A bought item keeps a holder: nobody could untick it otherwise.
+      allowNobody: !item.checked,
     );
     if (chosen == null || !context.mounted) return;
     if (chosen == (item.claimedBy?.trim() ?? '')) return;
@@ -2039,7 +2045,7 @@ class _ConsolidatedCategorySection extends StatelessWidget {
                       label: l10n.shoppingChangeCategoryMenu,
                       icon: PhosphorIconsRegular.folderSimpleUser,
                     ),
-                    if (onRequestAssign != null && !items[i].checked)
+                    if (onRequestAssign != null)
                       IngredientLineCustomMenuItem(
                         actionId: _assignItemActionId,
                         label: l10n.shoppingAssignMenu,
