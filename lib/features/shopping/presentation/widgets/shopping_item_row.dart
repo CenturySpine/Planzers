@@ -52,8 +52,8 @@ class ShoppingItemRow extends ConsumerStatefulWidget {
   /// them before they had an account is held under this id.
   final String currentParticipantId;
 
-  /// Holders (participants without an account) whose items the current user
-  /// may tick on their behalf (trip admins).
+  /// Holders whose items the current user may tick or untick on their behalf
+  /// (trip admins, for every participant).
   final Set<String> checkableOnBehalfIds;
 
   /// Display names by participant id and user id, for holders without a
